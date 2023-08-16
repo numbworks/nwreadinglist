@@ -1192,8 +1192,8 @@ def get_reading_list_by_rating_md(last_update : datetime, sas_by_rating_df : Dat
     return md_content
 def get_reading_list_by_topic_md(last_update : datetime, sas_by_topic_df : DataFrame) -> str:
 
-    md_file_name : str = "READINGLISTBYRATING.md"
-    md_paragraph_title : str = "Reading List By Rating"
+    md_file_name : str = "READINGLISTBYTOPIC.md"
+    md_paragraph_title : str = "Reading List By Topic"
 
     markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
     sas_by_topic_md : str = sas_by_topic_df.to_markdown(index = False)
