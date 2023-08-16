@@ -1059,7 +1059,7 @@ def get_formatted_reading_list(books_df : DataFrame) -> DataFrame:
     cn_rating : str = "Rating"
     cn_topic : str = "Topic"
 
-    formatted_rl_df[cn_id] = books_df.index
+    formatted_rl_df[cn_id] = books_df.index + 1
     formatted_rl_df[cn_title] = books_df[cn_title]
     formatted_rl_df[cn_year] = books_df[cn_year]
     formatted_rl_df[cn_language] = books_df[cn_language]
