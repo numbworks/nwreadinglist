@@ -18,7 +18,7 @@ From the documentation:
 
 ## Download the source code
 
-I assume you are on `Windows`, but the library should compile without issues on `Linux` as well. Please:
+I assume you are on `Windows`, but the software should run without issues on `Linux` as well. Please:
 
 1. Install [Git for Windows](https://git-scm.com/download/win);
 2. Open `Windows Powershell` (or `Windows Terminal` or similar) and type:

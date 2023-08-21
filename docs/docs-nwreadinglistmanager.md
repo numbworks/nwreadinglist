@@ -26,7 +26,7 @@ In order to run this Jupyter Notebook:
 4. Open a terminal and run the following commands:
     - ```python.exe -m pip install --upgrade pip```
 5. Launch Visual Studio Code and open `src/nwreadinglistmanager.ipynb`;
-6. Edit the `Settings` section according to your need;
+6. Edit the `SettingCollection` object according to your needs;
 7. Click on `Run All`;
 8. Done!
 
