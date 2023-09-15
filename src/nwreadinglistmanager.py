@@ -50,6 +50,14 @@ class SettingCollection():
     show_reading_list_md : bool
     formatted_rating : bool
     now : datetime
+    working_folder_path : str
+    readme_file_name : str
+    reading_list_by_month_file_name : str
+    reading_list_by_publisher_file_name : str
+    reading_list_by_rating_file_name : str
+    reading_list_by_topic_file_name : str
+    reading_list_file_name : str
+    save_reading_lists_to_file : bool 
 
     def __init__(
         self,
@@ -79,7 +87,15 @@ class SettingCollection():
         show_reading_list_by_topic_md : bool,
         show_reading_list_md : bool,
         formatted_rating : bool,
-        now : datetime
+        now : datetime,
+        working_folder_path : str,
+        readme_file_name : str,
+        reading_list_by_month_file_name : str,
+        reading_list_by_publisher_file_name : str,
+        reading_list_by_rating_file_name : str,
+        reading_list_by_topic_file_name : str,
+        reading_list_file_name : str,
+        save_reading_lists_to_file : bool
         ):
 
         self.read_years = read_years
@@ -109,6 +125,14 @@ class SettingCollection():
         self.show_reading_list_md = show_reading_list_md
         self.formatted_rating = formatted_rating
         self.now = now
+        self.working_folder_path = working_folder_path
+        self.readme_file_name = readme_file_name
+        self.reading_list_by_month_file_name = reading_list_by_month_file_name
+        self.reading_list_by_publisher_file_name = reading_list_by_publisher_file_name
+        self.reading_list_by_rating_file_name = reading_list_by_rating_file_name
+        self.reading_list_by_topic_file_name = reading_list_by_topic_file_name
+        self.reading_list_file_name = reading_list_file_name
+        self.save_reading_lists_to_file = save_reading_lists_to_file    
 
 # FUNCTIONS
 def get_default_reading_list_path()-> str:
