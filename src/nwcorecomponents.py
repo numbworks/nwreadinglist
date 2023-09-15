@@ -80,7 +80,7 @@ def save_content(content : str, file_path : str) -> None:
 
     '''Writes the provided content to the provided file path.'''
 
-    with open(file_path, 'w') as new_file:
+    with open(file_path, 'w', encoding="utf-8") as new_file:
         new_file.write(content)
 def save_contents(contents : list[str], file_paths : list[str]) -> None: 
 
