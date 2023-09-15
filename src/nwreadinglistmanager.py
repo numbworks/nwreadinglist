@@ -1134,21 +1134,17 @@ def get_markdown_header(last_update : datetime, paragraph_title : str) -> str:
 
     return markdown_header
 
-def get_readme_md(file_name : str, cumulative_df : DataFrame) -> str:
+def get_readme_md(cumulative_df : DataFrame) -> str:
 
     '''Creates the Markdown content for a README file out of the provided dataframe.'''
 
     cumulative_md : str = cumulative_df.to_markdown(index = False)
 
-    md_content : str = file_name
-    md_content += "\n"
-    md_content += ""
-    md_content += "\n"
-    md_content += cumulative_md
+    md_content : str = cumulative_md
     md_content += "\n"
 
     return md_content
-def get_reading_list_by_month_md(file_name : str, last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame) -> str:
+def get_reading_list_by_month_md(last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame) -> str:
 
     '''Creates the Markdown content for a "Reading List By Month" file out of the provided dataframes.'''
 
@@ -1158,11 +1154,7 @@ def get_reading_list_by_month_md(file_name : str, last_update : datetime, sas_by
     sas_by_month_md : str = sas_by_month_df.to_markdown(index = False)
     sas_by_year_street_price_md  : str = sas_by_year_street_price_df.to_markdown(index = False)
 
-    md_content : str = file_name
-    md_content += "\n"
-    md_content += ""
-    md_content += "\n"
-    md_content += markdown_header
+    md_content : str = markdown_header
     md_content += "\n"
     md_content += sas_by_month_md
     md_content += "\n"
@@ -1173,7 +1165,7 @@ def get_reading_list_by_month_md(file_name : str, last_update : datetime, sas_by
     md_content += ""
 
     return md_content
-def get_reading_list_by_publisher_md(file_name : str, last_update : datetime, sas_by_publisher_flt_df : DataFrame, sas_by_publisher_df : DataFrame) -> str:
+def get_reading_list_by_publisher_md(last_update : datetime, sas_by_publisher_flt_df : DataFrame, sas_by_publisher_df : DataFrame) -> str:
 
     '''Creates the Markdown content for a "Reading List By Publisher" file out of the provided dataframes.'''
 
@@ -1183,11 +1175,7 @@ def get_reading_list_by_publisher_md(file_name : str, last_update : datetime, sa
     sas_by_publisher_flt_md : str = sas_by_publisher_flt_df.to_markdown(index = False)
     sas_by_publisher_md : str = sas_by_publisher_df.to_markdown(index = False)
 
-    md_content : str = file_name
-    md_content += "\n"
-    md_content += ""
-    md_content += "\n"
-    md_content += markdown_header
+    md_content : str = markdown_header
     md_content += "\n"
     md_content += sas_by_publisher_flt_md
     md_content += "\n"
@@ -1198,7 +1186,7 @@ def get_reading_list_by_publisher_md(file_name : str, last_update : datetime, sa
     md_content += ""
 
     return md_content
-def get_reading_list_by_rating_md(file_name : str, last_update : datetime, sas_by_rating_df : DataFrame) -> str:
+def get_reading_list_by_rating_md(last_update : datetime, sas_by_rating_df : DataFrame) -> str:
 
     '''Creates the Markdown content for a "Reading List By Rating" file out of the provided dataframe.'''
 
@@ -1207,17 +1195,13 @@ def get_reading_list_by_rating_md(file_name : str, last_update : datetime, sas_b
     markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
     sas_by_rating_md : str = sas_by_rating_df.to_markdown(index = False)
 
-    md_content : str = file_name
-    md_content += "\n"
-    md_content += ""
-    md_content += "\n"
-    md_content += markdown_header
+    md_content : str = markdown_header
     md_content += "\n"
     md_content += sas_by_rating_md
     md_content += "\n"
 
     return md_content
-def get_reading_list_by_topic_md(file_name : str, last_update : datetime, sas_by_topic_df : DataFrame) -> str:
+def get_reading_list_by_topic_md(last_update : datetime, sas_by_topic_df : DataFrame) -> str:
 
     '''Creates the Markdown content for a "Reading List By Topic" file out of the provided dataframe.'''
 
@@ -1226,17 +1210,13 @@ def get_reading_list_by_topic_md(file_name : str, last_update : datetime, sas_by
     markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
     sas_by_topic_md : str = sas_by_topic_df.to_markdown(index = False)
 
-    md_content : str = file_name
-    md_content += "\n"
-    md_content += ""
-    md_content += "\n"
-    md_content += markdown_header
+    md_content : str = markdown_header
     md_content += "\n"
     md_content += sas_by_topic_md
     md_content += "\n"
 
     return md_content
-def get_reading_list_md(file_name : str, last_update : datetime, books_df : DataFrame) -> str:
+def get_reading_list_md(last_update : datetime, books_df : DataFrame) -> str:
 
     '''Creates the Markdown content for a "Reading List" file out of the provided dataframe.'''
 
@@ -1246,14 +1226,19 @@ def get_reading_list_md(file_name : str, last_update : datetime, books_df : Data
     formatted_rl_df : DataFrame = get_formatted_reading_list(books_df = books_df)
     formatted_rl_md : str = formatted_rl_df.to_markdown(index = False)
 
-    md_content : str = file_name
-    md_content += "\n"
-    md_content += ""
-    md_content += "\n"
-    md_content += markdown_header
+    md_content : str = markdown_header
     md_content += "\n"
     md_content += formatted_rl_md
     md_content += "\n"
+
+    return md_content
+def format_file_name(file_name : str) -> str:
+
+    '''Formats the provided file_name so that it can be displayed on the screen before the Markdown content.'''
+
+    md_content : str = file_name
+    md_content += "\n"
+    md_content += ""
 
     return md_content
 
