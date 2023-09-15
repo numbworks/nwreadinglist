@@ -1133,6 +1133,15 @@ def get_markdown_header(last_update : datetime, paragraph_title : str) -> str:
     markdown_header : str = "\n".join(lines)
 
     return markdown_header
+def add_subscript_tags(cell_value : str) -> str:
+
+	'''
+	"49.99" => "<sub>49.99</sub>"
+	'''
+
+	tagged : str = f"<sub>{cell_value}</sub>"
+
+	return tagged
 
 def get_readme_md(cumulative_df : DataFrame) -> str:
 
