@@ -1139,15 +1139,25 @@ def get_markdown_header(last_update : datetime, paragraph_title : str) -> str:
     markdown_header : str = "\n".join(lines)
 
     return markdown_header
-def add_subscript_tags(cell_value : str) -> str:
+def add_subscript_tags_to_value(value : str) -> str:
 
 	'''
 	"49.99" => "<sub>49.99</sub>"
 	'''
 
-	tagged : str = f"<sub>{cell_value}</sub>"
+	tagged : str = f"<sub>{value}</sub>"
 
 	return tagged
+def add_subscript_tags_to_dataframe(df : DataFrame) -> DataFrame:
+
+	'''Adds subscript tags to every cell and column name of the provided DataFrame.'''
+
+	tagged_df = df.copy(deep=True)
+	
+	tagged_df = tagged_df.applymap(add_subscript_tags_to_value)
+	tagged_df = tagged_df.rename(columns = lambda column_name : add_subscript_tags_to_value(value = column_name))
+
+	return tagged_df
 
 def get_readme_md(cumulative_df : DataFrame) -> str:
 
@@ -1276,7 +1286,7 @@ def process_readme_md(cumulative_df : DataFrame, setting_collection : SettingCol
         nwcc.save_content(content = content, file_path = file_path)
 def process_reading_list_by_month_md(sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, setting_collection : SettingCollection) -> None:
 
-    '''Performs all the tasks related to the "Reading List By Month" file.'''
+    '''Performs all the tasks related to the "Reading List By Month" file.''' 
 
     content : str = get_reading_list_by_month_md(      
         last_update = setting_collection.last_update, 
