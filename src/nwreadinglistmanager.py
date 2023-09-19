@@ -1169,15 +1169,21 @@ def get_readme_md(cumulative_df : DataFrame) -> str:
     md_content += "\n"
 
     return md_content
-def get_reading_list_by_month_md(last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame) -> str:
+def get_reading_list_by_month_md(last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, use_smaller_font : bool) -> str:
 
     '''Creates the Markdown content for a "Reading List By Month" file out of the provided dataframes.'''
+
+    copy_of_sas_by_month_df : DataFrame = sas_by_month_df.copy(deep=True)
+    copy_of_sas_by_year_street_price_df : DataFrame = sas_by_year_street_price_df.copy(deep=True)
+    if use_smaller_font:
+        copy_of_sas_by_month_df = add_subscript_tags_to_dataframe(df = copy_of_sas_by_month_df)
+        copy_of_sas_by_year_street_price_df = add_subscript_tags_to_dataframe(df = copy_of_sas_by_year_street_price_df)
 
     md_paragraph_title : str = "Reading List By Month"
 
     markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-    sas_by_month_md : str = sas_by_month_df.to_markdown(index = False)
-    sas_by_year_street_price_md  : str = sas_by_year_street_price_df.to_markdown(index = False)
+    sas_by_month_md : str = copy_of_sas_by_month_df.to_markdown(index = False)
+    sas_by_year_street_price_md  : str = copy_of_sas_by_year_street_price_df.to_markdown(index = False)
 
     md_content : str = markdown_header
     md_content += "\n"
@@ -1241,7 +1247,7 @@ def get_reading_list_by_topic_md(last_update : datetime, sas_by_topic_df : DataF
     md_content += "\n"
 
     return md_content
-def get_reading_list_md(last_update : datetime, books_df : DataFrame) -> str:
+def get_reading_list_md(last_update : datetime, books_df : DataFrame, use_smaller_font : bool) -> str:
 
     '''Creates the Markdown content for a "Reading List" file out of the provided dataframe.'''
 
@@ -1249,6 +1255,10 @@ def get_reading_list_md(last_update : datetime, books_df : DataFrame) -> str:
 
     markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
     formatted_rl_df : DataFrame = get_formatted_reading_list(books_df = books_df)
+
+    if use_smaller_font:
+        formatted_rl_df = add_subscript_tags_to_dataframe(df = formatted_rl_df)    
+
     formatted_rl_md : str = formatted_rl_df.to_markdown(index = False)
 
     md_content : str = markdown_header
@@ -1291,7 +1301,8 @@ def process_reading_list_by_month_md(sas_by_month_df : DataFrame, sas_by_year_st
     content : str = get_reading_list_by_month_md(      
         last_update = setting_collection.last_update, 
         sas_by_month_df = sas_by_month_df, 
-        sas_by_year_street_price_df = sas_by_year_street_price_df)
+        sas_by_year_street_price_df = sas_by_year_street_price_df,
+        use_smaller_font = setting_collection.use_smaller_font_for_reading_list_by_month_md)
 
     if setting_collection.show_reading_list_by_month_md:    
         print(format_file_name(file_name = setting_collection.reading_list_by_month_file_name))    
@@ -1368,7 +1379,8 @@ def process_reading_list_md(books_df : DataFrame, setting_collection : SettingCo
 
     content : str = get_reading_list_md(
         last_update = setting_collection.last_update, 
-        books_df = books_df)
+        books_df = books_df,
+        use_smaller_font = setting_collection.use_smaller_font_for_reading_list_md)
 
     if setting_collection.show_reading_list_md:
         print(format_file_name(file_name = setting_collection.reading_list_file_name))
