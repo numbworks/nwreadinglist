@@ -57,7 +57,9 @@ class SettingCollection():
     reading_list_by_rating_file_name : str
     reading_list_by_topic_file_name : str
     reading_list_file_name : str
-    save_reading_lists_to_file : bool 
+    save_reading_lists_to_file : bool
+    use_smaller_font_for_reading_list_md : bool = True
+    use_smaller_font_for_reading_list_by_month_md : bool = True    
 
     def __init__(
         self,
@@ -95,7 +97,9 @@ class SettingCollection():
         reading_list_by_rating_file_name : str,
         reading_list_by_topic_file_name : str,
         reading_list_file_name : str,
-        save_reading_lists_to_file : bool
+        save_reading_lists_to_file : bool,
+        use_smaller_font_for_reading_list_md : bool,
+        use_smaller_font_for_reading_list_by_month_md : bool
         ):
 
         self.read_years = read_years
@@ -132,7 +136,9 @@ class SettingCollection():
         self.reading_list_by_rating_file_name = reading_list_by_rating_file_name
         self.reading_list_by_topic_file_name = reading_list_by_topic_file_name
         self.reading_list_file_name = reading_list_file_name
-        self.save_reading_lists_to_file = save_reading_lists_to_file    
+        self.save_reading_lists_to_file = save_reading_lists_to_file 
+        self.use_smaller_font_for_reading_list_md = use_smaller_font_for_reading_list_md
+        self.use_smaller_font_for_reading_list_by_month_md = use_smaller_font_for_reading_list_by_month_md           
 
 # FUNCTIONS
 def get_default_reading_list_path()-> str:
