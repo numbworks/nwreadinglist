@@ -173,6 +173,7 @@ def get_books_dataset(setting_collection : SettingCollection) -> DataFrame:
     column_names.append("Topic")                # [16], str
     column_names.append("OnGoodreads")          # [17], str
     column_names.append("CommentLenght")        # [18], int
+    column_names.append("KBSize")               # [19], int
 
     dataset_df = pd.read_excel(
 	    io = setting_collection.excel_path, 	
@@ -211,6 +212,7 @@ def get_books_dataset(setting_collection : SettingCollection) -> DataFrame:
     dataset_df = dataset_df.astype({column_names[16]: str})
     dataset_df = dataset_df.astype({column_names[17]: str})
     dataset_df = dataset_df.astype({column_names[18]: int})
+    dataset_df = dataset_df.astype({column_names[19]: int})
 
     return dataset_df
 
