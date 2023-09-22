@@ -1106,6 +1106,31 @@ def get_formatted_reading_list(books_df : DataFrame) -> DataFrame:
 
     return formatted_rl_df
 
+def create_topn_by_kbsize(books_df : DataFrame, ascending : bool, n : int) -> DataFrame:
+
+    '''
+            Title	                                        Topic	                        KBSize
+        0	Machine Learning For Dummies	                Data Analysis, Data Science, ML	3732
+        1	Machine Learning Projects for .NET Developers	Data Analysis, Data Science, ML	3272
+        2	Producing Open Source Software	                Software Engineering	        2332    
+        ...
+    '''
+
+    topn_by_kbsize_df : DataFrame = books_df.copy(deep=True)
+
+    cn_title : str = "Title"
+    cn_topic : str = "Topic"
+    cn_kbsize : str = "KBSize"
+    topn_by_kbsize_df = topn_by_kbsize_df[[cn_title, cn_topic, cn_kbsize]]
+
+    condition : Series = (topn_by_kbsize_df[cn_kbsize] > 0)
+    topn_by_kbsize_df : DataFrame = topn_by_kbsize_df.loc[condition]
+
+    topn_by_kbsize_df = topn_by_kbsize_df.sort_values(by = cn_kbsize, ascending = ascending).reset_index(drop = True)
+    topn_by_kbsize_df = topn_by_kbsize_df.head(n = n)
+
+    return topn_by_kbsize_df
+
 def format_to_iso_8601(dt : datetime) -> str:
 
     '''

@@ -159,6 +159,22 @@ def remove_outliers(df : DataFrame, column_name : str) -> DataFrame:
 
     return filtered_df
 
+def convert_index_to_blanks(df : DataFrame) -> DataFrame:
+
+    '''Converts the index of the provided DataFrame to blanks.'''
+
+    blank_idx : list[str] = [''] * len(df)
+    df.index = blank_idx
+
+    return df
+def convert_index_to_one_based(df : DataFrame) -> DataFrame:
+
+    '''Converts the index of the provided DataFrame from zero-based to one-based.'''
+
+    df.index += 1
+
+    return df
+
 # MAIN
 if __name__ == "__main__":
     pass
