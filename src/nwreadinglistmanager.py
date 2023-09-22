@@ -12,6 +12,7 @@ import openpyxl
 import copy
 from pandas import DataFrame
 from datetime import datetime
+from datetime import date
 from pandas import Series
 from numpy import float64
 
@@ -1039,7 +1040,7 @@ def get_sas_by_rating(books_df : DataFrame, formatted_rating : bool) -> DataFram
 
     return sas_by_rating_df
 
-def get_cumulative(books_df : DataFrame, rounding_digits : bool = 2) -> DataFrame:
+def get_cumulative(books_df : DataFrame, last_update : date, rounding_digits : bool = 2) -> DataFrame:
 
     '''
 	        Years	Books	Pages	TotalSpend
@@ -1062,12 +1063,14 @@ def get_cumulative(books_df : DataFrame, rounding_digits : bool = 2) -> DataFram
     cn_books : str = "Books"
     cn_pages : str = "Pages"
     cn_total_spend : str = "TotalSpend"
+    cn_last_update : str = "LastUpdate"
 
     cumulative_dict : dict = {
         f"{cn_years}": f"{str(count_years)}",
         f"{cn_books}": f"{str(count_books)}",
         f"{cn_pages}": f"{str(sum_pages)}",
-        f"{cn_total_spend}": f"{format_usd_amount(amount = sum_street_price, rounding_digits = rounding_digits)}"        
+        f"{cn_total_spend}": f"{format_usd_amount(amount = sum_street_price, rounding_digits = rounding_digits)}",
+        f"{cn_last_update}": f"{format_to_iso_8601(dt = datetime(year = last_update.year, month = last_update.month, day = last_update.day))}"
         }
 
     cumulative_df : DataFrame = pd.DataFrame(cumulative_dict, index=[0])
