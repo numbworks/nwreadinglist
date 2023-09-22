@@ -1109,19 +1109,20 @@ def get_formatted_reading_list(books_df : DataFrame) -> DataFrame:
 def create_topn_by_kbsize(books_df : DataFrame, ascending : bool, n : int) -> DataFrame:
 
     '''
-            Title	                                        Topic	                        KBSize
-        0	Machine Learning For Dummies	                Data Analysis, Data Science, ML	3732
-        1	Machine Learning Projects for .NET Developers	Data Analysis, Data Science, ML	3272
-        2	Producing Open Source Software	                Software Engineering	        2332    
+        Title	                                                ReadYear	Topic	                        KBSize
+        1	    Machine Learning For Dummies	                2017	    Data Analysis, Data Science, ML	3732
+        2	    Machine Learning Projects for .NET Developers	2017	    Data Analysis, Data Science, ML	3272
+        3	    Producing Open Source Software	                2016	    Software Engineering	        2332
         ...
     '''
 
     topn_by_kbsize_df : DataFrame = books_df.copy(deep=True)
 
     cn_title : str = "Title"
+    cn_readyear : str = "ReadYear"
     cn_topic : str = "Topic"
     cn_kbsize : str = "KBSize"
-    topn_by_kbsize_df = topn_by_kbsize_df[[cn_title, cn_topic, cn_kbsize]]
+    topn_by_kbsize_df = topn_by_kbsize_df[[cn_title, cn_readyear, cn_topic, cn_kbsize]]
 
     condition : Series = (topn_by_kbsize_df[cn_kbsize] > 0)
     topn_by_kbsize_df : DataFrame = topn_by_kbsize_df.loc[condition]
