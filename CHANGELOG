@@ -3,6 +3,7 @@ v1.5.0
 	- Feature: support for the possibility to save Markdown files in a given working folder
 	- Feature: support for the subscript-tags-to-cell feature (Markdown tables with smaller fonts)
 	- Feature: support for the "KBSize" field
+	- Feature: support for "Last Update" in README.MD.
 
 v1.0.0
 - Notebook:
