@@ -1,24 +1,25 @@
 v1.5.0
 - Notebook:
-	- Feature: support for the possibility to save Markdown files in a given working folder
-	- Feature: support for the subscript-tags-to-cell feature (Markdown tables with smaller fonts)
-	- Feature: support for the "KBSize" field
+	- Feature: support for the possibility to save Markdown files in a given working folder.
+	- Feature: support for the subscript-tags-to-cell feature (Markdown tables with smaller fonts).
+	- Feature: support for the "KBSize" field.
 	- Feature: support for "Last Update" in README.MD.
+	- Feature: support for a boxplot chart to show "Year" ranges.
 
 v1.0.0
 - Notebook:
-	- Feature: support for the creation of the "Books" dataframe and for its visualization   
-	- Feature: support for the creation of the "Studying Activity Summary by Month" dataframe and for its visualization
-	- Feature: support for the creation of the "Studying Activity Summary by Year/Street Price" dataframe and for its visualization	
-	- Feature: support for the creation of the "Studying Activity Summary (cumulative)" dataframe and for its visualization
-	- Feature: support for the creation of the "Studying Activity Summary by Topic" dataframe and for its visualization
-	- Feature: support for the creation of the "Studying Activity Summary by Publisher / Is Worth" dataframe and for its visualization
-	- Feature: support for the creation of the "Studying Activity Summary by Rating" dataframe and for its visualization
-	- Feature: support for the creation of the Markdown content for "README.md"
-	- Feature: support for the creation of the Markdown content for "READINGLISTBYMONTH.md"
-	- Feature: support for the creation of the Markdown content for "READINGLISTBYPUBLISHER.md"
-	- Feature: support for the creation of the Markdown content for "READINGLISTBYRATING.md"
-	- Feature: support for the creation of the Markdown content for "READINGLISTBYRATING.md"
-	- Feature: support for the creation of the Markdown content for "READINGLIST.md"
+	- Feature: support for the creation of the "Books" dataframe and for its visualization.
+	- Feature: support for the creation of the "Studying Activity Summary by Month" dataframe and for its visualization.
+	- Feature: support for the creation of the "Studying Activity Summary by Year/Street Price" dataframe and for its visualization.
+	- Feature: support for the creation of the "Studying Activity Summary (cumulative)" dataframe and for its visualization.
+	- Feature: support for the creation of the "Studying Activity Summary by Topic" dataframe and for its visualization.
+	- Feature: support for the creation of the "Studying Activity Summary by Publisher / Is Worth" dataframe and for its visualization.
+	- Feature: support for the creation of the "Studying Activity Summary by Rating" dataframe and for its visualization.
+	- Feature: support for the creation of the Markdown content for "README.md".
+	- Feature: support for the creation of the Markdown content for "READINGLISTBYMONTH.md".
+	- Feature: support for the creation of the Markdown content for "READINGLISTBYPUBLISHER.md".
+	- Feature: support for the creation of the Markdown content for "READINGLISTBYRATING.md".
+	- Feature: support for the creation of the Markdown content for "READINGLISTBYRATING.md".
+	- Feature: support for the creation of the Markdown content for "READINGLIST.md".
 - Documentation:
 	- Feature: covers all the features available in v1.0.0.
