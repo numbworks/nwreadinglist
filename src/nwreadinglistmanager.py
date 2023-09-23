@@ -1043,8 +1043,8 @@ def get_sas_by_rating(books_df : DataFrame, formatted_rating : bool) -> DataFram
 def get_cumulative(books_df : DataFrame, last_update : date, rounding_digits : bool = 2) -> DataFrame:
 
     '''
-	        Years	Books	Pages	TotalSpend
-        0	8	    234	    62648	$6332.01
+	        Years	Books	Pages	TotalSpend  LastUpdate
+        0	8	    234	    62648	$6332.01    2023-09-23
     '''
 
     cn_read_year : str = "ReadYear"
@@ -1070,7 +1070,7 @@ def get_cumulative(books_df : DataFrame, last_update : date, rounding_digits : b
         f"{cn_books}": f"{str(count_books)}",
         f"{cn_pages}": f"{str(sum_pages)}",
         f"{cn_total_spend}": f"{format_usd_amount(amount = sum_street_price, rounding_digits = rounding_digits)}",
-        f"{cn_last_update}": f"{format_to_iso_8601(dt = datetime(year = last_update.year, month = last_update.month, day = last_update.day))}"
+        f"{cn_last_update}": f"{nwcc.format_to_iso_8601(dt = nwcc.convert_date_to_datetime(dt = last_update))}"
         }
 
     cumulative_df : DataFrame = pd.DataFrame(cumulative_dict, index=[0])
@@ -1136,15 +1136,6 @@ def get_topn_by_kbsize(books_df : DataFrame, ascending : bool, n : int) -> DataF
 
     return topn_by_kbsize_df
 
-def format_to_iso_8601(dt : datetime) -> str:
-
-    '''
-        "2023-08-03"
-    '''
-
-    dt_str : str = dt.strftime("%Y-%m-%d")
-
-    return dt_str
 def get_markdown_header(last_update : datetime, paragraph_title : str) -> str:
     
     '''
@@ -1165,7 +1156,7 @@ def get_markdown_header(last_update : datetime, paragraph_title : str) -> str:
         "|Date|Author|Description|", 
         "|---|---|---|",
         "|2020-12-22|numbworks|Created.|",
-        f"|{format_to_iso_8601(dt = last_update)}|numbworks|Last update.|",
+        f"|{nwcc.format_to_iso_8601(dt = last_update)}|numbworks|Last update.|",
         "",
         f"## {paragraph_title}",
         ""

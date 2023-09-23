@@ -9,6 +9,8 @@ import os
 import requests
 import seaborn as sns
 from pandas import DataFrame
+from datetime import datetime
+from datetime import date
 
 # LOCAL MODULES
 # CLASSES
@@ -158,6 +160,15 @@ def remove_outliers(df : DataFrame, column_name : str) -> DataFrame:
     filtered_df : DataFrame = df[condition]
 
     return filtered_df
+def format_to_iso_8601(dt : datetime) -> str:
+
+    '''
+        "2023-08-03"
+    '''
+
+    dt_str : str = dt.strftime("%Y-%m-%d")
+
+    return dt_str
 
 def convert_index_to_blanks(df : DataFrame) -> DataFrame:
 
@@ -174,6 +185,11 @@ def convert_index_to_one_based(df : DataFrame) -> DataFrame:
     df.index += 1
 
     return df
+def convert_date_to_datetime(dt : date) -> datetime:
+
+    '''Converts provided date to datetime.'''
+
+    return datetime(year = dt.year, month = dt.month, day = dt.day)
 
 # MAIN
 if __name__ == "__main__":
