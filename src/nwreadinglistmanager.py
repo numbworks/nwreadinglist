@@ -804,16 +804,7 @@ def add_trend_to_sas_by_street_price(sas_by_street_price_df : DataFrame, yeatren
             expanded_df = expanded_df.reindex(columns = new_column_names)
             
     return expanded_df
-def format_usd_amount(amount : float64, rounding_digits : int) -> str:
 
-    '''
-        748.7 => 748.70 => "$748.70"
-    '''
-
-    rounded : float64 = amount.round(decimals = rounding_digits)
-    formatted : str = f"${rounded:.2f}"
-
-    return formatted
 def get_sas_by_street_price(books_df : DataFrame, read_years : list, rounding_digits : int = 2) -> DataFrame:
 
     '''
@@ -865,7 +856,7 @@ def get_sas_by_street_price(books_df : DataFrame, read_years : list, rounding_di
 
     new_column_names : list = [str(x) for x in read_years]
     for column_name in new_column_names:
-        sas_by_street_price_df[column_name] = sas_by_street_price_df[column_name].apply(lambda x : format_usd_amount(amount = float64(x), rounding_digits = rounding_digits))
+        sas_by_street_price_df[column_name] = sas_by_street_price_df[column_name].apply(lambda x : nwcc.format_usd_amount(amount = float64(x), rounding_digits = rounding_digits))
 
     return sas_by_street_price_df
 def get_sas_by_year_street_price(sas_by_month_df : DataFrame, books_df : DataFrame, read_years : list) -> DataFrame:
@@ -1005,6 +996,8 @@ def filter_by_is_worth(sas_by_publisher_df : DataFrame, is_worth : str = "Yes") 
 
 def format_rating(rating : int) -> str:
 
+    '''"★★★★★", "★★★★☆", ...'''
+
     black_star : str = "★"
     white_star : str = "☆"
 
@@ -1069,7 +1062,7 @@ def get_cumulative(books_df : DataFrame, last_update : date, rounding_digits : b
         f"{cn_years}": f"{str(count_years)}",
         f"{cn_books}": f"{str(count_books)}",
         f"{cn_pages}": f"{str(sum_pages)}",
-        f"{cn_total_spend}": f"{format_usd_amount(amount = sum_street_price, rounding_digits = rounding_digits)}",
+        f"{cn_total_spend}": f"{nwcc.format_usd_amount(amount = sum_street_price, rounding_digits = rounding_digits)}",
         f"{cn_last_update}": f"{nwcc.format_to_iso_8601(dt = nwcc.convert_date_to_datetime(dt = last_update))}"
         }
 

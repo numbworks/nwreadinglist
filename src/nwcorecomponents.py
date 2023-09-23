@@ -11,6 +11,7 @@ import seaborn as sns
 from pandas import DataFrame
 from datetime import datetime
 from datetime import date
+from numpy import float64
 
 # LOCAL MODULES
 # CLASSES
@@ -128,6 +129,25 @@ def decode_unicode_characters(string : str) -> str:
     r'''Example: "Antikt \u0026 Design" => "Antikt & Design"'''
 
     return string.encode('utf_8').decode('unicode_escape')
+def format_to_iso_8601(dt : datetime) -> str:
+
+    '''
+        "2023-08-03"
+    '''
+
+    dt_str : str = dt.strftime("%Y-%m-%d")
+
+    return dt_str
+def format_usd_amount(amount : float64, rounding_digits : int) -> str:
+
+    '''
+        748.7 => 748.70 => "$748.70"
+    '''
+
+    rounded : float64 = amount.round(decimals = rounding_digits)
+    formatted : str = f"${rounded:.2f}"
+
+    return formatted
 
 def show_box_plot(df : DataFrame, x_name : str) -> None:
 
@@ -160,15 +180,6 @@ def remove_outliers(df : DataFrame, column_name : str) -> DataFrame:
     filtered_df : DataFrame = df[condition]
 
     return filtered_df
-def format_to_iso_8601(dt : datetime) -> str:
-
-    '''
-        "2023-08-03"
-    '''
-
-    dt_str : str = dt.strftime("%Y-%m-%d")
-
-    return dt_str
 
 def convert_index_to_blanks(df : DataFrame) -> DataFrame:
 
