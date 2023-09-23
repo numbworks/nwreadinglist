@@ -12,6 +12,7 @@ import openpyxl
 import copy
 from pandas import DataFrame
 from datetime import datetime
+from datetime import date
 from pandas import Series
 from numpy import float64
 
@@ -33,6 +34,7 @@ class SettingCollection():
     is_worth_min_avgrating : float
     n_generic : int
     n_by_month : int
+    n_by_kbsize : int
     show_books_df : bool
     show_sas_by_month_upd_df : bool
     show_sas_by_year_street_price_df : bool
@@ -50,6 +52,17 @@ class SettingCollection():
     show_reading_list_md : bool
     formatted_rating : bool
     now : datetime
+    working_folder_path : str
+    readme_file_name : str
+    reading_list_by_month_file_name : str
+    reading_list_by_publisher_file_name : str
+    reading_list_by_rating_file_name : str
+    reading_list_by_topic_file_name : str
+    reading_list_file_name : str
+    save_reading_lists_to_file : bool
+    use_smaller_font_for_reading_list_md : bool = True
+    use_smaller_font_for_reading_list_by_month_md : bool = True
+    definitions : dict
 
     def __init__(
         self,
@@ -63,6 +76,7 @@ class SettingCollection():
         is_worth_min_avgrating : float,
         n_generic : int,
         n_by_month : int,
+        n_by_kbsize : int,
         show_books_df : bool,
         show_sas_by_month_upd_df : bool,
         show_sas_by_year_street_price_df : bool,
@@ -79,7 +93,18 @@ class SettingCollection():
         show_reading_list_by_topic_md : bool,
         show_reading_list_md : bool,
         formatted_rating : bool,
-        now : datetime
+        now : datetime,
+        working_folder_path : str,
+        readme_file_name : str,
+        reading_list_by_month_file_name : str,
+        reading_list_by_publisher_file_name : str,
+        reading_list_by_rating_file_name : str,
+        reading_list_by_topic_file_name : str,
+        reading_list_file_name : str,
+        save_reading_lists_to_file : bool,
+        use_smaller_font_for_reading_list_md : bool,
+        use_smaller_font_for_reading_list_by_month_md : bool,
+        definitions : dict
         ):
 
         self.read_years = read_years
@@ -92,6 +117,7 @@ class SettingCollection():
         self.is_worth_min_avgrating = is_worth_min_avgrating
         self.n_generic = n_generic
         self.n_by_month = n_by_month
+        self.n_by_kbsize = n_by_kbsize
         self.show_books_df = show_books_df
         self.show_sas_by_month_upd_df = show_sas_by_month_upd_df
         self.show_sas_by_year_street_price_df = show_sas_by_year_street_price_df
@@ -109,6 +135,17 @@ class SettingCollection():
         self.show_reading_list_md = show_reading_list_md
         self.formatted_rating = formatted_rating
         self.now = now
+        self.working_folder_path = working_folder_path
+        self.readme_file_name = readme_file_name
+        self.reading_list_by_month_file_name = reading_list_by_month_file_name
+        self.reading_list_by_publisher_file_name = reading_list_by_publisher_file_name
+        self.reading_list_by_rating_file_name = reading_list_by_rating_file_name
+        self.reading_list_by_topic_file_name = reading_list_by_topic_file_name
+        self.reading_list_file_name = reading_list_file_name
+        self.save_reading_lists_to_file = save_reading_lists_to_file 
+        self.use_smaller_font_for_reading_list_md = use_smaller_font_for_reading_list_md
+        self.use_smaller_font_for_reading_list_by_month_md = use_smaller_font_for_reading_list_by_month_md
+        self.definitions = definitions
 
 # FUNCTIONS
 def get_default_reading_list_path()-> str:
@@ -125,7 +162,7 @@ def get_books_dataset(setting_collection : SettingCollection) -> DataFrame:
     
     column_names : list[str] = []
     column_names.append("Title")                # [0], str
-    column_names.append("Year")                 # [1], str <= not 'int' because can be null
+    column_names.append("Year")                 # [1], int
     column_names.append("Type")                 # [2], str
     column_names.append("Format")               # [3], str
     column_names.append("Language")             # [4], str
@@ -143,6 +180,7 @@ def get_books_dataset(setting_collection : SettingCollection) -> DataFrame:
     column_names.append("Topic")                # [16], str
     column_names.append("OnGoodreads")          # [17], str
     column_names.append("CommentLenght")        # [18], int
+    column_names.append("KBSize")               # [19], int
 
     dataset_df = pd.read_excel(
 	    io = setting_collection.excel_path, 	
@@ -160,7 +198,7 @@ def get_books_dataset(setting_collection : SettingCollection) -> DataFrame:
     )
   
     dataset_df = dataset_df.astype({column_names[0]: str})  
-    dataset_df = dataset_df.astype({column_names[1]: str})
+    dataset_df = dataset_df.astype({column_names[1]: int})
     dataset_df = dataset_df.astype({column_names[2]: str})
     dataset_df = dataset_df.astype({column_names[3]: str})
     dataset_df = dataset_df.astype({column_names[4]: str})
@@ -181,6 +219,7 @@ def get_books_dataset(setting_collection : SettingCollection) -> DataFrame:
     dataset_df = dataset_df.astype({column_names[16]: str})
     dataset_df = dataset_df.astype({column_names[17]: str})
     dataset_df = dataset_df.astype({column_names[18]: int})
+    dataset_df = dataset_df.astype({column_names[19]: int})
 
     return dataset_df
 
@@ -768,16 +807,7 @@ def add_trend_to_sas_by_street_price(sas_by_street_price_df : DataFrame, yeatren
             expanded_df = expanded_df.reindex(columns = new_column_names)
             
     return expanded_df
-def format_usd_amount(amount : float64, rounding_digits : int) -> str:
 
-    '''
-        748.7 => 748.70 => "$748.70"
-    '''
-
-    rounded : float64 = amount.round(decimals = rounding_digits)
-    formatted : str = f"${rounded:.2f}"
-
-    return formatted
 def get_sas_by_street_price(books_df : DataFrame, read_years : list, rounding_digits : int = 2) -> DataFrame:
 
     '''
@@ -829,7 +859,7 @@ def get_sas_by_street_price(books_df : DataFrame, read_years : list, rounding_di
 
     new_column_names : list = [str(x) for x in read_years]
     for column_name in new_column_names:
-        sas_by_street_price_df[column_name] = sas_by_street_price_df[column_name].apply(lambda x : format_usd_amount(amount = float64(x), rounding_digits = rounding_digits))
+        sas_by_street_price_df[column_name] = sas_by_street_price_df[column_name].apply(lambda x : nwcc.format_usd_amount(amount = float64(x), rounding_digits = rounding_digits))
 
     return sas_by_street_price_df
 def get_sas_by_year_street_price(sas_by_month_df : DataFrame, books_df : DataFrame, read_years : list) -> DataFrame:
@@ -969,6 +999,8 @@ def filter_by_is_worth(sas_by_publisher_df : DataFrame, is_worth : str = "Yes") 
 
 def format_rating(rating : int) -> str:
 
+    '''"★★★★★", "★★★★☆", ...'''
+
     black_star : str = "★"
     white_star : str = "☆"
 
@@ -1004,11 +1036,11 @@ def get_sas_by_rating(books_df : DataFrame, formatted_rating : bool) -> DataFram
 
     return sas_by_rating_df
 
-def get_cumulative(books_df : DataFrame, rounding_digits : bool = 2) -> DataFrame:
+def get_cumulative(books_df : DataFrame, last_update : date, rounding_digits : bool = 2) -> DataFrame:
 
     '''
-	        Years	Books	Pages	TotalSpend
-        0	8	    234	    62648	$6332.01
+	        Years	Books	Pages	TotalSpend  LastUpdate
+        0	8	    234	    62648	$6332.01    2023-09-23
     '''
 
     cn_read_year : str = "ReadYear"
@@ -1027,12 +1059,14 @@ def get_cumulative(books_df : DataFrame, rounding_digits : bool = 2) -> DataFram
     cn_books : str = "Books"
     cn_pages : str = "Pages"
     cn_total_spend : str = "TotalSpend"
+    cn_last_update : str = "LastUpdate"
 
     cumulative_dict : dict = {
         f"{cn_years}": f"{str(count_years)}",
         f"{cn_books}": f"{str(count_books)}",
         f"{cn_pages}": f"{str(sum_pages)}",
-        f"{cn_total_spend}": f"{format_usd_amount(amount = sum_street_price, rounding_digits = rounding_digits)}"        
+        f"{cn_total_spend}": f"{nwcc.format_usd_amount(amount = sum_street_price, rounding_digits = rounding_digits)}",
+        f"{cn_last_update}": f"{nwcc.format_to_iso_8601(dt = nwcc.convert_date_to_datetime(dt = last_update))}"
         }
 
     cumulative_df : DataFrame = pd.DataFrame(cumulative_dict, index=[0])
@@ -1070,16 +1104,37 @@ def get_formatted_reading_list(books_df : DataFrame) -> DataFrame:
     formatted_rl_df[cn_topic] = books_df[cn_topic]   
 
     return formatted_rl_df
-
-def format_to_iso_8601(dt : datetime) -> str:
+def slice_by_kbsize(books_df : DataFrame, ascending : bool, remove_if_zero : bool) -> DataFrame:
 
     '''
-        "2023-08-03"
+            Title	                                        ReadYear	Topic	                        Publisher	Rating	KBSize  A4Sheets
+        0	Machine Learning For Dummies	                2017	    Data Analysis, Data Science, ML	Wiley	    4	    3732    8
+        1	Machine Learning Projects for .NET Developers	2017	    Data Analysis, Data Science, ML	Apress	    4	    3272    7
+        2	Producing Open Source Software	                2016	    Software Engineering	        O'Reilly	1	    2332    5
+        ...
     '''
 
-    dt_str : str = dt.strftime("%Y-%m-%d")
+    sliced_df : DataFrame = books_df.copy(deep=True)
 
-    return dt_str
+    cn_title : str = "Title"
+    cn_readyear : str = "ReadYear"
+    cn_topic : str = "Topic"
+    cn_publisher : str = "Publisher"
+    cn_rating : str = "Rating"
+    cn_kbsize : str = "KBSize"
+    cn_a4sheets : str = "A4Sheets"
+
+    sliced_df = sliced_df[[cn_title, cn_readyear, cn_topic, cn_publisher, cn_rating, cn_kbsize]]
+
+    if remove_if_zero:
+        condition : Series = (sliced_df[cn_kbsize] != 0)
+        sliced_df = sliced_df.loc[condition]
+
+    sliced_df = sliced_df.sort_values(by = cn_kbsize, ascending = ascending).reset_index(drop = True)   
+    sliced_df[cn_a4sheets] = sliced_df[cn_kbsize].apply(lambda x : nwcc.convert_word_count_to_A4_sheets(word_count = x))
+
+    return sliced_df
+
 def get_markdown_header(last_update : datetime, paragraph_title : str) -> str:
     
     '''
@@ -1100,7 +1155,7 @@ def get_markdown_header(last_update : datetime, paragraph_title : str) -> str:
         "|Date|Author|Description|", 
         "|---|---|---|",
         "|2020-12-22|numbworks|Created.|",
-        f"|{format_to_iso_8601(dt = last_update)}|numbworks|Last update.|",
+        f"|{nwcc.format_to_iso_8601(dt = last_update)}|numbworks|Last update.|",
         "",
         f"## {paragraph_title}",
         ""
@@ -1109,35 +1164,53 @@ def get_markdown_header(last_update : datetime, paragraph_title : str) -> str:
     markdown_header : str = "\n".join(lines)
 
     return markdown_header
+def add_subscript_tags_to_value(value : str) -> str:
+
+	'''
+	"49.99" => "<sub>49.99</sub>"
+	'''
+
+	tagged : str = f"<sub>{value}</sub>"
+
+	return tagged
+def add_subscript_tags_to_dataframe(df : DataFrame) -> DataFrame:
+
+	'''Adds subscript tags to every cell and column name of the provided DataFrame.'''
+
+	tagged_df = df.copy(deep=True)
+	
+	tagged_df = tagged_df.applymap(add_subscript_tags_to_value)
+	tagged_df = tagged_df.rename(columns = lambda column_name : add_subscript_tags_to_value(value = column_name))
+
+	return tagged_df
 
 def get_readme_md(cumulative_df : DataFrame) -> str:
 
-    md_file_name : str = "README.md"
+    '''Creates the Markdown content for a README file out of the provided dataframe.'''
 
     cumulative_md : str = cumulative_df.to_markdown(index = False)
 
-    md_content : str = md_file_name
-    md_content += "\n"
-    md_content += ""
-    md_content += "\n"
-    md_content += cumulative_md
+    md_content : str = cumulative_md
     md_content += "\n"
 
     return md_content
-def get_reading_list_by_month_md(last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame) -> str:
+def get_reading_list_by_month_md(last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, use_smaller_font : bool) -> str:
 
-    md_file_name : str = "READINGLISTBYMONTH.md"
+    '''Creates the Markdown content for a "Reading List By Month" file out of the provided dataframes.'''
+
+    copy_of_sas_by_month_df : DataFrame = sas_by_month_df.copy(deep=True)
+    copy_of_sas_by_year_street_price_df : DataFrame = sas_by_year_street_price_df.copy(deep=True)
+    if use_smaller_font:
+        copy_of_sas_by_month_df = add_subscript_tags_to_dataframe(df = copy_of_sas_by_month_df)
+        copy_of_sas_by_year_street_price_df = add_subscript_tags_to_dataframe(df = copy_of_sas_by_year_street_price_df)
+
     md_paragraph_title : str = "Reading List By Month"
 
     markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-    sas_by_month_md : str = sas_by_month_df.to_markdown(index = False)
-    sas_by_year_street_price_md  : str = sas_by_year_street_price_df.to_markdown(index = False)
+    sas_by_month_md : str = copy_of_sas_by_month_df.to_markdown(index = False)
+    sas_by_year_street_price_md  : str = copy_of_sas_by_year_street_price_df.to_markdown(index = False)
 
-    md_content : str = md_file_name
-    md_content += "\n"
-    md_content += ""
-    md_content += "\n"
-    md_content += markdown_header
+    md_content : str = markdown_header
     md_content += "\n"
     md_content += sas_by_month_md
     md_content += "\n"
@@ -1150,18 +1223,15 @@ def get_reading_list_by_month_md(last_update : datetime, sas_by_month_df : DataF
     return md_content
 def get_reading_list_by_publisher_md(last_update : datetime, sas_by_publisher_flt_df : DataFrame, sas_by_publisher_df : DataFrame) -> str:
 
-    md_file_name : str = "READINGLISTBYPUBLISHER.md"
+    '''Creates the Markdown content for a "Reading List By Publisher" file out of the provided dataframes.'''
+
     md_paragraph_title : str = "Reading List By Publisher"
 
     markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
     sas_by_publisher_flt_md : str = sas_by_publisher_flt_df.to_markdown(index = False)
     sas_by_publisher_md : str = sas_by_publisher_df.to_markdown(index = False)
 
-    md_content : str = md_file_name
-    md_content += "\n"
-    md_content += ""
-    md_content += "\n"
-    md_content += markdown_header
+    md_content : str = markdown_header
     md_content += "\n"
     md_content += sas_by_publisher_flt_md
     md_content += "\n"
@@ -1174,17 +1244,14 @@ def get_reading_list_by_publisher_md(last_update : datetime, sas_by_publisher_fl
     return md_content
 def get_reading_list_by_rating_md(last_update : datetime, sas_by_rating_df : DataFrame) -> str:
 
-    md_file_name : str = "READINGLISTBYRATING.md"
+    '''Creates the Markdown content for a "Reading List By Rating" file out of the provided dataframe.'''
+
     md_paragraph_title : str = "Reading List By Rating"
 
     markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
     sas_by_rating_md : str = sas_by_rating_df.to_markdown(index = False)
 
-    md_content : str = md_file_name
-    md_content += "\n"
-    md_content += ""
-    md_content += "\n"
-    md_content += markdown_header
+    md_content : str = markdown_header
     md_content += "\n"
     md_content += sas_by_rating_md
     md_content += "\n"
@@ -1192,41 +1259,165 @@ def get_reading_list_by_rating_md(last_update : datetime, sas_by_rating_df : Dat
     return md_content
 def get_reading_list_by_topic_md(last_update : datetime, sas_by_topic_df : DataFrame) -> str:
 
-    md_file_name : str = "READINGLISTBYTOPIC.md"
+    '''Creates the Markdown content for a "Reading List By Topic" file out of the provided dataframe.'''
+
     md_paragraph_title : str = "Reading List By Topic"
 
     markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
     sas_by_topic_md : str = sas_by_topic_df.to_markdown(index = False)
 
-    md_content : str = md_file_name
-    md_content += "\n"
-    md_content += ""
-    md_content += "\n"
-    md_content += markdown_header
+    md_content : str = markdown_header
     md_content += "\n"
     md_content += sas_by_topic_md
     md_content += "\n"
 
     return md_content
-def get_reading_list_md(last_update : datetime, books_df : DataFrame) -> str:
+def get_reading_list_md(last_update : datetime, books_df : DataFrame, use_smaller_font : bool) -> str:
 
-    md_file_name : str = "READINGLIST.md"
+    '''Creates the Markdown content for a "Reading List" file out of the provided dataframe.'''
+
     md_paragraph_title : str = "Reading List"
 
     markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
     formatted_rl_df : DataFrame = get_formatted_reading_list(books_df = books_df)
+
+    if use_smaller_font:
+        formatted_rl_df = add_subscript_tags_to_dataframe(df = formatted_rl_df)    
+
     formatted_rl_md : str = formatted_rl_df.to_markdown(index = False)
 
-    md_content : str = md_file_name
-    md_content += "\n"
-    md_content += ""
-    md_content += "\n"
-    md_content += markdown_header
+    md_content : str = markdown_header
     md_content += "\n"
     md_content += formatted_rl_md
     md_content += "\n"
 
     return md_content
+def format_file_name(file_name : str) -> str:
+
+    '''Formats the provided file_name so that it can be displayed on the screen before the Markdown content.'''
+
+    md_content : str = file_name
+    md_content += "\n"
+    md_content += ""
+
+    return md_content
+
+def process_readme_md(cumulative_df : DataFrame, setting_collection : SettingCollection) -> None:
+
+    '''Performs all the tasks related to the README file.'''
+
+    content : str = get_readme_md(cumulative_df = cumulative_df)
+
+    if setting_collection.show_readme_md:
+        print(format_file_name(file_name = setting_collection.readme_file_name))
+        print(content)
+
+    if setting_collection.save_reading_lists_to_file:
+        
+        file_path : str = nwcc.create_file_path(
+            folder_path = setting_collection.working_folder_path,
+            file_name = setting_collection.readme_file_name)
+        
+        nwcc.save_content(content = content, file_path = file_path)
+def process_reading_list_by_month_md(sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, setting_collection : SettingCollection) -> None:
+
+    '''Performs all the tasks related to the "Reading List By Month" file.''' 
+
+    content : str = get_reading_list_by_month_md(      
+        last_update = setting_collection.last_update, 
+        sas_by_month_df = sas_by_month_df, 
+        sas_by_year_street_price_df = sas_by_year_street_price_df,
+        use_smaller_font = setting_collection.use_smaller_font_for_reading_list_by_month_md)
+
+    if setting_collection.show_reading_list_by_month_md:    
+        print(format_file_name(file_name = setting_collection.reading_list_by_month_file_name))    
+        print(content)
+
+    if setting_collection.save_reading_lists_to_file:
+
+        file_path : str = nwcc.create_file_path(
+            folder_path = setting_collection.working_folder_path,
+            file_name = setting_collection.reading_list_by_month_file_name)
+        
+        nwcc.save_content(content = content, file_path = file_path)
+def process_reading_list_by_publisher_md(sas_by_publisher_flt_df : DataFrame, sas_by_publisher_df : DataFrame, setting_collection : SettingCollection) -> None:
+
+    '''Performs all the tasks related to the "Reading List By Publisher" file.'''
+
+    content : str = get_reading_list_by_publisher_md(      
+        last_update = setting_collection.last_update, 
+        sas_by_publisher_flt_df = sas_by_publisher_flt_df, 
+        sas_by_publisher_df = sas_by_publisher_df)
+
+    if setting_collection.show_reading_list_by_publisher_md:
+        print(format_file_name(file_name = setting_collection.reading_list_by_publisher_file_name))        
+        print(content)
+
+    if setting_collection.save_reading_lists_to_file:
+
+        file_path : str = nwcc.create_file_path(
+            folder_path = setting_collection.working_folder_path,
+            file_name = setting_collection.reading_list_by_publisher_file_name)
+        
+        nwcc.save_content(content = content, file_path = file_path)
+def process_reading_list_by_rating_md(sas_by_rating_df : DataFrame, setting_collection : SettingCollection) -> None:
+
+    '''Performs all the tasks related to the "Reading List By Rating" file.'''
+
+    content : str = get_reading_list_by_rating_md(       
+        last_update = setting_collection.last_update, 
+        sas_by_rating_df = sas_by_rating_df)
+
+    if setting_collection.show_reading_list_by_rating_md:
+        print(format_file_name(file_name = setting_collection.reading_list_by_rating_file_name))
+        print(content)
+
+    if setting_collection.save_reading_lists_to_file:
+        
+        file_path : str = nwcc.create_file_path(
+            folder_path = setting_collection.working_folder_path,
+            file_name = setting_collection.reading_list_by_rating_file_name)
+        
+        nwcc.save_content(content = content, file_path = file_path)
+def process_reading_list_by_topic_md(sas_by_topic_df : DataFrame, setting_collection : SettingCollection) -> None:
+
+    '''Performs all the tasks related to the "Reading List By Topic" file.'''
+
+    content : str = get_reading_list_by_topic_md( 
+        last_update = setting_collection.last_update, 
+        sas_by_topic_df = sas_by_topic_df)
+
+    if setting_collection.show_reading_list_by_topic_md:
+        print(format_file_name(file_name = setting_collection.reading_list_by_topic_file_name))
+        print(content)
+
+    if setting_collection.save_reading_lists_to_file:
+
+        file_path : str = nwcc.create_file_path(
+            folder_path = setting_collection.working_folder_path,
+            file_name = setting_collection.reading_list_by_topic_file_name)
+        
+        nwcc.save_content(content = content, file_path = file_path)
+def process_reading_list_md(books_df : DataFrame, setting_collection : SettingCollection) -> None:
+
+    '''Performs all the tasks related to the "Reading List" file.'''
+
+    content : str = get_reading_list_md(
+        last_update = setting_collection.last_update, 
+        books_df = books_df,
+        use_smaller_font = setting_collection.use_smaller_font_for_reading_list_md)
+
+    if setting_collection.show_reading_list_md:
+        print(format_file_name(file_name = setting_collection.reading_list_file_name))
+        print(content)
+
+    if setting_collection.save_reading_lists_to_file:
+
+        file_path : str = nwcc.create_file_path(
+            folder_path = setting_collection.working_folder_path,
+            file_name = setting_collection.reading_list_file_name)
+        
+        nwcc.save_content(content = content, file_path = file_path)
 
 # MAIN
 if __name__ == "__main__":

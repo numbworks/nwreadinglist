@@ -9,6 +9,9 @@ import os
 import requests
 import seaborn as sns
 from pandas import DataFrame
+from datetime import datetime
+from datetime import date
+from numpy import float64
 
 # LOCAL MODULES
 # CLASSES
@@ -80,7 +83,7 @@ def save_content(content : str, file_path : str) -> None:
 
     '''Writes the provided content to the provided file path.'''
 
-    with open(file_path, 'w') as new_file:
+    with open(file_path, 'w', encoding="utf-8") as new_file:
         new_file.write(content)
 def save_contents(contents : list[str], file_paths : list[str]) -> None: 
 
@@ -126,6 +129,25 @@ def decode_unicode_characters(string : str) -> str:
     r'''Example: "Antikt \u0026 Design" => "Antikt & Design"'''
 
     return string.encode('utf_8').decode('unicode_escape')
+def format_to_iso_8601(dt : datetime) -> str:
+
+    '''
+        "2023-08-03"
+    '''
+
+    dt_str : str = dt.strftime("%Y-%m-%d")
+
+    return dt_str
+def format_usd_amount(amount : float64, rounding_digits : int) -> str:
+
+    '''
+        748.7 => 748.70 => "$748.70"
+    '''
+
+    rounded : float64 = amount.round(decimals = rounding_digits)
+    formatted : str = f"${rounded:.2f}"
+
+    return formatted
 
 def show_box_plot(df : DataFrame, x_name : str) -> None:
 
@@ -158,6 +180,41 @@ def remove_outliers(df : DataFrame, column_name : str) -> DataFrame:
     filtered_df : DataFrame = df[condition]
 
     return filtered_df
+
+def convert_index_to_blanks(df : DataFrame) -> DataFrame:
+
+    '''Converts the index of the provided DataFrame to blanks.'''
+
+    blank_idx : list[str] = [''] * len(df)
+    df.index = blank_idx
+
+    return df
+def convert_index_to_one_based(df : DataFrame) -> DataFrame:
+
+    '''Converts the index of the provided DataFrame from zero-based to one-based.'''
+
+    df.index += 1
+
+    return df
+def convert_date_to_datetime(dt : date) -> datetime:
+
+    '''Converts provided date to datetime.'''
+
+    return datetime(year = dt.year, month = dt.month, day = dt.day)
+def convert_word_count_to_A4_sheets(word_count : int) -> int:
+
+    '''
+        "[...], a typical page which has 1-inch margines and is typed with a 12-point font 
+        with standard spacing elements will be approximately 500 words when typed single spaced."
+    '''
+
+    if word_count == 0:
+        return 0
+
+    A4_sheets : int = int(word_count / 500)
+    A4_sheets += 1
+
+    return A4_sheets
 
 # MAIN
 if __name__ == "__main__":
