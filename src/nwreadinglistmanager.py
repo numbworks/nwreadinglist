@@ -159,7 +159,7 @@ def get_books_dataset(setting_collection : SettingCollection) -> DataFrame:
     
     column_names : list[str] = []
     column_names.append("Title")                # [0], str
-    column_names.append("Year")                 # [1], str <= not 'int' because can be null
+    column_names.append("Year")                 # [1], int
     column_names.append("Type")                 # [2], str
     column_names.append("Format")               # [3], str
     column_names.append("Language")             # [4], str
@@ -195,7 +195,7 @@ def get_books_dataset(setting_collection : SettingCollection) -> DataFrame:
     )
   
     dataset_df = dataset_df.astype({column_names[0]: str})  
-    dataset_df = dataset_df.astype({column_names[1]: str})
+    dataset_df = dataset_df.astype({column_names[1]: int})
     dataset_df = dataset_df.astype({column_names[2]: str})
     dataset_df = dataset_df.astype({column_names[3]: str})
     dataset_df = dataset_df.astype({column_names[4]: str})
