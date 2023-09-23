@@ -34,6 +34,7 @@ class SettingCollection():
     is_worth_min_avgrating : float
     n_generic : int
     n_by_month : int
+    n_by_kbsize : int
     show_books_df : bool
     show_sas_by_month_upd_df : bool
     show_sas_by_year_street_price_df : bool
@@ -75,6 +76,7 @@ class SettingCollection():
         is_worth_min_avgrating : float,
         n_generic : int,
         n_by_month : int,
+        n_by_kbsize : int,
         show_books_df : bool,
         show_sas_by_month_upd_df : bool,
         show_sas_by_year_street_price_df : bool,
@@ -115,6 +117,7 @@ class SettingCollection():
         self.is_worth_min_avgrating = is_worth_min_avgrating
         self.n_generic = n_generic
         self.n_by_month = n_by_month
+        self.n_by_kbsize = n_by_kbsize
         self.show_books_df = show_books_df
         self.show_sas_by_month_upd_df = show_sas_by_month_upd_df
         self.show_sas_by_year_street_price_df = show_sas_by_year_street_price_df
@@ -1101,7 +1104,7 @@ def get_formatted_reading_list(books_df : DataFrame) -> DataFrame:
     formatted_rl_df[cn_topic] = books_df[cn_topic]   
 
     return formatted_rl_df
-def get_topn_by_kbsize(books_df : DataFrame, ascending : bool, n : int) -> DataFrame:
+def slice_by_kbsize(books_df : DataFrame, ascending : bool, remove_if_zero : bool) -> DataFrame:
 
     '''
             Title	                                        ReadYear	Topic	                        Publisher	Rating	KBSize  A4Sheets
@@ -1111,7 +1114,7 @@ def get_topn_by_kbsize(books_df : DataFrame, ascending : bool, n : int) -> DataF
         ...
     '''
 
-    topn_by_kbsize_df : DataFrame = books_df.copy(deep=True)
+    sliced_df : DataFrame = books_df.copy(deep=True)
 
     cn_title : str = "Title"
     cn_readyear : str = "ReadYear"
@@ -1119,18 +1122,18 @@ def get_topn_by_kbsize(books_df : DataFrame, ascending : bool, n : int) -> DataF
     cn_publisher : str = "Publisher"
     cn_rating : str = "Rating"
     cn_kbsize : str = "KBSize"
-    topn_by_kbsize_df = topn_by_kbsize_df[[cn_title, cn_readyear, cn_topic, cn_publisher, cn_rating, cn_kbsize]]
-
-    condition : Series = (topn_by_kbsize_df[cn_kbsize] > 0)
-    topn_by_kbsize_df : DataFrame = topn_by_kbsize_df.loc[condition]
-
-    topn_by_kbsize_df = topn_by_kbsize_df.sort_values(by = cn_kbsize, ascending = ascending).reset_index(drop = True)
-    topn_by_kbsize_df = topn_by_kbsize_df.head(n = n)
-
     cn_a4sheets : str = "A4Sheets"
-    topn_by_kbsize_df[cn_a4sheets] = topn_by_kbsize_df[cn_kbsize].apply(lambda x : nwcc.convert_word_count_to_A4_sheets(word_count = x))
 
-    return topn_by_kbsize_df
+    sliced_df = sliced_df[[cn_title, cn_readyear, cn_topic, cn_publisher, cn_rating, cn_kbsize]]
+
+    if remove_if_zero:
+        condition : Series = (sliced_df[cn_kbsize] != 0)
+        sliced_df = sliced_df.loc[condition]
+
+    sliced_df = sliced_df.sort_values(by = cn_kbsize, ascending = ascending).reset_index(drop = True)   
+    sliced_df[cn_a4sheets] = sliced_df[cn_kbsize].apply(lambda x : nwcc.convert_word_count_to_A4_sheets(word_count = x))
+
+    return sliced_df
 
 def get_markdown_header(last_update : datetime, paragraph_title : str) -> str:
     

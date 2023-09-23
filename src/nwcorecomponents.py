@@ -208,6 +208,9 @@ def convert_word_count_to_A4_sheets(word_count : int) -> int:
         with standard spacing elements will be approximately 500 words when typed single spaced."
     '''
 
+    if word_count == 0:
+        return 0
+
     A4_sheets : int = int(word_count / 500)
     A4_sheets += 1
 
