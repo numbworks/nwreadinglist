@@ -1104,10 +1104,10 @@ def get_formatted_reading_list(books_df : DataFrame) -> DataFrame:
 def get_topn_by_kbsize(books_df : DataFrame, ascending : bool, n : int) -> DataFrame:
 
     '''
-            Title	                                        ReadYear	Topic	                        Publisher	Rating	KBSize
-        0	Machine Learning For Dummies	                2017	    Data Analysis, Data Science, ML	Wiley	    4	    3732
-        1	Machine Learning Projects for .NET Developers	2017	    Data Analysis, Data Science, ML	Apress	    4	    3272
-        2	Producing Open Source Software	                2016	    Software Engineering	        O'Reilly	1	    2332
+            Title	                                        ReadYear	Topic	                        Publisher	Rating	KBSize  A4Sheets
+        0	Machine Learning For Dummies	                2017	    Data Analysis, Data Science, ML	Wiley	    4	    3732    8
+        1	Machine Learning Projects for .NET Developers	2017	    Data Analysis, Data Science, ML	Apress	    4	    3272    7
+        2	Producing Open Source Software	                2016	    Software Engineering	        O'Reilly	1	    2332    5
         ...
     '''
 
@@ -1126,6 +1126,9 @@ def get_topn_by_kbsize(books_df : DataFrame, ascending : bool, n : int) -> DataF
 
     topn_by_kbsize_df = topn_by_kbsize_df.sort_values(by = cn_kbsize, ascending = ascending).reset_index(drop = True)
     topn_by_kbsize_df = topn_by_kbsize_df.head(n = n)
+
+    cn_a4sheets : str = "A4Sheets"
+    topn_by_kbsize_df[cn_a4sheets] = topn_by_kbsize_df[cn_kbsize].apply(lambda x : nwcc.convert_word_count_to_A4_sheets(word_count = x))
 
     return topn_by_kbsize_df
 
