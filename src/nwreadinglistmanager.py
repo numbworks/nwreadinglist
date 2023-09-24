@@ -65,6 +65,11 @@ class SettingCollection():
     use_smaller_font_for_reading_list_by_month_md : bool = True
     definitions : dict
     enable_sparklines_maximum : bool
+    show_books_by_year_box_plot : bool
+    show_sliced_by_kbsize_box_plot : bool
+    show_sliced_by_kbsize_desc_df : bool
+    show_sliced_by_kbsize_asc_df : bool
+    show_yearly_trend_by_topic_df : bool
 
     def __init__(
         self,
@@ -107,7 +112,12 @@ class SettingCollection():
         use_smaller_font_for_reading_list_md : bool,
         use_smaller_font_for_reading_list_by_month_md : bool,
         definitions : dict,
-        enable_sparklines_maximum : bool
+        enable_sparklines_maximum : bool,
+        show_books_by_year_box_plot : bool,
+        show_sliced_by_kbsize_box_plot : bool,
+        show_sliced_by_kbsize_desc_df : bool,
+        show_sliced_by_kbsize_asc_df : bool,
+        show_yearly_trend_by_topic_df : bool
         ):
 
         self.read_years = read_years
@@ -150,6 +160,11 @@ class SettingCollection():
         self.use_smaller_font_for_reading_list_by_month_md = use_smaller_font_for_reading_list_by_month_md
         self.definitions = definitions
         self.enable_sparklines_maximum = enable_sparklines_maximum
+        self.show_books_by_year_box_plot = show_books_by_year_box_plot
+        self.show_sliced_by_kbsize_box_plot = show_sliced_by_kbsize_box_plot
+        self.show_sliced_by_kbsize_desc_df = show_sliced_by_kbsize_desc_df
+        self.show_sliced_by_kbsize_asc_df = show_sliced_by_kbsize_asc_df
+        self.show_yearly_trend_by_topic_df = show_yearly_trend_by_topic_df
 
 # FUNCTIONS
 def get_default_reading_list_path()-> str:
