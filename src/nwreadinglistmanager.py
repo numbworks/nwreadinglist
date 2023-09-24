@@ -1448,7 +1448,12 @@ def get_yearly_trend_by_topic(books_df : DataFrame, setting_collection : Setting
 
     by_topic_read_year_df : DataFrame = get_books_by_topic_read_year(books_df = books_df, read_years = setting_collection.read_years)
     pivoted_df : DataFrame = pivot_column_values_to_cell(df = by_topic_read_year_df, cn_index = cn_topic, cn_values = cn_books)
-    sparklined_df : DataFrame = add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_yearly_trend)
+
+    if setting_collection.enable_sparklines_maximum:
+        maximum : int = by_topic_read_year_df[cn_books].max()
+        sparklined_df : DataFrame = add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_yearly_trend, maximum = maximum)
+    else: 
+        sparklined_df : DataFrame = add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_yearly_trend)
 
     return sparklined_df
 
