@@ -24,7 +24,7 @@ class SettingCollection():
 
     '''Represents a collection of settings.'''
 
-    read_years : list
+    read_years : list[int]
     excel_path : str
     excel_books_skiprows : int
     excel_books_nrows : int
@@ -66,7 +66,7 @@ class SettingCollection():
 
     def __init__(
         self,
-        read_years : list,
+        read_years : list[int],
         excel_path : str,
         excel_books_skiprows : int,
         excel_books_nrows : int,
@@ -1315,6 +1315,15 @@ def format_file_name(file_name : str) -> str:
     md_content += ""
 
     return md_content
+
+def create_read_years_dataframe(read_years : list[int]) -> DataFrame:
+
+    '''Create a dataframe out of the provided list of Read Years.'''
+
+    cn_read_year : str = "ReadYear"
+    read_years_df : DataFrame = pd.DataFrame(data = read_years, columns = [cn_read_year])
+
+    return read_years_df
 
 def process_readme_md(cumulative_df : DataFrame, setting_collection : SettingCollection) -> None:
 
