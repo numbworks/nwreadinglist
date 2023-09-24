@@ -15,6 +15,7 @@ from datetime import datetime
 from datetime import date
 from pandas import Series
 from numpy import float64
+from sparklines import sparklines
 
 # LOCAL MODULES
 import nwcorecomponents as nwcc
@@ -1390,6 +1391,63 @@ def get_books_by_topic_read_year(books_df : DataFrame, read_years : list[int]) -
     completed_df = completed_df.astype({cn_books: int})
 
     return completed_df
+def pivot_column_values_to_cell(df : DataFrame, cn_index : str, cn_values : str) -> DataFrame:
+
+    '''
+        Before:
+
+                Topic	                        ReadYear	Books
+            0	BI, Data Warehousing, PowerBI	2016	    0
+            1	BI, Data Warehousing, PowerBI	2017	    1
+            2	BI, Data Warehousing, PowerBI	2018	    9
+            ...
+
+        After:
+
+                    Topic	                        Books
+            0	    BI, Data Warehousing, PowerBI	[0, 1, 9, 11, 0, 0, 0, 0]
+            1	    C#	                            [10, 14, 4, 17, 8, 3, 0, 0]
+            ...
+    '''
+
+    pivoted_df : DataFrame = pd.pivot_table(data = df, index = [cn_index], values = [cn_values], aggfunc = lambda x : list(x))
+    pivoted_df.sort_values(by = cn_index, inplace = True)
+    pivoted_df.reset_index(inplace = True)
+
+    return pivoted_df
+def add_sparklines(df : DataFrame, cn_values : str, cn_sparklines : str, maximum : int = None) -> DataFrame:
+
+    '''
+        Adds a column with sparklines to the provided DataFrame.
+
+        "cn_values" is the name of the column containing a list of numbers.
+        "cn_sparklines" is the name of the column that will host the sparklines.
+    '''
+
+    sparklined_df : DataFrame = df.copy(deep = True)
+    sparklined_df[cn_sparklines] = sparklined_df[cn_values].apply(lambda numbers : sparklines(numbers = numbers, maximum = maximum)[0])
+
+    return sparklined_df
+def get_yearly_trend_by_topic(books_df : DataFrame, setting_collection : SettingCollection) -> DataFrame:
+
+    '''
+        Get yearly trend by topic as numbers and sparklines.
+
+            Topic	                        Books	                    YearlyTrend
+        0	BI, Data Warehousing, PowerBI	[0, 1, 9, 11, 0, 0, 0, 0]	▁▂▇█▁▁▁▁
+        1	C#	                            [10, 14, 4, 17, 8, 3, 0, 0]	▅▇▃█▄▂▁▁ 
+        ...          
+    '''
+
+    cn_topic : str = "Topic"
+    cn_books : str = "Books"
+    cn_yearly_trend : str = "YearlyTrend"
+
+    by_topic_read_year_df : DataFrame = get_books_by_topic_read_year(books_df = books_df, read_years = setting_collection.read_years)
+    pivoted_df : DataFrame = pivot_column_values_to_cell(df = by_topic_read_year_df, cn_index = cn_topic, cn_values = cn_books)
+    sparklined_df : DataFrame = add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_yearly_trend)
+
+    return sparklined_df
 
 def process_readme_md(cumulative_df : DataFrame, setting_collection : SettingCollection) -> None:
 
