@@ -1324,6 +1324,72 @@ def create_read_years_dataframe(read_years : list[int]) -> DataFrame:
     read_years_df : DataFrame = pd.DataFrame(data = read_years, columns = [cn_read_year])
 
     return read_years_df
+def get_topics_dataframe(df : DataFrame) -> DataFrame:
+
+    '''Creates a dataframe of unique topics out of the provided dataframe.'''
+
+    cn_topic : str = "Topic"
+    topics_df : DataFrame = pd.DataFrame(data = df[cn_topic].unique(), columns = [cn_topic])
+    
+    return topics_df
+def get_default_topic_read_year_dataframe(topics_df : DataFrame, read_years_df : DataFrame) -> DataFrame:
+
+    '''
+            Topic	                ReadYear
+        0	Software Engineering	2016
+        1	Software Engineering	2017
+        ...
+    '''
+
+    default_df : DataFrame = pd.merge(left = topics_df, right = read_years_df, how='cross')
+
+    return default_df
+def get_books_by_topic_read_year(books_df : DataFrame, read_years : list[int]) -> DataFrame:
+
+    '''
+        [0] - Groups by books_df by Topic_ReadYear:
+
+            Topic	                        ReadYear	Books
+        0	BI, Data Warehousing, PowerBI	2017	    1
+        1	BI, Data Warehousing, PowerBI	2018	    9
+        2	BI, Data Warehousing, PowerBI	2019	    11
+        ...
+
+        [1] - Add the missing values thru a default dataframe:
+
+             Topic	                        ReadYear	Books
+        0	BI, Data Warehousing, PowerBI	2016	    0
+        1	BI, Data Warehousing, PowerBI	2017	    1
+        2	BI, Data Warehousing, PowerBI	2018	    9
+        3	BI, Data Warehousing, PowerBI	2019	    11
+        4	BI, Data Warehousing, PowerBI	2020	    0
+        ...
+
+        The outer merge creates NaN values and converts the datatype of the original column 
+        from "int" to "float" in order to host it. Casting it back to "int" is therefore necessary.
+    '''
+
+    cn_topic : str = "Topic"
+    cn_read_year : str = "ReadYear"
+    cn_books : str = "Books"    
+
+    books_by_topic_read_year_df : DataFrame = group_books_by_multiple_columns(books_df = books_df, column_names = [cn_topic, cn_read_year])
+
+    topics_df : DataFrame = get_topics_dataframe(df = books_df)
+    read_years_df : DataFrame = create_read_years_dataframe(read_years = read_years)
+    default_df : DataFrame = get_default_topic_read_year_dataframe(topics_df = topics_df, read_years_df = read_years_df)
+
+    completed_df : DataFrame = pd.merge(
+        left = books_by_topic_read_year_df, 
+        right = default_df,
+        how = "outer")
+
+    completed_df.sort_values(by = [cn_topic, cn_read_year], ascending = [True, True], inplace = True)
+    completed_df.reset_index(inplace = True, drop = True)
+    completed_df.fillna(value = 0, inplace = True)
+    completed_df = completed_df.astype({cn_books: int})
+
+    return completed_df
 
 def process_readme_md(cumulative_df : DataFrame, setting_collection : SettingCollection) -> None:
 
