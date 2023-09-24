@@ -878,7 +878,9 @@ def get_sas_by_year_street_price(sas_by_month_df : DataFrame, books_df : DataFra
 
     return sas_by_year_street_price_df
 
-def group_books_by(books_df : DataFrame, column_name : str) -> DataFrame:
+def group_books_by_single_column(books_df : DataFrame, column_name : str) -> DataFrame:
+
+    '''Groups books according to the provided column name. The book titles act as unique identifiers.'''
 
     cn_uniqueitemidentifier : str = "Title"
     cn_items : str = "Books"
@@ -886,6 +888,18 @@ def group_books_by(books_df : DataFrame, column_name : str) -> DataFrame:
     grouped_df : DataFrame = books_df.groupby([column_name])[cn_uniqueitemidentifier].size().sort_values(ascending = [False]).reset_index(name = cn_items)
     
     return grouped_df
+def group_books_by_multiple_columns(books_df : DataFrame, column_names : list[str]) -> DataFrame:
+
+    '''Groups books according to the provided column names (note: order matters). The book titles act as unique identifiers.'''
+
+    cn_uniqueitemidentifier : str = "Title"
+    cn_items : str = "Books"
+
+    grouped_df : DataFrame = books_df.groupby(by = column_names)[cn_uniqueitemidentifier].count().reset_index(name = cn_items)
+    grouped_df = grouped_df.sort_values(by = column_names, ascending = [True, True])
+
+    return grouped_df
+
 def get_sas_by_topic(books_df : DataFrame) -> DataFrame:
 
     """
@@ -1027,7 +1041,7 @@ def get_sas_by_rating(books_df : DataFrame, formatted_rating : bool) -> DataFram
 
     cn_rating : str = "Rating"
 
-    sas_by_rating_df : DataFrame = group_books_by(books_df = books_df, column_name = cn_rating)
+    sas_by_rating_df : DataFrame = group_books_by_single_column(books_df = books_df, column_name = cn_rating)
     sas_by_rating_df.sort_values(by = cn_rating, ascending = False, inplace = True)
     sas_by_rating_df.reset_index(drop = True, inplace = True)
 
