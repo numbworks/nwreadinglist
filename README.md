@@ -14,7 +14,7 @@ Contact: numbworks@gmail.com
 
 From the documentation:
 
-> nwreadinglistmanager is a Jupyter Notebook designed to analyze the Reading List.xlsx file I use to annotate all the books I study in my continuous education journey. As a second set of features, it converts some of the analyses to Markdown files, so that I can easily show them on my `Github` account.
+> nwreadinglistmanager is a Jupyter Notebook designed to analyze the Excel file I use to annotate all the books I study in my continuous education journey. As a second set of features, it converts some of the analyses to Markdown files, so that I can easily show them on my `Github` account.
 
 ## Download the source code
 
