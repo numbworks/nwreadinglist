@@ -6,6 +6,7 @@ Contact: numbworks@gmail.com
 | Date | Author | Description |
 |---|---|---|
 | 2023-08-10 | numbworks | Created. |
+| 2023-09-24 | numbworks | Updated to v1.6.0. |
 
 ## Introduction
 
@@ -26,17 +27,19 @@ In order to run this Jupyter Notebook:
 4. Open a terminal and run the following commands:
     - ```python.exe -m pip install --upgrade pip```
 5. Launch Visual Studio Code and open `src/nwreadinglistmanager.ipynb`;
-6. Edit the `SettingCollection` object according to your needs;
-7. Click on `Run All`;
-8. Done!
+6. Edit the `install_dependencies` flag in the `Setup` section according to your needs;
+7. Edit the `SettingCollection` object according to your needs;
+8. Click on `Run All`;
+9. Done!
 
 If, for some reason the `Setup` block doesn't work, you can open a terminal and run the following commands to install the required packages:
 
-- ```pip3 install pandas==1.5.2```
-- ```pip3 install numpy==1.24.0```
-- ```pip3 install openpyxl==3.0.10```
-- ```pip3 install tabulate==0.9.0```
-- ```pip3 install coverage==7.2.3```
+- ```pip install pandas==1.5.2```
+- ```pip install numpy==1.24.0```
+- ```pip install openpyxl==3.0.10```
+- ```pip install tabulate==0.9.0```
+- ```pip install coverage==7.2.3```
+- ```pip install sparklines==0.4.2```
 
 To run the unit tests, open a terminal and run the following commands:
 

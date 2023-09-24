@@ -15,6 +15,7 @@ from datetime import datetime
 from datetime import date
 from pandas import Series
 from numpy import float64
+from sparklines import sparklines
 
 # LOCAL MODULES
 import nwcorecomponents as nwcc
@@ -24,7 +25,7 @@ class SettingCollection():
 
     '''Represents a collection of settings.'''
 
-    read_years : list
+    read_years : list[int]
     excel_path : str
     excel_books_skiprows : int
     excel_books_nrows : int
@@ -63,10 +64,16 @@ class SettingCollection():
     use_smaller_font_for_reading_list_md : bool = True
     use_smaller_font_for_reading_list_by_month_md : bool = True
     definitions : dict
+    enable_sparklines_maximum : bool
+    show_books_by_year_box_plot : bool
+    show_sliced_by_kbsize_box_plot : bool
+    show_sliced_by_kbsize_desc_df : bool
+    show_sliced_by_kbsize_asc_df : bool
+    show_yearly_trend_by_topic_df : bool
 
     def __init__(
         self,
-        read_years : list,
+        read_years : list[int],
         excel_path : str,
         excel_books_skiprows : int,
         excel_books_nrows : int,
@@ -104,7 +111,13 @@ class SettingCollection():
         save_reading_lists_to_file : bool,
         use_smaller_font_for_reading_list_md : bool,
         use_smaller_font_for_reading_list_by_month_md : bool,
-        definitions : dict
+        definitions : dict,
+        enable_sparklines_maximum : bool,
+        show_books_by_year_box_plot : bool,
+        show_sliced_by_kbsize_box_plot : bool,
+        show_sliced_by_kbsize_desc_df : bool,
+        show_sliced_by_kbsize_asc_df : bool,
+        show_yearly_trend_by_topic_df : bool
         ):
 
         self.read_years = read_years
@@ -146,6 +159,12 @@ class SettingCollection():
         self.use_smaller_font_for_reading_list_md = use_smaller_font_for_reading_list_md
         self.use_smaller_font_for_reading_list_by_month_md = use_smaller_font_for_reading_list_by_month_md
         self.definitions = definitions
+        self.enable_sparklines_maximum = enable_sparklines_maximum
+        self.show_books_by_year_box_plot = show_books_by_year_box_plot
+        self.show_sliced_by_kbsize_box_plot = show_sliced_by_kbsize_box_plot
+        self.show_sliced_by_kbsize_desc_df = show_sliced_by_kbsize_desc_df
+        self.show_sliced_by_kbsize_asc_df = show_sliced_by_kbsize_asc_df
+        self.show_yearly_trend_by_topic_df = show_yearly_trend_by_topic_df
 
 # FUNCTIONS
 def get_default_reading_list_path()-> str:
@@ -878,7 +897,9 @@ def get_sas_by_year_street_price(sas_by_month_df : DataFrame, books_df : DataFra
 
     return sas_by_year_street_price_df
 
-def group_books_by(books_df : DataFrame, column_name : str) -> DataFrame:
+def group_books_by_single_column(books_df : DataFrame, column_name : str) -> DataFrame:
+
+    '''Groups books according to the provided column name. The book titles act as unique identifiers.'''
 
     cn_uniqueitemidentifier : str = "Title"
     cn_items : str = "Books"
@@ -886,6 +907,18 @@ def group_books_by(books_df : DataFrame, column_name : str) -> DataFrame:
     grouped_df : DataFrame = books_df.groupby([column_name])[cn_uniqueitemidentifier].size().sort_values(ascending = [False]).reset_index(name = cn_items)
     
     return grouped_df
+def group_books_by_multiple_columns(books_df : DataFrame, column_names : list[str]) -> DataFrame:
+
+    '''Groups books according to the provided column names (note: order matters). The book titles act as unique identifiers.'''
+
+    cn_uniqueitemidentifier : str = "Title"
+    cn_items : str = "Books"
+
+    grouped_df : DataFrame = books_df.groupby(by = column_names)[cn_uniqueitemidentifier].count().reset_index(name = cn_items)
+    grouped_df = grouped_df.sort_values(by = column_names, ascending = [True, True])
+
+    return grouped_df
+
 def get_sas_by_topic(books_df : DataFrame) -> DataFrame:
 
     """
@@ -1027,7 +1060,7 @@ def get_sas_by_rating(books_df : DataFrame, formatted_rating : bool) -> DataFram
 
     cn_rating : str = "Rating"
 
-    sas_by_rating_df : DataFrame = group_books_by(books_df = books_df, column_name = cn_rating)
+    sas_by_rating_df : DataFrame = group_books_by_single_column(books_df = books_df, column_name = cn_rating)
     sas_by_rating_df.sort_values(by = cn_rating, ascending = False, inplace = True)
     sas_by_rating_df.reset_index(drop = True, inplace = True)
 
@@ -1301,6 +1334,143 @@ def format_file_name(file_name : str) -> str:
     md_content += ""
 
     return md_content
+
+def create_read_years_dataframe(read_years : list[int]) -> DataFrame:
+
+    '''Create a dataframe out of the provided list of Read Years.'''
+
+    cn_read_year : str = "ReadYear"
+    read_years_df : DataFrame = pd.DataFrame(data = read_years, columns = [cn_read_year])
+
+    return read_years_df
+def get_topics_dataframe(df : DataFrame) -> DataFrame:
+
+    '''Creates a dataframe of unique topics out of the provided dataframe.'''
+
+    cn_topic : str = "Topic"
+    topics_df : DataFrame = pd.DataFrame(data = df[cn_topic].unique(), columns = [cn_topic])
+    
+    return topics_df
+def get_default_topic_read_year_dataframe(topics_df : DataFrame, read_years_df : DataFrame) -> DataFrame:
+
+    '''
+            Topic	                ReadYear
+        0	Software Engineering	2016
+        1	Software Engineering	2017
+        ...
+    '''
+
+    default_df : DataFrame = pd.merge(left = topics_df, right = read_years_df, how='cross')
+
+    return default_df
+def get_books_by_topic_read_year(books_df : DataFrame, read_years : list[int]) -> DataFrame:
+
+    '''
+        [0] - Groups by books_df by Topic_ReadYear:
+
+            Topic	                        ReadYear	Books
+        0	BI, Data Warehousing, PowerBI	2017	    1
+        1	BI, Data Warehousing, PowerBI	2018	    9
+        2	BI, Data Warehousing, PowerBI	2019	    11
+        ...
+
+        [1] - Add the missing values thru a default dataframe:
+
+             Topic	                        ReadYear	Books
+        0	BI, Data Warehousing, PowerBI	2016	    0
+        1	BI, Data Warehousing, PowerBI	2017	    1
+        2	BI, Data Warehousing, PowerBI	2018	    9
+        3	BI, Data Warehousing, PowerBI	2019	    11
+        4	BI, Data Warehousing, PowerBI	2020	    0
+        ...
+
+        The outer merge creates NaN values and converts the datatype of the original column 
+        from "int" to "float" in order to host it. Casting it back to "int" is therefore necessary.
+    '''
+
+    cn_topic : str = "Topic"
+    cn_read_year : str = "ReadYear"
+    cn_books : str = "Books"    
+
+    books_by_topic_read_year_df : DataFrame = group_books_by_multiple_columns(books_df = books_df, column_names = [cn_topic, cn_read_year])
+
+    topics_df : DataFrame = get_topics_dataframe(df = books_df)
+    read_years_df : DataFrame = create_read_years_dataframe(read_years = read_years)
+    default_df : DataFrame = get_default_topic_read_year_dataframe(topics_df = topics_df, read_years_df = read_years_df)
+
+    completed_df : DataFrame = pd.merge(
+        left = books_by_topic_read_year_df, 
+        right = default_df,
+        how = "outer")
+
+    completed_df.sort_values(by = [cn_topic, cn_read_year], ascending = [True, True], inplace = True)
+    completed_df.reset_index(inplace = True, drop = True)
+    completed_df.fillna(value = 0, inplace = True)
+    completed_df = completed_df.astype({cn_books: int})
+
+    return completed_df
+def pivot_column_values_to_cell(df : DataFrame, cn_index : str, cn_values : str) -> DataFrame:
+
+    '''
+        Before:
+
+                Topic	                        ReadYear	Books
+            0	BI, Data Warehousing, PowerBI	2016	    0
+            1	BI, Data Warehousing, PowerBI	2017	    1
+            2	BI, Data Warehousing, PowerBI	2018	    9
+            ...
+
+        After:
+
+                    Topic	                        Books
+            0	    BI, Data Warehousing, PowerBI	[0, 1, 9, 11, 0, 0, 0, 0]
+            1	    C#	                            [10, 14, 4, 17, 8, 3, 0, 0]
+            ...
+    '''
+
+    pivoted_df : DataFrame = pd.pivot_table(data = df, index = [cn_index], values = [cn_values], aggfunc = lambda x : list(x))
+    pivoted_df.sort_values(by = cn_index, inplace = True)
+    pivoted_df.reset_index(inplace = True)
+
+    return pivoted_df
+def add_sparklines(df : DataFrame, cn_values : str, cn_sparklines : str, maximum : int = None) -> DataFrame:
+
+    '''
+        Adds a column with sparklines to the provided DataFrame.
+
+        "cn_values" is the name of the column containing a list of numbers.
+        "cn_sparklines" is the name of the column that will host the sparklines.
+    '''
+
+    sparklined_df : DataFrame = df.copy(deep = True)
+    sparklined_df[cn_sparklines] = sparklined_df[cn_values].apply(lambda numbers : sparklines(numbers = numbers, maximum = maximum)[0])
+
+    return sparklined_df
+def get_yearly_trend_by_topic(books_df : DataFrame, setting_collection : SettingCollection) -> DataFrame:
+
+    '''
+        Get yearly trend by topic as numbers and sparklines.
+
+            Topic	                        Books	                    YearlyTrend
+        0	BI, Data Warehousing, PowerBI	[0, 1, 9, 11, 0, 0, 0, 0]	▁▂▇█▁▁▁▁
+        1	C#	                            [10, 14, 4, 17, 8, 3, 0, 0]	▅▇▃█▄▂▁▁ 
+        ...          
+    '''
+
+    cn_topic : str = "Topic"
+    cn_books : str = "Books"
+    cn_yearly_trend : str = "YearlyTrend"
+
+    by_topic_read_year_df : DataFrame = get_books_by_topic_read_year(books_df = books_df, read_years = setting_collection.read_years)
+    pivoted_df : DataFrame = pivot_column_values_to_cell(df = by_topic_read_year_df, cn_index = cn_topic, cn_values = cn_books)
+
+    if setting_collection.enable_sparklines_maximum:
+        maximum : int = by_topic_read_year_df[cn_books].max()
+        sparklined_df : DataFrame = add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_yearly_trend, maximum = maximum)
+    else: 
+        sparklined_df : DataFrame = add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_yearly_trend)
+
+    return sparklined_df
 
 def process_readme_md(cumulative_df : DataFrame, setting_collection : SettingCollection) -> None:
 
