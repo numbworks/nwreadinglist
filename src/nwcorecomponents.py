@@ -7,6 +7,7 @@ Alias: nwcc
 # GLOBAL MODULES
 import os
 import requests
+import sys
 import seaborn as sns
 from pandas import DataFrame
 from datetime import datetime
@@ -17,6 +18,20 @@ from numpy import float64
 # CLASSES
 
 # FUNCTIONS
+def check_python_version(expected_version : (int, int, int) = (3, 12, 1)) -> None:
+
+    '''Prints a warning message if the installed Python version doesn't match the expected one.'''
+
+    expected_version_str : str = f"{expected_version[0]}.{expected_version[1]}.{expected_version[2]}"
+
+    installed_version : (int, int, int) = (sys.version_info.major, sys.version_info.minor, sys.version_info.micro)
+    installed_version_str : str = f"{installed_version[0]}.{installed_version[1]}.{installed_version[2]}"
+
+    if installed_version == expected_version:
+        print(f"The installed Python version matches the expected one (installed: '{installed_version_str}', expected: '{expected_version_str}').")
+    else:
+        print(f"Warning! The installed Python doesn't match the expected one (installed: '{installed_version_str}', expected: '{expected_version_str}').")
+
 def create_file_path(folder_path : str, file_name : str) -> str:
 
     '''Creates a file path.'''
