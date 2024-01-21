@@ -1212,7 +1212,7 @@ def add_subscript_tags_to_dataframe(df : DataFrame) -> DataFrame:
 
 	tagged_df = df.copy(deep=True)
 	
-	tagged_df = tagged_df.applymap(add_subscript_tags_to_value)
+	tagged_df = tagged_df.map(func = add_subscript_tags_to_value)
 	tagged_df = tagged_df.rename(columns = lambda column_name : add_subscript_tags_to_value(value = column_name))
 
 	return tagged_df
