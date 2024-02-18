@@ -1336,7 +1336,7 @@ def get_yearly_trend_by_topic(books_df : DataFrame, setting_collection : Setting
     '''
         Get yearly trend by topic as numbers and sparklines.
 
-            Topic	                        Books	                    YearlyTrend
+            Topic	                        Books	                    Trend
         0	BI, Data Warehousing, PowerBI	[0, 1, 9, 11, 0, 0, 0, 0]	▁▂▇█▁▁▁▁
         1	C#	                            [10, 14, 4, 17, 8, 3, 0, 0]	▅▇▃█▄▂▁▁ 
         ...          
@@ -1344,16 +1344,16 @@ def get_yearly_trend_by_topic(books_df : DataFrame, setting_collection : Setting
 
     cn_topic : str = "Topic"
     cn_books : str = "Books"
-    cn_yearly_trend : str = "YearlyTrend"
+    cn_trend : str = "Trend"
 
     by_topic_read_year_df : DataFrame = get_books_by_topic_read_year(books_df = books_df, read_years = setting_collection.read_years)
     pivoted_df : DataFrame = pivot_column_values_to_cell(df = by_topic_read_year_df, cn_index = cn_topic, cn_values = cn_books)
 
     if setting_collection.enable_sparklines_maximum:
         maximum : int = by_topic_read_year_df[cn_books].max()
-        sparklined_df : DataFrame = add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_yearly_trend, maximum = maximum)
+        sparklined_df : DataFrame = add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend, maximum = maximum)
     else: 
-        sparklined_df : DataFrame = add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_yearly_trend)
+        sparklined_df : DataFrame = add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend)
 
     return sparklined_df
 
