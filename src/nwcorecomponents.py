@@ -9,6 +9,8 @@ import os
 import requests
 import sys
 import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
 from pandas import DataFrame
 from datetime import datetime
 from datetime import date
@@ -167,9 +169,10 @@ def format_usd_amount(amount : float64, rounding_digits : int) -> str:
 def show_box_plot(df : DataFrame, x_name : str) -> None:
 
     '''Shows a box plot.'''
-
-    title = f"{x_name} ranges"
-    df_plot = sns.boxplot(x = df[x_name]).set(title = title)
+  
+    fig = plt.figure(figsize =(5, 5))
+    plt.boxplot(x = df[x_name], vert = False, labels = [x_name])
+    plt.show()
 def show_bar_plot(df : DataFrame, x_name : str, y_name : str) -> None:
 
     '''Shows a bar plot.'''
