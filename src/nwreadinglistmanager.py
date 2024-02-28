@@ -87,7 +87,7 @@ def get_default_reading_list_path()-> str:
     path = os.path.join(path, "Reading List.xlsx")
 
     return path
-def get_books_dataset(setting_bag : SettingBag) -> DataFrame:
+def get_books_df(setting_bag : SettingBag) -> DataFrame:
     
     column_names : list[str] = []
     column_names.append("Title")                # [0], str
@@ -111,7 +111,7 @@ def get_books_dataset(setting_bag : SettingBag) -> DataFrame:
     column_names.append("CommentLenght")        # [18], int
     column_names.append("KBSize")               # [19], int
 
-    dataset_df = pd.read_excel(
+    books_df = pd.read_excel(
 	    io = setting_bag.excel_path, 	
         skiprows = setting_bag.excel_books_skiprows,
         nrows = setting_bag.excel_books_nrows,
@@ -119,38 +119,38 @@ def get_books_dataset(setting_bag : SettingBag) -> DataFrame:
         engine = 'openpyxl'
         )
     
-    dataset_df = dataset_df[column_names]
+    books_df = books_df[column_names]
 
-    dataset_df = dataset_df.replace(
+    books_df = books_df.replace(
         to_replace = setting_bag.excel_null_value, 
         value = np.nan
     )
   
-    dataset_df = dataset_df.astype({column_names[0]: str})  
-    dataset_df = dataset_df.astype({column_names[1]: int})
-    dataset_df = dataset_df.astype({column_names[2]: str})
-    dataset_df = dataset_df.astype({column_names[3]: str})
-    dataset_df = dataset_df.astype({column_names[4]: str})
-    dataset_df = dataset_df.astype({column_names[5]: int})
+    books_df = books_df.astype({column_names[0]: str})  
+    books_df = books_df.astype({column_names[1]: int})
+    books_df = books_df.astype({column_names[2]: str})
+    books_df = books_df.astype({column_names[3]: str})
+    books_df = books_df.astype({column_names[4]: str})
+    books_df = books_df.astype({column_names[5]: int})
 
-    dataset_df[column_names[6]] = pd.to_datetime(dataset_df[column_names[6]], format="%Y-%m-%d") 
-    dataset_df[column_names[6]] = dataset_df[column_names[6]].apply(lambda x: x.date())
+    books_df[column_names[6]] = pd.to_datetime(books_df[column_names[6]], format="%Y-%m-%d") 
+    books_df[column_names[6]] = books_df[column_names[6]].apply(lambda x: x.date())
 
-    dataset_df = dataset_df.astype({column_names[7]: int})
-    dataset_df = dataset_df.astype({column_names[8]: int})
-    dataset_df = dataset_df.astype({column_names[9]: str})
-    dataset_df = dataset_df.astype({column_names[10]: str})
-    dataset_df = dataset_df.astype({column_names[11]: str})
-    dataset_df = dataset_df.astype({column_names[12]: int})
-    dataset_df = dataset_df.astype({column_names[13]: float})    
-    dataset_df = dataset_df.astype({column_names[14]: str})
-    dataset_df = dataset_df.astype({column_names[15]: str})
-    dataset_df = dataset_df.astype({column_names[16]: str})
-    dataset_df = dataset_df.astype({column_names[17]: str})
-    dataset_df = dataset_df.astype({column_names[18]: int})
-    dataset_df = dataset_df.astype({column_names[19]: int})
+    books_df = books_df.astype({column_names[7]: int})
+    books_df = books_df.astype({column_names[8]: int})
+    books_df = books_df.astype({column_names[9]: str})
+    books_df = books_df.astype({column_names[10]: str})
+    books_df = books_df.astype({column_names[11]: str})
+    books_df = books_df.astype({column_names[12]: int})
+    books_df = books_df.astype({column_names[13]: float})    
+    books_df = books_df.astype({column_names[14]: str})
+    books_df = books_df.astype({column_names[15]: str})
+    books_df = books_df.astype({column_names[16]: str})
+    books_df = books_df.astype({column_names[17]: str})
+    books_df = books_df.astype({column_names[18]: int})
+    books_df = books_df.astype({column_names[19]: int})
 
-    return dataset_df
+    return books_df
 
 def format_reading_status(books : int, pages : int) -> str:
 
