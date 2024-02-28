@@ -87,8 +87,10 @@ def get_default_reading_list_path()-> str:
     path = os.path.join(path, "Reading List.xlsx")
 
     return path
-def get_books_df(setting_bag : SettingBag) -> DataFrame:
-    
+def enforce_dataframe_definition_for_books_df(books_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+
+    '''Enforces definition for the provided dataframe.'''
+
     column_names : list[str] = []
     column_names.append("Title")                # [0], str
     column_names.append("Year")                 # [1], int
@@ -111,14 +113,6 @@ def get_books_df(setting_bag : SettingBag) -> DataFrame:
     column_names.append("CommentLenght")        # [18], int
     column_names.append("KBSize")               # [19], int
 
-    books_df = pd.read_excel(
-	    io = setting_bag.excel_path, 	
-        skiprows = setting_bag.excel_books_skiprows,
-        nrows = setting_bag.excel_books_nrows,
-	    sheet_name = setting_bag.excel_books_tabname, 
-        engine = 'openpyxl'
-        )
-    
     books_df = books_df[column_names]
 
     books_df = books_df.replace(
@@ -149,6 +143,21 @@ def get_books_df(setting_bag : SettingBag) -> DataFrame:
     books_df = books_df.astype({column_names[17]: str})
     books_df = books_df.astype({column_names[18]: int})
     books_df = books_df.astype({column_names[19]: int})
+
+    return books_df
+def get_books_df(setting_bag : SettingBag) -> DataFrame:
+    
+    '''Retrieves the content of the "Books" tab and returns it as a Dataframe.'''
+
+    books_df = pd.read_excel(
+	    io = setting_bag.excel_path, 	
+        skiprows = setting_bag.excel_books_skiprows,
+        nrows = setting_bag.excel_books_nrows,
+	    sheet_name = setting_bag.excel_books_tabname, 
+        engine = 'openpyxl'
+        )
+    
+    books_df = enforce_dataframe_definition_for_books_df(books_df = books_df, setting_bag = setting_bag)
 
     return books_df
 
