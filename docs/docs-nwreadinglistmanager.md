@@ -39,6 +39,7 @@ To run the unit tests, open a terminal and run the following commands:
 
 - `cd <base_folder>\nwreadinglistmanager\tests`
 - `coverage run -m unittest nwcorecomponentstests.py`
+- `coverage run -a nwreadinglistmanagertests.py`
 - `coverage report`
 
 ## For Developers
