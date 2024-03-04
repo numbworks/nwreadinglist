@@ -400,7 +400,8 @@ class FormatRatingTestCase(unittest.TestCase):
         [4, "★★★★☆"],
         [3, "★★★☆☆"],
         [2, "★★☆☆☆"],
-        [1, "★☆☆☆☆"]
+        [1, "★☆☆☆☆"],
+        [0, "0"]
     ])
     def test_formatrating_shouldreturnexpectedstring_wheninvoked(self, rating : int, expected : str):
         
