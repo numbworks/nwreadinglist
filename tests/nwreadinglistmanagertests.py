@@ -164,7 +164,7 @@ class ObjectMother():
             "string",
             "string",
             "Int32",
-            "float",
+            "Float64",
             "string",
             "string",
             "string",
@@ -209,4 +209,17 @@ class GetBookssDfTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(expected_column_names, actual_df.columns.tolist())
         self.assertEqual(expected_dtype_names, SupportMethodProvider().get_dtype_names(df = actual_df))
+class FormatReadingStatusTestCase(unittest.TestCase):
 
+    @parameterized.expand([
+        [0, 0, "0 (0)"],
+        [13, 5157, "13 (5157)"]
+    ])
+    def test_formatreadingstatus_shouldreturnexpectedstring_wheninvoked(self, books : int, pages : int, expected : str):
+        
+        # Arrange
+        # Act
+        actual : str = nwrlm.format_reading_status(books = books, pages = pages)
+
+        # Assert
+        self.assertEqual(expected, actual)
