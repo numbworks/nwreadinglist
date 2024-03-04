@@ -189,7 +189,7 @@ def get_default_sa_by_year(read_year : int) -> DataFrame:
             f"{cn_month}": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
             f"{str(read_year)}": ["0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)"]
         },
-        index=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+        index=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     )
 
     default_df = default_df.astype({cn_month: int})

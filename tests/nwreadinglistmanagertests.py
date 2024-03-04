@@ -175,6 +175,22 @@ class ObjectMother():
 
         return expected_dtype_names
 
+    @staticmethod
+    def create_default_sa_by_2024_df() -> DataFrame:
+
+        default_df : DataFrame = pd.DataFrame(
+            {
+                "Month": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                "2024": ["0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)"]
+            },
+            index=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        )
+
+        default_df = default_df.astype({"Month": int})
+        default_df = default_df.astype({"2024": str})
+
+        return default_df
+
 # TEST CLASSES
 class GetDefaultReadingListPathTestCase(unittest.TestCase):
 
@@ -223,3 +239,17 @@ class FormatReadingStatusTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(expected, actual)
+class GetDefaultSAByYearTestCase(unittest.TestCase):
+
+    def test_getdefaultsabyyear_shouldreturnexpecteddataframe_wheninvoked(self):
+        
+        # Arrange
+        expected_df : DataFrame = ObjectMother().create_default_sa_by_2024_df()
+
+        # Act
+        actual_df : DataFrame = nwrlm.get_default_sa_by_year(read_year = 2024)
+
+        # Assert
+        assert_frame_equal(expected_df, actual_df)
+
+
