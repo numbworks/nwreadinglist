@@ -192,17 +192,6 @@ class ObjectMother():
         return default_df
 
     @staticmethod
-    def create_cumulative_df() -> DataFrame:
-
-        return pd.DataFrame({
-            'Years': np.array(['1'], dtype=object),
-            'Books': np.array(['14'], dtype=object),
-            'Pages': np.array(['5573'], dtype=object),
-            'TotalSpend': np.array(['$587.57'], dtype=object),
-            'LastUpdate': np.array(['2024-03-04'], dtype=object),
-        }, index=pd.Index([0], dtype='int64'))
-
-    @staticmethod
     def create_sas_by_topic_df() -> DataFrame:
 
         return pd.DataFrame({
@@ -220,14 +209,24 @@ class ObjectMother():
         }, index=pd.RangeIndex(start=0, stop=4, step=1))
 
     @staticmethod
+    def create_cumulative_df() -> DataFrame:
+
+        return pd.DataFrame({
+            'Years': np.array(['1'], dtype=object),
+            'Books': np.array(['14'], dtype=object),
+            'Pages': np.array(['5573'], dtype=object),
+            'TotalSpend': np.array(['$587.57'], dtype=object),
+            'LastUpdate': np.array(['2024-03-04'], dtype=object),
+        }, index=pd.Index([0], dtype='int64'))
+
+    @staticmethod
     def create_yt_by_topic_df() -> DataFrame:
 
         return pd.DataFrame({
             'Topic': np.array(['Development Tools', 'Python', 'Software Engineering'], dtype=object),
-            'Books': np.array([[0, 0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 12], [0, 0, 0, 0, 0, 0, 0, 0, 1]], dtype=object),
+            'Books': pd.Series([[0, 0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 12], [0, 0, 0, 0, 0, 0, 0, 0, 1]]).to_numpy(),
             'Trend': np.array(['▁▁▁▁▁▁▁▁▂', '▁▁▁▁▁▁▁▁█', '▁▁▁▁▁▁▁▁▂'], dtype=object),
         }, index=pd.RangeIndex(start=0, stop=3, step=1))
-
 
 # TEST CLASSES
 class GetDefaultReadingListPathTestCase(unittest.TestCase):
@@ -289,9 +288,6 @@ class GetDefaultSAByYearTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected_df, actual_df)
-
-# ...
-
 class ExtractBooksFromTrendTestCase(unittest.TestCase):
 
     @parameterized.expand([
@@ -336,9 +332,6 @@ class GetTrendByBooksTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(expected, actual)
-
-# ...
-        
 class TryConsolidateTrendColumnNameTestCase(unittest.TestCase):
 
     @parameterized.expand([
@@ -353,9 +346,6 @@ class TryConsolidateTrendColumnNameTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(expected, actual)
-
-# ...
-        
 class ExtractPagesFromTrendTestCase(unittest.TestCase):
 
     @parameterized.expand([
@@ -410,9 +400,6 @@ class ExtractYearFromColumnNameTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(expected, actual)
-
-# ...
-        
 class GetTrendWhenFloat64TestCase(unittest.TestCase):
 
     @parameterized.expand([
@@ -428,9 +415,6 @@ class GetTrendWhenFloat64TestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(expected, actual)
-
-# ...
-
 class GetSASByTopicTestCase(unittest.TestCase):
 
     def test_getsasbytopic_shouldreturnexpecteddataframe_wheninvoked(self):
@@ -488,9 +472,6 @@ class GetCumulativeTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected_df, actual_df)
-
-# ...
-        
 class GetMarkdownHeaderTestCase(unittest.TestCase):
 
     def test_getmarkdownheader_shouldreturnexpectedstring_wheninvoked(self):
@@ -530,5 +511,21 @@ class AddSubscriptTagsToValueTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(expected, actual)
+class GetYearlyTrendByTopicTestCase(unittest.TestCase):
 
-# ...
+    def test_getyearlytrendbytopic_shouldreturnexpecteddataframe_wheninvoked(self):
+        
+        # Arrange
+        setting_bag : SettingBag = ObjectMother().create_setting_bag()
+        books_df : DataFrame = ObjectMother().create_books_df()
+        expected_df : DataFrame = ObjectMother().create_yt_by_topic_df()
+
+        # Act
+        actual_df : DataFrame = nwrlm.get_yearly_trend_by_topic(books_df = books_df, setting_bag = setting_bag)
+
+        # Assert
+        assert_frame_equal(expected_df, actual_df)
+
+# MAIN
+if __name__ == "__main__":
+    result = unittest.main(argv=[''], verbosity=3, exit=False)
