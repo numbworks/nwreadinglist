@@ -462,6 +462,19 @@ class FormatRatingTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(expected, actual)
+class GetSASByRatingTestCase(unittest.TestCase):
+
+    def test_getsasbyrating_shouldreturnexpecteddataframe_whenformattedratingequalstotrue(self):
+        
+        # Arrange
+        books_df : DataFrame = ObjectMother().create_books_df()
+        expected_df : DataFrame = ObjectMother().create_sas_by_rating_df()
+
+        # Act
+        actual_df : DataFrame = nwrlm.get_sas_by_rating(books_df = books_df, formatted_rating = True)
+
+        # Assert
+        assert_frame_equal(expected_df, actual_df)
 
 # ...
         
