@@ -475,6 +475,19 @@ class GetSASByRatingTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected_df, actual_df)
+class GetCumulativeTestCase(unittest.TestCase):
+
+    def test_getcumulative_shouldreturnexpecteddataframe_wheninvoked(self):
+        
+        # Arrange
+        books_df : DataFrame = ObjectMother().create_books_df()
+        expected_df : DataFrame = ObjectMother().create_cumulative_df()
+
+        # Act
+        actual_df : DataFrame = nwrlm.get_cumulative(books_df = books_df, last_update = datetime(2024, 3, 4))
+
+        # Assert
+        assert_frame_equal(expected_df, actual_df)
 
 # ...
         
