@@ -358,5 +358,18 @@ class FormatYearPagesColumnNameTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(expected, actual)
+class ExtractYearFromColumnNameTestCase(unittest.TestCase):
 
+    @parameterized.expand([
+        ["2016_Books", "2016"],
+        ["2016_Pages", "2016"]
+    ])
+    def test_extractyearfromcolumnname_shouldreturnexpectedstring_wheninvoked(self, column_name : str, expected : str):
+        
+        # Arrange
+        # Act
+        actual : str = nwrlm.extract_year_from_column_name(column_name = column_name)
+
+        # Assert
+        self.assertEqual(expected, actual)
 
