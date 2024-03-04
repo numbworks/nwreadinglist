@@ -252,4 +252,22 @@ class GetDefaultSAByYearTestCase(unittest.TestCase):
         # Assert
         assert_frame_equal(expected_df, actual_df)
 
+# ...
+        
+class GetTrendTestCase(unittest.TestCase):
+
+    @parameterized.expand([
+        [13, 16, "↑"],
+        [16, 13, "↓"],
+        [0, 0, "="]
+    ])
+    def test_gettrend_shouldreturnexpectedstring_wheninvoked(self, value_1 : int, value_2 : int, expected : str):
+        
+        # Arrange
+        # Act
+        actual : str = nwrlm.get_trend(value_1 = value_1, value_2 = value_2)
+
+        # Assert
+        self.assertEqual(expected, actual)
+
 
