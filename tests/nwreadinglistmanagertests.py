@@ -412,4 +412,33 @@ class FormatRatingTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(expected, actual)
 
+# ...
+        
+class GetMarkdownHeaderTestCase(unittest.TestCase):
+
+    def test_getmarkdownheader_shouldreturnexpectedstring_wheninvoked(self):
+        
+        # Arrange
+        last_update : datetime = datetime(2023, 4, 28)
+        paragraph_title : str = "Reading List By Month"
+        
+        lines : list[str] = [
+            "## Revision History",
+            "",
+            "|Date|Author|Description|",
+            "|---|---|---|",
+            "|2020-12-22|numbworks|Created.|",
+            "|2023-04-28|numbworks|Last update.|",
+            "",
+            "## Reading List By Month",
+            ""
+        ]
+        expected : str = "\n".join(lines)
+
+        # Act
+        actual : str = nwrlm.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
+
+        # Assert
+        self.assertEqual(expected, actual)
+
 

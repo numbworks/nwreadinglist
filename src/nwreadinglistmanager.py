@@ -1098,10 +1098,9 @@ def get_markdown_header(last_update : datetime, paragraph_title : str) -> str:
         |2023-04-28|numbworks|Last update.|
 
         ## Reading List By Month
-
     '''
 
-    lines : list = [
+    lines : list[str] = [
         "## Revision History", 
         "", 
         "|Date|Author|Description|", 
