@@ -79,7 +79,7 @@ class SettingBag():
 # FUNCTIONS
 def get_default_reading_list_path()-> str:
 
-    '''
+    r'''
         "c:\...\nwreadinglistmanager\data\Reading List.xlsx"
     '''
     
