@@ -299,3 +299,21 @@ class GetTrendByBooksTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(expected, actual)
 
+# ...
+        
+class TryConsolidateTrendColumnNameTestCase(unittest.TestCase):
+
+    @parameterized.expand([
+        ["2016", "2016"],
+        ["↕1", "↕"]
+    ])
+    def test_tryconsolidatetrendcolumnname_shouldreturnexpectedstring_wheninvoked(self, column_name : str, expected : str):
+        
+        # Arrange
+        # Act
+        actual : str = nwrlm.try_consolidate_trend_column_name(column_name = column_name)
+
+        # Assert
+        self.assertEqual(expected, actual)
+
+
