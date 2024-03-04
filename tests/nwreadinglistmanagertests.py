@@ -191,6 +191,44 @@ class ObjectMother():
 
         return default_df
 
+    @staticmethod
+    def create_cumulative_df() -> DataFrame:
+
+        return pd.DataFrame({
+            'Years': np.array(['1'], dtype=object),
+            'Books': np.array(['14'], dtype=object),
+            'Pages': np.array(['5573'], dtype=object),
+            'TotalSpend': np.array(['$587.57'], dtype=object),
+            'LastUpdate': np.array(['2024-03-04'], dtype=object),
+        }, index=pd.Index([0], dtype='int64'))
+
+    @staticmethod
+    def create_sas_by_topic_df() -> DataFrame:
+
+        return pd.DataFrame({
+            'Topic': np.array(['Python', 'Development Tools', 'Software Engineering'], dtype=object),
+            'Books': np.array([12, 1, 1], dtype= np.int64),
+            'Pages': np.array([4609, 535, 429], dtype=int32),
+        }, index=pd.RangeIndex(start=0, stop=3, step=1))
+
+    @staticmethod
+    def create_sas_by_rating_df() -> DataFrame:
+
+        return pd.DataFrame({
+            'Rating': np.array(['★★★★☆', '★★★☆☆', '★★☆☆☆', '★☆☆☆☆'], dtype=object),
+            'Books': np.array([1, 3, 4, 6], dtype= np.int64),
+        }, index=pd.RangeIndex(start=0, stop=4, step=1))
+
+    @staticmethod
+    def create_yt_by_topic_df() -> DataFrame:
+
+        return pd.DataFrame({
+            'Topic': np.array(['Development Tools', 'Python', 'Software Engineering'], dtype=object),
+            'Books': np.array([[0, 0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 12], [0, 0, 0, 0, 0, 0, 0, 0, 1]], dtype=object),
+            'Trend': np.array(['▁▁▁▁▁▁▁▁▂', '▁▁▁▁▁▁▁▁█', '▁▁▁▁▁▁▁▁▂'], dtype=object),
+        }, index=pd.RangeIndex(start=0, stop=3, step=1))
+
+
 # TEST CLASSES
 class GetDefaultReadingListPathTestCase(unittest.TestCase):
 
@@ -392,7 +430,20 @@ class GetTrendWhenFloat64TestCase(unittest.TestCase):
         self.assertEqual(expected, actual)
 
 # ...
+
+class GetSASByTopicTestCase(unittest.TestCase):
+
+    def test_getsasbytopic_shouldreturnexpecteddataframe_wheninvoked(self):
         
+        # Arrange
+        books_df : DataFrame = ObjectMother().create_books_df()
+        expected_df : DataFrame = ObjectMother().create_sas_by_topic_df()
+
+        # Act
+        actual_df : DataFrame = nwrlm.get_sas_by_topic(books_df = books_df)
+
+        # Assert
+        assert_frame_equal(expected_df, actual_df)
 class FormatRatingTestCase(unittest.TestCase):
 
     @parameterized.expand([
