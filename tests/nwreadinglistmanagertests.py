@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import datetime
 from datetime import date
 from datetime import timedelta
-from numpy import int32
+from numpy import float64, int32
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
@@ -369,6 +369,24 @@ class ExtractYearFromColumnNameTestCase(unittest.TestCase):
         # Arrange
         # Act
         actual : str = nwrlm.extract_year_from_column_name(column_name = column_name)
+
+        # Assert
+        self.assertEqual(expected, actual)
+
+# ...
+        
+class GetTrendWhenFloat64TestCase(unittest.TestCase):
+
+    @parameterized.expand([
+        [1447.14, 2123.36, "↑"],
+        [2123.36, 1447.14, "↓"],
+        [0, 0, "="]
+    ])
+    def test_gettrendwhenfloat64_shouldreturnexpectedstring_wheninvoked(self, value_1 : float64, value_2 : float64, expected : str):
+        
+        # Arrange
+        # Act
+        actual : str = nwrlm.get_trend_when_float64(value_1 = value_1, value_2 = value_2)
 
         # Assert
         self.assertEqual(expected, actual)
