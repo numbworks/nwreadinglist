@@ -5,23 +5,26 @@ Alias: nwrlm
 '''
 
 # GLOBAL MODULES
-import os
-import pandas as pd
+
+import copy
 import numpy as np
 import openpyxl
-import copy
-from pandas import DataFrame
+import os
+import pandas as pd
+from dataclasses import dataclass
 from datetime import datetime
 from datetime import date
-from pandas import Series
 from numpy import float64
+from pandas import DataFrame
+from pandas import Series
 from sparklines import sparklines
 
 # LOCAL MODULES
 import nwcorecomponents as nwcc
 
-# CLASSES
-class SettingCollection():
+# DATACLASSES
+@dataclass(frozen=True)
+class SettingBag():
 
     '''Represents a collection of settings.'''
 
@@ -62,8 +65,6 @@ class SettingCollection():
     reading_list_file_name : str
     reading_list_topic_trend_file_name : str
     save_reading_lists_to_file : bool
-    use_smaller_font_for_reading_list_md : bool = True
-    use_smaller_font_for_reading_list_by_month_md : bool = True
     definitions : dict
     enable_sparklines_maximum : bool
     show_books_by_year_box_plot : bool
@@ -71,108 +72,14 @@ class SettingCollection():
     show_sliced_by_kbsize_desc_df : bool
     show_sliced_by_kbsize_asc_df : bool
     show_yearly_trend_by_topic_df : bool
+    use_smaller_font_for_reading_list_md : bool = True
+    use_smaller_font_for_reading_list_by_month_md : bool = True
 
-    def __init__(
-        self,
-        read_years : list[int],
-        excel_path : str,
-        excel_books_skiprows : int,
-        excel_books_nrows : int,
-        excel_books_tabname : str,
-        excel_null_value : str,
-        is_worth_min_books : int,
-        is_worth_min_avgrating : float,
-        n_generic : int,
-        n_by_month : int,
-        n_by_kbsize : int,
-        show_books_df : bool,
-        show_sas_by_month_upd_df : bool,
-        show_sas_by_year_street_price_df : bool,
-        show_cumulative_df : bool,
-        show_sas_by_topic_df : bool,
-        show_sas_by_publisher_df : bool,
-        show_sas_by_publisher_flt_df : bool,
-        show_sas_by_rating_df : bool,
-        last_update : datetime,
-        show_readme_md : bool,
-        show_reading_list_by_month_md : bool,
-        show_reading_list_by_publisher_md : bool,
-        show_reading_list_by_rating_md : bool,
-        show_reading_list_by_topic_md : bool,
-        show_reading_list_md : bool,
-        show_reading_list_topic_trend_md : bool,
-        formatted_rating : bool,
-        now : datetime,
-        working_folder_path : str,
-        reading_list_by_month_file_name : str,
-        reading_list_by_publisher_file_name : str,
-        reading_list_by_rating_file_name : str,
-        reading_list_by_topic_file_name : str,
-        reading_list_file_name : str,
-        reading_list_topic_trend_file_name : str,
-        save_reading_lists_to_file : bool,
-        use_smaller_font_for_reading_list_md : bool,
-        use_smaller_font_for_reading_list_by_month_md : bool,
-        definitions : dict,
-        enable_sparklines_maximum : bool,
-        show_books_by_year_box_plot : bool,
-        show_sliced_by_kbsize_box_plot : bool,
-        show_sliced_by_kbsize_desc_df : bool,
-        show_sliced_by_kbsize_asc_df : bool,
-        show_yearly_trend_by_topic_df : bool
-        ):
-
-        self.read_years = read_years
-        self.excel_path = excel_path
-        self.excel_books_skiprows = excel_books_skiprows
-        self.excel_books_nrows = excel_books_nrows
-        self.excel_books_tabname = excel_books_tabname
-        self.excel_null_value = excel_null_value
-        self.is_worth_min_books = is_worth_min_books
-        self.is_worth_min_avgrating = is_worth_min_avgrating
-        self.n_generic = n_generic
-        self.n_by_month = n_by_month
-        self.n_by_kbsize = n_by_kbsize
-        self.show_books_df = show_books_df
-        self.show_sas_by_month_upd_df = show_sas_by_month_upd_df
-        self.show_sas_by_year_street_price_df = show_sas_by_year_street_price_df
-        self.show_cumulative_df = show_cumulative_df
-        self.show_sas_by_topic_df = show_sas_by_topic_df
-        self.show_sas_by_publisher_df = show_sas_by_publisher_df
-        self.show_sas_by_publisher_flt_df = show_sas_by_publisher_flt_df
-        self.show_sas_by_rating_df = show_sas_by_rating_df
-        self.last_update = last_update
-        self.show_readme_md = show_readme_md
-        self.show_reading_list_by_month_md = show_reading_list_by_month_md
-        self.show_reading_list_by_publisher_md = show_reading_list_by_publisher_md
-        self.show_reading_list_by_rating_md = show_reading_list_by_rating_md
-        self.show_reading_list_by_topic_md = show_reading_list_by_topic_md
-        self.show_reading_list_md = show_reading_list_md
-        self.show_reading_list_topic_trend_md = show_reading_list_topic_trend_md
-        self.formatted_rating = formatted_rating
-        self.now = now
-        self.working_folder_path = working_folder_path
-        self.reading_list_by_month_file_name = reading_list_by_month_file_name
-        self.reading_list_by_publisher_file_name = reading_list_by_publisher_file_name
-        self.reading_list_by_rating_file_name = reading_list_by_rating_file_name
-        self.reading_list_by_topic_file_name = reading_list_by_topic_file_name
-        self.reading_list_file_name = reading_list_file_name
-        self.reading_list_topic_trend_file_name = reading_list_topic_trend_file_name
-        self.save_reading_lists_to_file = save_reading_lists_to_file 
-        self.use_smaller_font_for_reading_list_md = use_smaller_font_for_reading_list_md
-        self.use_smaller_font_for_reading_list_by_month_md = use_smaller_font_for_reading_list_by_month_md
-        self.definitions = definitions
-        self.enable_sparklines_maximum = enable_sparklines_maximum
-        self.show_books_by_year_box_plot = show_books_by_year_box_plot
-        self.show_sliced_by_kbsize_box_plot = show_sliced_by_kbsize_box_plot
-        self.show_sliced_by_kbsize_desc_df = show_sliced_by_kbsize_desc_df
-        self.show_sliced_by_kbsize_asc_df = show_sliced_by_kbsize_asc_df
-        self.show_yearly_trend_by_topic_df = show_yearly_trend_by_topic_df
-
+# CLASSES
 # FUNCTIONS
 def get_default_reading_list_path()-> str:
 
-    '''
+    r'''
         "c:\...\nwreadinglistmanager\data\Reading List.xlsx"
     '''
     
@@ -180,8 +87,10 @@ def get_default_reading_list_path()-> str:
     path = os.path.join(path, "Reading List.xlsx")
 
     return path
-def get_books_dataset(setting_collection : SettingCollection) -> DataFrame:
-    
+def enforce_dataframe_definition_for_books_df(books_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+
+    '''Enforces definition for the provided dataframe.'''
+
     column_names : list[str] = []
     column_names.append("Title")                # [0], str
     column_names.append("Year")                 # [1], int
@@ -204,46 +113,53 @@ def get_books_dataset(setting_collection : SettingCollection) -> DataFrame:
     column_names.append("CommentLenght")        # [18], int
     column_names.append("KBSize")               # [19], int
 
-    dataset_df = pd.read_excel(
-	    io = setting_collection.excel_path, 	
-        skiprows = setting_collection.excel_books_skiprows,
-        nrows = setting_collection.excel_books_nrows,
-	    sheet_name = setting_collection.excel_books_tabname, 
-        engine = 'openpyxl'
-        )
-    
-    dataset_df = dataset_df[column_names]
+    books_df = books_df[column_names]
 
-    dataset_df = dataset_df.replace(
-        to_replace = setting_collection.excel_null_value, 
+    books_df = books_df.replace(
+        to_replace = setting_bag.excel_null_value, 
         value = np.nan
     )
   
-    dataset_df = dataset_df.astype({column_names[0]: str})  
-    dataset_df = dataset_df.astype({column_names[1]: int})
-    dataset_df = dataset_df.astype({column_names[2]: str})
-    dataset_df = dataset_df.astype({column_names[3]: str})
-    dataset_df = dataset_df.astype({column_names[4]: str})
-    dataset_df = dataset_df.astype({column_names[5]: int})
+    books_df = books_df.astype({column_names[0]: str})  
+    books_df = books_df.astype({column_names[1]: int})
+    books_df = books_df.astype({column_names[2]: str})
+    books_df = books_df.astype({column_names[3]: str})
+    books_df = books_df.astype({column_names[4]: str})
+    books_df = books_df.astype({column_names[5]: int})
 
-    dataset_df[column_names[6]] = pd.to_datetime(dataset_df[column_names[6]], format="%Y-%m-%d") 
-    dataset_df[column_names[6]] = dataset_df[column_names[6]].apply(lambda x: x.date())
+    books_df[column_names[6]] = pd.to_datetime(books_df[column_names[6]], format="%Y-%m-%d") 
+    books_df[column_names[6]] = books_df[column_names[6]].apply(lambda x: x.date())
 
-    dataset_df = dataset_df.astype({column_names[7]: int})
-    dataset_df = dataset_df.astype({column_names[8]: int})
-    dataset_df = dataset_df.astype({column_names[9]: str})
-    dataset_df = dataset_df.astype({column_names[10]: str})
-    dataset_df = dataset_df.astype({column_names[11]: str})
-    dataset_df = dataset_df.astype({column_names[12]: int})
-    dataset_df = dataset_df.astype({column_names[13]: float})    
-    dataset_df = dataset_df.astype({column_names[14]: str})
-    dataset_df = dataset_df.astype({column_names[15]: str})
-    dataset_df = dataset_df.astype({column_names[16]: str})
-    dataset_df = dataset_df.astype({column_names[17]: str})
-    dataset_df = dataset_df.astype({column_names[18]: int})
-    dataset_df = dataset_df.astype({column_names[19]: int})
+    books_df = books_df.astype({column_names[7]: int})
+    books_df = books_df.astype({column_names[8]: int})
+    books_df = books_df.astype({column_names[9]: str})
+    books_df = books_df.astype({column_names[10]: str})
+    books_df = books_df.astype({column_names[11]: str})
+    books_df = books_df.astype({column_names[12]: int})
+    books_df = books_df.astype({column_names[13]: float})    
+    books_df = books_df.astype({column_names[14]: str})
+    books_df = books_df.astype({column_names[15]: str})
+    books_df = books_df.astype({column_names[16]: str})
+    books_df = books_df.astype({column_names[17]: str})
+    books_df = books_df.astype({column_names[18]: int})
+    books_df = books_df.astype({column_names[19]: int})
 
-    return dataset_df
+    return books_df
+def get_books_df(setting_bag : SettingBag) -> DataFrame:
+    
+    '''Retrieves the content of the "Books" tab and returns it as a Dataframe.'''
+
+    books_df = pd.read_excel(
+	    io = setting_bag.excel_path, 	
+        skiprows = setting_bag.excel_books_skiprows,
+        nrows = setting_bag.excel_books_nrows,
+	    sheet_name = setting_bag.excel_books_tabname, 
+        engine = 'openpyxl'
+        )
+    
+    books_df = enforce_dataframe_definition_for_books_df(books_df = books_df, setting_bag = setting_bag)
+
+    return books_df
 
 def format_reading_status(books : int, pages : int) -> str:
 
@@ -273,7 +189,7 @@ def get_default_sa_by_year(read_year : int) -> DataFrame:
             f"{cn_month}": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
             f"{str(read_year)}": ["0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)"]
         },
-        index=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+        index=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     )
 
     default_df = default_df.astype({cn_month: int})
@@ -962,7 +878,7 @@ def get_sas_by_topic(books_df : DataFrame) -> DataFrame:
         right_on = cn_topic)
 
     return sas_by_topic_df
-def get_sas_by_publisher(books_df : DataFrame, setting_collection : SettingCollection) -> DataFrame:
+def get_sas_by_publisher(books_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
     
     """
         by_books_df:
@@ -1009,8 +925,8 @@ def get_sas_by_publisher(books_df : DataFrame, setting_collection : SettingColle
 
     cn_isworth : str = "IsWorth"
     sas_by_publisher_df[cn_isworth] = np.where(
-        (sas_by_publisher_df[cn_books] >= setting_collection.is_worth_min_books) & 
-        (sas_by_publisher_df[cn_avgrating] >= setting_collection.is_worth_min_avgrating), 
+        (sas_by_publisher_df[cn_books] >= setting_bag.is_worth_min_books) & 
+        (sas_by_publisher_df[cn_avgrating] >= setting_bag.is_worth_min_avgrating), 
         "Yes", "No")
 
     return sas_by_publisher_df
@@ -1182,10 +1098,9 @@ def get_markdown_header(last_update : datetime, paragraph_title : str) -> str:
         |2023-04-28|numbworks|Last update.|
 
         ## Reading List By Month
-
     '''
 
-    lines : list = [
+    lines : list[str] = [
         "## Revision History", 
         "", 
         "|Date|Author|Description|", 
@@ -1331,7 +1246,7 @@ def add_sparklines(df : DataFrame, cn_values : str, cn_sparklines : str, maximum
     sparklined_df[cn_sparklines] = sparklined_df[cn_values].apply(lambda numbers : sparklines(numbers = numbers, maximum = maximum)[0])
 
     return sparklined_df
-def get_yearly_trend_by_topic(books_df : DataFrame, setting_collection : SettingCollection) -> DataFrame:
+def get_yearly_trend_by_topic(books_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
 
     '''
         Get yearly trend by topic as numbers and sparklines.
@@ -1346,10 +1261,10 @@ def get_yearly_trend_by_topic(books_df : DataFrame, setting_collection : Setting
     cn_books : str = "Books"
     cn_trend : str = "Trend"
 
-    by_topic_read_year_df : DataFrame = get_books_by_topic_read_year(books_df = books_df, read_years = setting_collection.read_years)
+    by_topic_read_year_df : DataFrame = get_books_by_topic_read_year(books_df = books_df, read_years = setting_bag.read_years)
     pivoted_df : DataFrame = pivot_column_values_to_cell(df = by_topic_read_year_df, cn_index = cn_topic, cn_values = cn_books)
 
-    if setting_collection.enable_sparklines_maximum:
+    if setting_bag.enable_sparklines_maximum:
         maximum : int = by_topic_read_year_df[cn_books].max()
         sparklined_df : DataFrame = add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend, maximum = maximum)
     else: 
@@ -1490,130 +1405,130 @@ def format_file_name(file_name : str) -> str:
 
     return md_content
 
-def process_readme_md(cumulative_df : DataFrame, setting_collection : SettingCollection) -> None:
+def process_readme_md(cumulative_df : DataFrame, setting_bag : SettingBag) -> None:
 
     '''Performs all the tasks related to the README file.'''
 
     content : str = get_readme_md(cumulative_df = cumulative_df)
 
-    if setting_collection.show_readme_md:
+    if setting_bag.show_readme_md:
         print(content)
-def process_reading_list_by_month_md(sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, setting_collection : SettingCollection) -> None:
+def process_reading_list_by_month_md(sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, setting_bag : SettingBag) -> None:
 
     '''Performs all the tasks related to the "Reading List By Month" file.''' 
 
     content : str = get_reading_list_by_month_md(      
-        last_update = setting_collection.last_update, 
+        last_update = setting_bag.last_update, 
         sas_by_month_df = sas_by_month_df, 
         sas_by_year_street_price_df = sas_by_year_street_price_df,
-        use_smaller_font = setting_collection.use_smaller_font_for_reading_list_by_month_md)
+        use_smaller_font = setting_bag.use_smaller_font_for_reading_list_by_month_md)
 
-    if setting_collection.show_reading_list_by_month_md:    
-        print(format_file_name(file_name = setting_collection.reading_list_by_month_file_name))    
+    if setting_bag.show_reading_list_by_month_md:    
+        print(format_file_name(file_name = setting_bag.reading_list_by_month_file_name))    
         print(content)
 
-    if setting_collection.save_reading_lists_to_file:
+    if setting_bag.save_reading_lists_to_file:
 
         file_path : str = nwcc.create_file_path(
-            folder_path = setting_collection.working_folder_path,
-            file_name = setting_collection.reading_list_by_month_file_name)
+            folder_path = setting_bag.working_folder_path,
+            file_name = setting_bag.reading_list_by_month_file_name)
         
         nwcc.save_content(content = content, file_path = file_path)
-def process_reading_list_by_publisher_md(sas_by_publisher_flt_df : DataFrame, sas_by_publisher_df : DataFrame, setting_collection : SettingCollection) -> None:
+def process_reading_list_by_publisher_md(sas_by_publisher_flt_df : DataFrame, sas_by_publisher_df : DataFrame, setting_bag : SettingBag) -> None:
 
     '''Performs all the tasks related to the "Reading List By Publisher" file.'''
 
     content : str = get_reading_list_by_publisher_md(      
-        last_update = setting_collection.last_update, 
+        last_update = setting_bag.last_update, 
         sas_by_publisher_flt_df = sas_by_publisher_flt_df, 
         sas_by_publisher_df = sas_by_publisher_df)
 
-    if setting_collection.show_reading_list_by_publisher_md:
-        print(format_file_name(file_name = setting_collection.reading_list_by_publisher_file_name))        
+    if setting_bag.show_reading_list_by_publisher_md:
+        print(format_file_name(file_name = setting_bag.reading_list_by_publisher_file_name))        
         print(content)
 
-    if setting_collection.save_reading_lists_to_file:
+    if setting_bag.save_reading_lists_to_file:
 
         file_path : str = nwcc.create_file_path(
-            folder_path = setting_collection.working_folder_path,
-            file_name = setting_collection.reading_list_by_publisher_file_name)
+            folder_path = setting_bag.working_folder_path,
+            file_name = setting_bag.reading_list_by_publisher_file_name)
         
         nwcc.save_content(content = content, file_path = file_path)
-def process_reading_list_by_rating_md(sas_by_rating_df : DataFrame, setting_collection : SettingCollection) -> None:
+def process_reading_list_by_rating_md(sas_by_rating_df : DataFrame, setting_bag : SettingBag) -> None:
 
     '''Performs all the tasks related to the "Reading List By Rating" file.'''
 
     content : str = get_reading_list_by_rating_md(       
-        last_update = setting_collection.last_update, 
+        last_update = setting_bag.last_update, 
         sas_by_rating_df = sas_by_rating_df)
 
-    if setting_collection.show_reading_list_by_rating_md:
-        print(format_file_name(file_name = setting_collection.reading_list_by_rating_file_name))
+    if setting_bag.show_reading_list_by_rating_md:
+        print(format_file_name(file_name = setting_bag.reading_list_by_rating_file_name))
         print(content)
 
-    if setting_collection.save_reading_lists_to_file:
+    if setting_bag.save_reading_lists_to_file:
         
         file_path : str = nwcc.create_file_path(
-            folder_path = setting_collection.working_folder_path,
-            file_name = setting_collection.reading_list_by_rating_file_name)
+            folder_path = setting_bag.working_folder_path,
+            file_name = setting_bag.reading_list_by_rating_file_name)
         
         nwcc.save_content(content = content, file_path = file_path)
-def process_reading_list_by_topic_md(sas_by_topic_df : DataFrame, setting_collection : SettingCollection) -> None:
+def process_reading_list_by_topic_md(sas_by_topic_df : DataFrame, setting_bag : SettingBag) -> None:
 
     '''Performs all the tasks related to the "Reading List By Topic" file.'''
 
     content : str = get_reading_list_by_topic_md( 
-        last_update = setting_collection.last_update, 
+        last_update = setting_bag.last_update, 
         sas_by_topic_df = sas_by_topic_df)
 
-    if setting_collection.show_reading_list_by_topic_md:
-        print(format_file_name(file_name = setting_collection.reading_list_by_topic_file_name))
+    if setting_bag.show_reading_list_by_topic_md:
+        print(format_file_name(file_name = setting_bag.reading_list_by_topic_file_name))
         print(content)
 
-    if setting_collection.save_reading_lists_to_file:
+    if setting_bag.save_reading_lists_to_file:
 
         file_path : str = nwcc.create_file_path(
-            folder_path = setting_collection.working_folder_path,
-            file_name = setting_collection.reading_list_by_topic_file_name)
+            folder_path = setting_bag.working_folder_path,
+            file_name = setting_bag.reading_list_by_topic_file_name)
         
         nwcc.save_content(content = content, file_path = file_path)
-def process_reading_list_md(books_df : DataFrame, setting_collection : SettingCollection) -> None:
+def process_reading_list_md(books_df : DataFrame, setting_bag : SettingBag) -> None:
 
     '''Performs all the tasks related to the "Reading List" file.'''
 
     content : str = get_reading_list_md(
-        last_update = setting_collection.last_update, 
+        last_update = setting_bag.last_update, 
         books_df = books_df,
-        use_smaller_font = setting_collection.use_smaller_font_for_reading_list_md)
+        use_smaller_font = setting_bag.use_smaller_font_for_reading_list_md)
 
-    if setting_collection.show_reading_list_md:
-        print(format_file_name(file_name = setting_collection.reading_list_file_name))
+    if setting_bag.show_reading_list_md:
+        print(format_file_name(file_name = setting_bag.reading_list_file_name))
         print(content)
 
-    if setting_collection.save_reading_lists_to_file:
+    if setting_bag.save_reading_lists_to_file:
 
         file_path : str = nwcc.create_file_path(
-            folder_path = setting_collection.working_folder_path,
-            file_name = setting_collection.reading_list_file_name)
+            folder_path = setting_bag.working_folder_path,
+            file_name = setting_bag.reading_list_file_name)
         
         nwcc.save_content(content = content, file_path = file_path)
-def process_reading_list_topic_trend_md(yt_by_topic_df : DataFrame, setting_collection : SettingCollection) -> None:
+def process_reading_list_topic_trend_md(yt_by_topic_df : DataFrame, setting_bag : SettingBag) -> None:
 
     '''Performs all the tasks related to the "Reading List Topic Trend" file.'''
 
     content : str = get_reading_list_topic_trend_md(
-        last_update = setting_collection.last_update, 
+        last_update = setting_bag.last_update, 
         yt_by_topic_df = yt_by_topic_df)
 
-    if setting_collection.show_reading_list_topic_trend_md:
-        print(format_file_name(file_name = setting_collection.reading_list_topic_trend_file_name))
+    if setting_bag.show_reading_list_topic_trend_md:
+        print(format_file_name(file_name = setting_bag.reading_list_topic_trend_file_name))
         print(content)
 
-    if setting_collection.save_reading_lists_to_file:
+    if setting_bag.save_reading_lists_to_file:
         
         file_path : str = nwcc.create_file_path(
-            folder_path = setting_collection.working_folder_path,
-            file_name = setting_collection.reading_list_topic_trend_file_name)
+            folder_path = setting_bag.working_folder_path,
+            file_name = setting_bag.reading_list_topic_trend_file_name)
         
         nwcc.save_content(content = content, file_path = file_path)
 
