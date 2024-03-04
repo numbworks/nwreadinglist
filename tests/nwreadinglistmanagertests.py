@@ -332,4 +332,31 @@ class ExtractPagesFromTrendTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(expected, actual)
+class FormatYearBooksColumnNameTestCase(unittest.TestCase):
+
+    @parameterized.expand([
+        ["2016", "2016_Books"]
+    ])
+    def test_formatyearbookscolumnname_shouldreturnexpectedstring_wheninvoked(self, year_cn : str, expected : str):
+        
+        # Arrange
+        # Act
+        actual : str = nwrlm.format_year_books_column_name(year_cn = year_cn)
+
+        # Assert
+        self.assertEqual(expected, actual)
+class FormatYearPagesColumnNameTestCase(unittest.TestCase):
+
+    @parameterized.expand([
+        ["2016", "2016_Pages"]
+    ])
+    def test_formatyearpagescolumnname_shouldreturnexpectedstring_wheninvoked(self, year_cn : str, expected : str):
+        
+        # Arrange
+        # Act
+        actual : str = nwrlm.format_year_pages_column_name(year_cn = year_cn)
+
+        # Assert
+        self.assertEqual(expected, actual)
+
 
