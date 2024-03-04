@@ -440,5 +440,18 @@ class GetMarkdownHeaderTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(expected, actual)
+class AddSubscriptTagsToValueTestCase(unittest.TestCase):
 
+    @parameterized.expand([
+        ["49.99", "<sub>49.99</sub>"]
+    ])
+    def test_addsubscripttagstovalue_shouldreturnexpectedstring_wheninvoked(self, value : str, expected : str):
+        
+        # Arrange
+        # Act
+        actual : str = nwrlm.add_subscript_tags_to_value(value = value)
 
+        # Assert
+        self.assertEqual(expected, actual)
+
+# ...
