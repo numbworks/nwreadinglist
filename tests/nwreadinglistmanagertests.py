@@ -316,4 +316,20 @@ class TryConsolidateTrendColumnNameTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(expected, actual)
 
+# ...
+        
+class ExtractPagesFromTrendTestCase(unittest.TestCase):
+
+    @parameterized.expand([
+        ["13 (5157)", 5157],
+        ["0 (0)", 0]
+    ])
+    def test_extractpagesfromtrend_shouldreturnexpectedint_wheninvoked(self, trend : str, expected : int):
+        
+        # Arrange
+        # Act
+        actual : int = nwrlm.extract_pages_from_trend(trend = trend)
+
+        # Assert
+        self.assertEqual(expected, actual)
 
