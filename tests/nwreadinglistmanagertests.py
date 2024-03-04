@@ -253,7 +253,20 @@ class GetDefaultSAByYearTestCase(unittest.TestCase):
         assert_frame_equal(expected_df, actual_df)
 
 # ...
+class ExtractBooksFromTrendTestCase(unittest.TestCase):
+
+    @parameterized.expand([
+        ["0 (0)", 0],
+        ["13 (5157)", 13]
+    ])
+    def test_extractbooksfromtrend_shouldreturnexpectedint_wheninvoked(self, trend : str, expected : int):
         
+        # Arrange
+        # Act
+        actual : int = nwrlm.extract_books_from_trend(trend = trend)
+
+        # Assert
+        self.assertEqual(expected, actual)
 class GetTrendTestCase(unittest.TestCase):
 
     @parameterized.expand([
