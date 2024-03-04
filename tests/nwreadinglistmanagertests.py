@@ -391,3 +391,24 @@ class GetTrendWhenFloat64TestCase(unittest.TestCase):
         # Assert
         self.assertEqual(expected, actual)
 
+# ...
+        
+class FormatRatingTestCase(unittest.TestCase):
+
+    @parameterized.expand([
+        [5, "★★★★★"],
+        [4, "★★★★☆"],
+        [3, "★★★☆☆"],
+        [2, "★★☆☆☆"],
+        [1, "★☆☆☆☆"]
+    ])
+    def test_formatrating_shouldreturnexpectedstring_wheninvoked(self, rating : int, expected : str):
+        
+        # Arrange
+        # Act
+        actual : str = nwrlm.format_rating(rating = rating)
+
+        # Assert
+        self.assertEqual(expected, actual)
+
+
