@@ -272,7 +272,7 @@ class FormatReadingStatusTestCase(unittest.TestCase):
         
         # Arrange
         # Act
-        actual : str = nwrlm.format_reading_status(books = books, pages = pages)
+        actual : str = nwrlm.__format_reading_status(books = books, pages = pages)
 
         # Assert
         self.assertEqual(expected, actual)
@@ -284,7 +284,7 @@ class GetDefaultSAByYearTestCase(unittest.TestCase):
         expected_df : DataFrame = ObjectMother().create_default_sa_by_2024_df()
 
         # Act
-        actual_df : DataFrame = nwrlm.get_default_sa_by_year(read_year = 2024)
+        actual_df : DataFrame = nwrlm.__get_default_sa_by_year(read_year = 2024)
 
         # Assert
         assert_frame_equal(expected_df, actual_df)
@@ -298,7 +298,7 @@ class ExtractBooksFromTrendTestCase(unittest.TestCase):
         
         # Arrange
         # Act
-        actual : int = nwrlm.extract_books_from_trend(trend = trend)
+        actual : int = nwrlm.__extract_books_from_trend(trend = trend)
 
         # Assert
         self.assertEqual(expected, actual)
@@ -313,7 +313,7 @@ class GetTrendTestCase(unittest.TestCase):
         
         # Arrange
         # Act
-        actual : str = nwrlm.get_trend(value_1 = value_1, value_2 = value_2)
+        actual : str = nwrlm.__get_trend(value_1 = value_1, value_2 = value_2)
 
         # Assert
         self.assertEqual(expected, actual)
@@ -328,7 +328,7 @@ class GetTrendByBooksTestCase(unittest.TestCase):
         
         # Arrange
         # Act
-        actual : str = nwrlm.get_trend_by_books(trend_1 = trend_1, trend_2 = trend_2)
+        actual : str = nwrlm.__get_trend_by_books(trend_1 = trend_1, trend_2 = trend_2)
 
         # Assert
         self.assertEqual(expected, actual)
@@ -342,7 +342,7 @@ class TryConsolidateTrendColumnNameTestCase(unittest.TestCase):
         
         # Arrange
         # Act
-        actual : str = nwrlm.try_consolidate_trend_column_name(column_name = column_name)
+        actual : str = nwrlm.__try_consolidate_trend_column_name(column_name = column_name)
 
         # Assert
         self.assertEqual(expected, actual)
