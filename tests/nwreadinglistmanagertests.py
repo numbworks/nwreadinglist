@@ -442,7 +442,7 @@ class FormatRatingTestCase(unittest.TestCase):
         
         # Arrange
         # Act
-        actual : str = nwrlm.format_rating(rating = rating)
+        actual : str = nwrlm.__format_rating(rating = rating)
 
         # Assert
         self.assertEqual(expected, actual)
@@ -468,7 +468,7 @@ class GetCumulativeTestCase(unittest.TestCase):
         expected_df : DataFrame = ObjectMother().create_cumulative_df()
 
         # Act
-        actual_df : DataFrame = nwrlm.get_cumulative(books_df = books_df, last_update = datetime(2024, 3, 4))
+        actual_df : DataFrame = nwrlm.__get_cumulative(books_df = books_df, last_update = datetime(2024, 3, 4))
 
         # Assert
         assert_frame_equal(expected_df, actual_df)

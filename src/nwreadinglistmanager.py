@@ -19,7 +19,7 @@ from pandas import Series
 from sparklines import sparklines
 
 # LOCAL MODULES
-from nwshared import Formatter
+from nwshared import Formatter, Converter
 
 # CONSTANTS
 MODULE_ALIAS : str = "nwrlm"
@@ -91,13 +91,16 @@ class ComponentBag():
     '''
 
     formatter : Formatter
+    converter : Converter
 
-    def __init__(self, formatter : Formatter) -> None:
+    def __init__(self, formatter : Formatter, converter : Converter) -> None:
 
-        self.formatter : formatter
+        self.formatter = formatter
+        self.converter = converter
     def __init__(self) -> None:
         
         self.formatter = Formatter()
+        self.converter = Converter()
 class ReadingListManager():
 
     '''Collects all the logic related to the management of "Reading List.xlsx".'''
@@ -632,7 +635,124 @@ class ReadingListManager():
         grouped_df = grouped_df.sort_values(by = column_names, ascending = [True, True])
 
         return grouped_df
+    def __format_rating(self, rating : int) -> str:
 
+        '''"★★★★★", "★★★★☆", ...'''
+
+        black_star : str = "★"
+        white_star : str = "☆"
+
+        if rating == 1:
+            return f"{black_star}{white_star*4}"
+        elif rating == 2:
+            return f"{black_star*2}{white_star*3}"
+        elif rating == 3:
+            return f"{black_star*3}{white_star*2}"
+        elif rating == 4:
+            return f"{black_star*4}{white_star*1}"
+        elif rating == 5:
+            return f"{black_star*5}"            
+        else:
+            return str(rating)
+    def __get_cumulative(self, books_df : DataFrame, last_update : date, rounding_digits : bool = 2) -> DataFrame:
+
+        '''
+                Years	Books	Pages	TotalSpend  LastUpdate
+            0	8	    234	    62648	$6332.01    2023-09-23
+        '''
+
+        cn_read_year : str = "ReadYear"
+        count_years : int = books_df[cn_read_year].unique().size
+
+        cn_title : str = "Title"
+        count_books : int = books_df[cn_title].size
+
+        cn_pages : str = "Pages"
+        sum_pages : int = books_df[cn_pages].sum()
+
+        cn_street_price : str = "StreetPrice"
+        sum_street_price : float64 = books_df[cn_street_price].sum()
+
+        cn_years : str = "Years"
+        cn_books : str = "Books"
+        cn_pages : str = "Pages"
+        cn_total_spend : str = "TotalSpend"
+        cn_last_update : str = "LastUpdate"
+
+        cumulative_dict : dict = {
+            f"{cn_years}": f"{str(count_years)}",
+            f"{cn_books}": f"{str(count_books)}",
+            f"{cn_pages}": f"{str(sum_pages)}",
+            f"{cn_total_spend}": f"{self.__component_bag.formatter.format_usd_amount(amount = sum_street_price, rounding_digits = rounding_digits)}",
+            f"{cn_last_update}": f"{self.__component_bag.formatter.format_to_iso_8601(dt = self.__component_bag.converter.convert_date_to_datetime(dt = last_update))}"
+            }
+
+        cumulative_df : DataFrame = pd.DataFrame(cumulative_dict, index=[0])
+
+        return cumulative_df
+    def __get_formatted_reading_list(self, books_df : DataFrame) -> DataFrame:
+
+        '''
+                Id	    Title	            Year	Pages	ReadDate	Publisher	    Rating    Topic
+            0	0	    Writing Solid Code	1993	288	    2016-05-28	Microsoft Press	★★☆☆☆  Software Engineering
+            1	1	    Git Essentials	    2015	168	    2016-06-05	Packt	        ★★☆☆☆  Git
+            ...    
+        '''
+
+        formatted_rl_df : DataFrame = pd.DataFrame()
+
+        cn_id : str = "Id"
+        cn_title : str = "Title"
+        cn_year : str = "Year"
+        cn_language : str = "Language"
+        cn_pages : str = "Pages"
+        cn_read_date : str = "ReadDate"
+        cn_publisher : str = "Publisher"
+        cn_rating : str = "Rating"
+        cn_topic : str = "Topic"
+
+        formatted_rl_df[cn_id] = books_df.index + 1
+        formatted_rl_df[cn_title] = books_df[cn_title]
+        formatted_rl_df[cn_year] = books_df[cn_year]
+        formatted_rl_df[cn_language] = books_df[cn_language]
+        formatted_rl_df[cn_pages] = books_df[cn_pages]
+        formatted_rl_df[cn_read_date] = books_df[cn_read_date]   
+        formatted_rl_df[cn_publisher] = books_df[cn_publisher]   
+        formatted_rl_df[cn_rating] = books_df[cn_rating].apply(lambda x : self.__format_rating(rating = x))
+        formatted_rl_df[cn_topic] = books_df[cn_topic]   
+
+        return formatted_rl_df
+    def __slice_by_kbsize(self, books_df : DataFrame, ascending : bool, remove_if_zero : bool) -> DataFrame:
+
+        '''
+                Title	                                        ReadYear	Topic	                        Publisher	Rating	KBSize  A4Sheets
+            0	Machine Learning For Dummies	                2017	    Data Analysis, Data Science, ML	Wiley	    4	    3732    8
+            1	Machine Learning Projects for .NET Developers	2017	    Data Analysis, Data Science, ML	Apress	    4	    3272    7
+            2	Producing Open Source Software	                2016	    Software Engineering	        O'Reilly	1	    2332    5
+            ...
+        '''
+
+        sliced_df : DataFrame = books_df.copy(deep=True)
+
+        cn_title : str = "Title"
+        cn_readyear : str = "ReadYear"
+        cn_topic : str = "Topic"
+        cn_publisher : str = "Publisher"
+        cn_rating : str = "Rating"
+        cn_kbsize : str = "KBSize"
+        cn_a4sheets : str = "A4Sheets"
+
+        sliced_df = sliced_df[[cn_title, cn_readyear, cn_topic, cn_publisher, cn_rating, cn_kbsize]]
+
+        if remove_if_zero:
+            condition : Series = (sliced_df[cn_kbsize] != 0)
+            sliced_df = sliced_df.loc[condition]
+
+        sliced_df = sliced_df.sort_values(by = cn_kbsize, ascending = ascending).reset_index(drop = True)   
+        sliced_df[cn_a4sheets] = sliced_df[cn_kbsize].apply(
+            lambda x : self.__component_bag.converter.convert_word_count_to_A4_sheets(word_count = x))
+
+        return sliced_df    
 
 
     def get_default_reading_list_path(self)-> str:
@@ -978,7 +1098,25 @@ class ReadingListManager():
         filtered_df.reset_index(drop = True, inplace = True)
 
         return filtered_df
+    def get_sas_by_rating(self, books_df : DataFrame, formatted_rating : bool) -> DataFrame:
 
+        '''
+                Rating  Books
+            0	★★★★★  9
+            1	★★★★☆  18
+            ...
+        '''
+
+        cn_rating : str = "Rating"
+
+        sas_by_rating_df : DataFrame = self.__group_books_by_single_column(books_df = books_df, column_name = cn_rating)
+        sas_by_rating_df.sort_values(by = cn_rating, ascending = False, inplace = True)
+        sas_by_rating_df.reset_index(drop = True, inplace = True)
+
+        if formatted_rating:
+            sas_by_rating_df[cn_rating] = sas_by_rating_df[cn_rating].apply(lambda x : __format_rating(rating = x))
+
+        return sas_by_rating_df
 
 # FUNCTIONS
 
@@ -988,143 +1126,10 @@ class ReadingListManager():
 
 
 
-def format_rating(rating : int) -> str:
 
-    '''"★★★★★", "★★★★☆", ...'''
 
-    black_star : str = "★"
-    white_star : str = "☆"
 
-    if rating == 1:
-        return f"{black_star}{white_star*4}"
-    elif rating == 2:
-        return f"{black_star*2}{white_star*3}"
-    elif rating == 3:
-        return f"{black_star*3}{white_star*2}"
-    elif rating == 4:
-        return f"{black_star*4}{white_star*1}"
-    elif rating == 5:
-        return f"{black_star*5}"            
-    else:
-        return str(rating)
-def get_sas_by_rating(books_df : DataFrame, formatted_rating : bool) -> DataFrame:
 
-    '''
-            Rating  Books
-        0	★★★★★  9
-        1	★★★★☆  18
-        ...
-    '''
-
-    cn_rating : str = "Rating"
-
-    sas_by_rating_df : DataFrame = __group_books_by_single_column(books_df = books_df, column_name = cn_rating)
-    sas_by_rating_df.sort_values(by = cn_rating, ascending = False, inplace = True)
-    sas_by_rating_df.reset_index(drop = True, inplace = True)
-
-    if formatted_rating:
-        sas_by_rating_df[cn_rating] = sas_by_rating_df[cn_rating].apply(lambda x : format_rating(rating = x))
-
-    return sas_by_rating_df
-
-def get_cumulative(books_df : DataFrame, last_update : date, rounding_digits : bool = 2) -> DataFrame:
-
-    '''
-	        Years	Books	Pages	TotalSpend  LastUpdate
-        0	8	    234	    62648	$6332.01    2023-09-23
-    '''
-
-    cn_read_year : str = "ReadYear"
-    count_years : int = books_df[cn_read_year].unique().size
-
-    cn_title : str = "Title"
-    count_books : int = books_df[cn_title].size
-
-    cn_pages : str = "Pages"
-    sum_pages : int = books_df[cn_pages].sum()
-
-    cn_street_price : str = "StreetPrice"
-    sum_street_price : float64 = books_df[cn_street_price].sum()
-
-    cn_years : str = "Years"
-    cn_books : str = "Books"
-    cn_pages : str = "Pages"
-    cn_total_spend : str = "TotalSpend"
-    cn_last_update : str = "LastUpdate"
-
-    cumulative_dict : dict = {
-        f"{cn_years}": f"{str(count_years)}",
-        f"{cn_books}": f"{str(count_books)}",
-        f"{cn_pages}": f"{str(sum_pages)}",
-        f"{cn_total_spend}": f"{nwcc.format_usd_amount(amount = sum_street_price, rounding_digits = rounding_digits)}",
-        f"{cn_last_update}": f"{nwcc.format_to_iso_8601(dt = nwcc.convert_date_to_datetime(dt = last_update))}"
-        }
-
-    cumulative_df : DataFrame = pd.DataFrame(cumulative_dict, index=[0])
-
-    return cumulative_df
-def get_formatted_reading_list(books_df : DataFrame) -> DataFrame:
-
-    '''
-            Id	    Title	            Year	Pages	ReadDate	Publisher	    Rating    Topic
-        0	0	    Writing Solid Code	1993	288	    2016-05-28	Microsoft Press	★★☆☆☆  Software Engineering
-        1	1	    Git Essentials	    2015	168	    2016-06-05	Packt	        ★★☆☆☆  Git
-        ...    
-    '''
-
-    formatted_rl_df : DataFrame = pd.DataFrame()
-
-    cn_id : str = "Id"
-    cn_title : str = "Title"
-    cn_year : str = "Year"
-    cn_language : str = "Language"
-    cn_pages : str = "Pages"
-    cn_read_date : str = "ReadDate"
-    cn_publisher : str = "Publisher"
-    cn_rating : str = "Rating"
-    cn_topic : str = "Topic"
-
-    formatted_rl_df[cn_id] = books_df.index + 1
-    formatted_rl_df[cn_title] = books_df[cn_title]
-    formatted_rl_df[cn_year] = books_df[cn_year]
-    formatted_rl_df[cn_language] = books_df[cn_language]
-    formatted_rl_df[cn_pages] = books_df[cn_pages]
-    formatted_rl_df[cn_read_date] = books_df[cn_read_date]   
-    formatted_rl_df[cn_publisher] = books_df[cn_publisher]   
-    formatted_rl_df[cn_rating] = books_df[cn_rating].apply(lambda x : format_rating(rating = x))
-    formatted_rl_df[cn_topic] = books_df[cn_topic]   
-
-    return formatted_rl_df
-def slice_by_kbsize(books_df : DataFrame, ascending : bool, remove_if_zero : bool) -> DataFrame:
-
-    '''
-            Title	                                        ReadYear	Topic	                        Publisher	Rating	KBSize  A4Sheets
-        0	Machine Learning For Dummies	                2017	    Data Analysis, Data Science, ML	Wiley	    4	    3732    8
-        1	Machine Learning Projects for .NET Developers	2017	    Data Analysis, Data Science, ML	Apress	    4	    3272    7
-        2	Producing Open Source Software	                2016	    Software Engineering	        O'Reilly	1	    2332    5
-        ...
-    '''
-
-    sliced_df : DataFrame = books_df.copy(deep=True)
-
-    cn_title : str = "Title"
-    cn_readyear : str = "ReadYear"
-    cn_topic : str = "Topic"
-    cn_publisher : str = "Publisher"
-    cn_rating : str = "Rating"
-    cn_kbsize : str = "KBSize"
-    cn_a4sheets : str = "A4Sheets"
-
-    sliced_df = sliced_df[[cn_title, cn_readyear, cn_topic, cn_publisher, cn_rating, cn_kbsize]]
-
-    if remove_if_zero:
-        condition : Series = (sliced_df[cn_kbsize] != 0)
-        sliced_df = sliced_df.loc[condition]
-
-    sliced_df = sliced_df.sort_values(by = cn_kbsize, ascending = ascending).reset_index(drop = True)   
-    sliced_df[cn_a4sheets] = sliced_df[cn_kbsize].apply(lambda x : nwcc.convert_word_count_to_A4_sheets(word_count = x))
-
-    return sliced_df
 
 def get_markdown_header(last_update : datetime, paragraph_title : str) -> str:
     
@@ -1406,7 +1411,7 @@ def get_reading_list_md(last_update : datetime, books_df : DataFrame, use_smalle
     md_paragraph_title : str = "Reading List"
 
     markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-    formatted_rl_df : DataFrame = get_formatted_reading_list(books_df = books_df)
+    formatted_rl_df : DataFrame = __get_formatted_reading_list(books_df = books_df)
 
     if use_smaller_font:
         formatted_rl_df = add_subscript_tags_to_dataframe(df = formatted_rl_df)    
