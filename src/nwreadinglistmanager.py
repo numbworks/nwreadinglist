@@ -5,7 +5,6 @@ Alias: nwrlm
 '''
 
 # GLOBAL MODULES
-
 import copy
 import numpy as np
 import openpyxl
@@ -20,9 +19,14 @@ from pandas import Series
 from sparklines import sparklines
 
 # LOCAL MODULES
-import nwcorecomponents as nwcc
+import nwshared as nwsh
 
-# DATACLASSES
+# CONSTANTS
+MODULE_ALIAS : str = "nwrlm"
+MODULE_NAME : str = "nwreadinglistmanager"
+MODULE_VERSION : str = "3.0.0"
+
+# DTOs
 @dataclass(frozen=True)
 class SettingBag():
 
@@ -75,91 +79,102 @@ class SettingBag():
     use_smaller_font_for_reading_list_md : bool = True
     use_smaller_font_for_reading_list_by_month_md : bool = True
 
+# STATIC CLASSES
+
 # CLASSES
-# FUNCTIONS
-def get_default_reading_list_path()-> str:
+class ReadingListManager():
 
-    r'''
-        "c:\...\nwreadinglistmanager\data\Reading List.xlsx"
-    '''
-    
-    path : str = os.getcwd().replace("src", "data")
-    path = os.path.join(path, "Reading List.xlsx")
+    '''Collects all the logic related to the management of "Reading List.xlsx".'''
 
-    return path
-def enforce_dataframe_definition_for_books_df(books_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+    def __enforce_dataframe_definition_for_books_df(self, books_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
 
-    '''Enforces definition for the provided dataframe.'''
+        '''Enforces definition for the provided dataframe.'''
 
-    column_names : list[str] = []
-    column_names.append("Title")                # [0], str
-    column_names.append("Year")                 # [1], int
-    column_names.append("Type")                 # [2], str
-    column_names.append("Format")               # [3], str
-    column_names.append("Language")             # [4], str
-    column_names.append("Pages")                # [5], int
-    column_names.append("ReadDate")             # [6], date
-    column_names.append("ReadYear")             # [7], int
-    column_names.append("ReadMonth")            # [8], int    
-    column_names.append("WorthBuying")          # [9], str
-    column_names.append("WorthReadingAgain")    # [10], str
-    column_names.append("Publisher")            # [11], str
-    column_names.append("Rating")               # [12], int
-    column_names.append("StreetPrice")          # [13], float
-    column_names.append("Currency")             # [14], str
-    column_names.append("Comment")              # [15], str
-    column_names.append("Topic")                # [16], str
-    column_names.append("OnGoodreads")          # [17], str
-    column_names.append("CommentLenght")        # [18], int
-    column_names.append("KBSize")               # [19], int
+        column_names : list[str] = []
+        column_names.append("Title")                # [0], str
+        column_names.append("Year")                 # [1], int
+        column_names.append("Type")                 # [2], str
+        column_names.append("Format")               # [3], str
+        column_names.append("Language")             # [4], str
+        column_names.append("Pages")                # [5], int
+        column_names.append("ReadDate")             # [6], date
+        column_names.append("ReadYear")             # [7], int
+        column_names.append("ReadMonth")            # [8], int    
+        column_names.append("WorthBuying")          # [9], str
+        column_names.append("WorthReadingAgain")    # [10], str
+        column_names.append("Publisher")            # [11], str
+        column_names.append("Rating")               # [12], int
+        column_names.append("StreetPrice")          # [13], float
+        column_names.append("Currency")             # [14], str
+        column_names.append("Comment")              # [15], str
+        column_names.append("Topic")                # [16], str
+        column_names.append("OnGoodreads")          # [17], str
+        column_names.append("CommentLenght")        # [18], int
+        column_names.append("KBSize")               # [19], int
 
-    books_df = books_df[column_names]
+        books_df = books_df[column_names]
 
-    books_df = books_df.replace(
-        to_replace = setting_bag.excel_null_value, 
-        value = np.nan
-    )
-  
-    books_df = books_df.astype({column_names[0]: str})  
-    books_df = books_df.astype({column_names[1]: int})
-    books_df = books_df.astype({column_names[2]: str})
-    books_df = books_df.astype({column_names[3]: str})
-    books_df = books_df.astype({column_names[4]: str})
-    books_df = books_df.astype({column_names[5]: int})
-
-    books_df[column_names[6]] = pd.to_datetime(books_df[column_names[6]], format="%Y-%m-%d") 
-    books_df[column_names[6]] = books_df[column_names[6]].apply(lambda x: x.date())
-
-    books_df = books_df.astype({column_names[7]: int})
-    books_df = books_df.astype({column_names[8]: int})
-    books_df = books_df.astype({column_names[9]: str})
-    books_df = books_df.astype({column_names[10]: str})
-    books_df = books_df.astype({column_names[11]: str})
-    books_df = books_df.astype({column_names[12]: int})
-    books_df = books_df.astype({column_names[13]: float})    
-    books_df = books_df.astype({column_names[14]: str})
-    books_df = books_df.astype({column_names[15]: str})
-    books_df = books_df.astype({column_names[16]: str})
-    books_df = books_df.astype({column_names[17]: str})
-    books_df = books_df.astype({column_names[18]: int})
-    books_df = books_df.astype({column_names[19]: int})
-
-    return books_df
-def get_books_df(setting_bag : SettingBag) -> DataFrame:
-    
-    '''Retrieves the content of the "Books" tab and returns it as a Dataframe.'''
-
-    books_df = pd.read_excel(
-	    io = setting_bag.excel_path, 	
-        skiprows = setting_bag.excel_books_skiprows,
-        nrows = setting_bag.excel_books_nrows,
-	    sheet_name = setting_bag.excel_books_tabname, 
-        engine = 'openpyxl'
+        books_df = books_df.replace(
+            to_replace = setting_bag.excel_null_value, 
+            value = np.nan
         )
     
-    books_df = enforce_dataframe_definition_for_books_df(books_df = books_df, setting_bag = setting_bag)
+        books_df = books_df.astype({column_names[0]: str})  
+        books_df = books_df.astype({column_names[1]: int})
+        books_df = books_df.astype({column_names[2]: str})
+        books_df = books_df.astype({column_names[3]: str})
+        books_df = books_df.astype({column_names[4]: str})
+        books_df = books_df.astype({column_names[5]: int})
 
-    return books_df
+        books_df[column_names[6]] = pd.to_datetime(books_df[column_names[6]], format="%Y-%m-%d") 
+        books_df[column_names[6]] = books_df[column_names[6]].apply(lambda x: x.date())
+
+        books_df = books_df.astype({column_names[7]: int})
+        books_df = books_df.astype({column_names[8]: int})
+        books_df = books_df.astype({column_names[9]: str})
+        books_df = books_df.astype({column_names[10]: str})
+        books_df = books_df.astype({column_names[11]: str})
+        books_df = books_df.astype({column_names[12]: int})
+        books_df = books_df.astype({column_names[13]: float})    
+        books_df = books_df.astype({column_names[14]: str})
+        books_df = books_df.astype({column_names[15]: str})
+        books_df = books_df.astype({column_names[16]: str})
+        books_df = books_df.astype({column_names[17]: str})
+        books_df = books_df.astype({column_names[18]: int})
+        books_df = books_df.astype({column_names[19]: int})
+
+        return books_df
+
+    def get_default_reading_list_path(self)-> str:
+
+        r'''
+            "c:\...\nwreadinglistmanager\data\Reading List.xlsx"
+        '''
+        
+        path : str = os.getcwd().replace("src", "data")
+        path = os.path.join(path, "Reading List.xlsx")
+
+        return path
+    def get_books_dataset(self, setting_bag : SettingBag) -> DataFrame:
+        
+        '''Retrieves the content of the "Books" tab and returns it as a Dataframe.'''
+
+        books_df = pd.read_excel(
+            io = setting_bag.excel_path, 	
+            skiprows = setting_bag.excel_books_skiprows,
+            nrows = setting_bag.excel_books_nrows,
+            sheet_name = setting_bag.excel_books_tabname, 
+            engine = 'openpyxl'
+            )
+        
+        books_df = self.__enforce_dataframe_definition_for_books_df(books_df = books_df, setting_bag = setting_bag)
+
+        return books_df
+
+
+# FUNCTIONS
+
+
 
 def format_reading_status(books : int, pages : int) -> str:
 
