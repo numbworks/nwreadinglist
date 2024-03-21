@@ -411,7 +411,7 @@ class GetTrendWhenFloat64TestCase(unittest.TestCase):
         
         # Arrange
         # Act
-        actual : str = nwrlm.get_trend_when_float64(value_1 = value_1, value_2 = value_2)
+        actual : str = nwrlm.__get_trend_when_float64(value_1 = value_1, value_2 = value_2)
 
         # Assert
         self.assertEqual(expected, actual)

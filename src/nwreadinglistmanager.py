@@ -19,7 +19,7 @@ from pandas import Series
 from sparklines import sparklines
 
 # LOCAL MODULES
-import nwshared as nwsh
+from nwshared import Formatter
 
 # CONSTANTS
 MODULE_ALIAS : str = "nwrlm"
@@ -82,9 +82,31 @@ class SettingBag():
 # STATIC CLASSES
 
 # CLASSES
+class ComponentBag():
+
+    '''
+        Represents a collection of components.
+    
+        Dependencies: nwshared  
+    '''
+
+    formatter : Formatter
+
+    def __init__(self, formatter : Formatter) -> None:
+
+        self.formatter : formatter
+    def __init__(self) -> None:
+        
+        self.formatter = Formatter()
 class ReadingListManager():
 
     '''Collects all the logic related to the management of "Reading List.xlsx".'''
+
+    __component_bag : ComponentBag
+
+    def __init__(self, component_bag : ComponentBag) -> None:
+
+        self.__component_bag = component_bag
 
     def __enforce_dataframe_definition_for_books_df(self, books_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
 
@@ -540,6 +562,56 @@ class ReadingListManager():
                 expanded_df = expanded_df.reindex(columns = new_column_names)
                 
         return expanded_df
+    def __get_trend_when_float64(self, value_1 : float64, value_2 : float64) -> str:
+
+        '''
+            1447.14, 2123.36 => "↑"
+            2123.36, 1447.14 => "↓"
+            0, 0 => "="
+        '''
+
+        trend : str = None
+
+        if value_1 < value_2:
+            trend = "↑"
+        elif value_1 > value_2:
+            trend = "↓"
+        else:
+            trend = "="
+
+        return trend
+    def __add_trend_to_sas_by_street_price(self, sas_by_street_price_df : DataFrame, yeatrend : list) -> DataFrame:
+
+        '''
+            [...]
+
+            expanded_df:
+
+                2016	↕0	2017	↕1	2018	↕2	2019	↕3	2020	↕4	2021	↕5	2022	↕6	2023
+            0	1447.14	↑	2123.36	↓	1249.15	↓	748.7	↓	538.75	↓	169.92	↓	49.99	↓	5.0
+        '''  
+
+        expanded_df : DataFrame = sas_by_street_price_df.copy(deep=True)
+        new_column_names : list = copy.deepcopy(x = yeatrend)
+        new_column_names = [str(x) for x in new_column_names]
+
+        for i in range(len(yeatrend)):
+
+            if i != (len(yeatrend) - 1):
+
+                cn_trend : str = f"↕{i}"
+                cn_value_1 : str = str(yeatrend[i])       # 2016 => "2016"
+                cn_value_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
+                
+                expanded_df[cn_trend] = expanded_df.apply(lambda x : self.__get_trend_when_float64(value_1 = x[cn_value_1], value_2 = x[cn_value_2]), axis = 1) 
+                
+                new_item_position : int = (new_column_names.index(cn_value_1) + 1)
+                new_column_names.insert(new_item_position, cn_trend)
+
+                expanded_df = expanded_df.reindex(columns = new_column_names)
+                
+        return expanded_df
+
 
 
     def get_default_reading_list_path(self)-> str:
@@ -704,130 +776,84 @@ class ReadingListManager():
         sas_by_year_df.rename(columns = (lambda x : self.__try_consolidate_trend_column_name(column_name = x)), inplace = True)
 
         return sas_by_year_df
+    def get_sas_by_street_price(self, books_df : DataFrame, read_years : list, rounding_digits : int = 2) -> DataFrame:
+
+        '''
+            [...]
+        
+                ReadYear	StreetPrice
+            0	2016	    34.95
+            1	2016	    34.99
+            ...
+
+                ReadYear	StreetPrice
+            0	2016	    1447.14
+            1	2017	    2123.36
+            ...
+
+                2016	2017	2018	2019	2020	2021	2022	2023
+            0	1447.14	2123.36	1249.15	748.7	538.75	169.92	49.99	5.0
+
+                2016	↕0	2017	↕1	2018	↕2	2019	↕3	2020	↕4	2021	↕5	2022	↕6	2023
+            0	1447.14	↑	2123.36	↓	1249.15	↓	748.7	↓	538.75	↓	169.92	↓	49.99	↓	5.0
+
+                2016	↕	2017	↕	2018	↕	2019	↕	2020	↕	2021	↕	2022	↕	2023
+            0	1447.14	↑	2123.36	↓	1249.15	↓	748.7	↓	538.75	↓	169.92	↓	49.99	↓	5.0        
+
+                2016	    ↕	2017	    ↕	2018	    ↕	2019	↕	2020	↕	2021	↕	2022	↕	2023
+            0	$1447.14	↑	$2123.36	↓	$1249.15	↓	$748.70	↓	$538.75	↓	$169.92	↓	$49.99	↓	$5.00
+        '''
+
+        sas_by_street_price_df : DataFrame = books_df.copy(deep=True)
+
+        cn_readyear : str = "ReadYear"
+        cn_streetprice : str = "StreetPrice"
+
+        condition : Series = (sas_by_street_price_df[cn_readyear].isin(read_years))
+        sas_by_street_price_df = sas_by_street_price_df.loc[condition]
+        sas_by_street_price_df = sas_by_street_price_df[[cn_readyear, cn_streetprice]]
+
+        sas_by_street_price_df = sas_by_street_price_df.groupby([cn_readyear])[cn_streetprice].sum().sort_values(ascending = [False]).reset_index(name = cn_streetprice)
+        sas_by_street_price_df = sas_by_street_price_df.sort_values(by = cn_readyear, ascending = [True])
+        sas_by_street_price_df = sas_by_street_price_df.reset_index(drop = True)
+
+        sas_by_street_price_df = sas_by_street_price_df.set_index(cn_readyear).transpose()
+        sas_by_street_price_df.reset_index(drop = True, inplace = True)
+        sas_by_street_price_df.rename_axis(None, axis = 1, inplace = True)
+        sas_by_street_price_df.columns = sas_by_street_price_df.columns.astype(str)
+        
+        sas_by_street_price_df = self.__add_trend_to_sas_by_street_price(sas_by_street_price_df = sas_by_street_price_df, yeatrend = read_years)
+        sas_by_street_price_df.rename(columns = (lambda x : self.__try_consolidate_trend_column_name(column_name = x)), inplace = True)
+
+        new_column_names : list = [str(x) for x in read_years]
+        for column_name in new_column_names:
+            sas_by_street_price_df[column_name] = sas_by_street_price_df[column_name].apply(
+                lambda x : self.__component_bag.formatter.formatter.format_usd_amount(
+                    amount = float64(x), rounding_digits = rounding_digits))
+
+        return sas_by_street_price_df
+    def get_sas_by_year_street_price(sas_by_month_df : DataFrame, books_df : DataFrame, read_years : list) -> DataFrame:
+
+        '''
+                2016	    ↕	2017	    ↕	2018	    ↕	2019	    ↕	2020	    ↕	2021	    ↕	2022	↕	2023
+            0	43 (12322)	↑	63 (18726)	↓	48 (12646)	↓	42 (9952)	↓	23 (6602)	↓	13 (1901)	↓	1 (360)	=	1 (139)
+            1	$1447.14	↑	$2123.36	↓	$1249.15	↓	$748.70	    ↓	$538.75	    ↓	$169.92	    ↓	$49.99	↓	$5.00
+        '''
+
+        sas_by_year_df : DataFrame = self.get_sas_by_year(sas_by_month_df = sas_by_month_df)
+        sas_by_street_price_df : DataFrame = self.get_sas_by_street_price(books_df = books_df, read_years = read_years)
+
+        sas_by_year_street_price_df : DataFrame = pd.concat(objs = [sas_by_year_df, sas_by_street_price_df])
+        sas_by_year_street_price_df.reset_index(drop = True, inplace = True)
+
+        return sas_by_year_street_price_df
 
 
 # FUNCTIONS
 
 
-def get_trend_when_float64(value_1 : float64, value_2 : float64) -> str:
 
-    '''
-        1447.14, 2123.36 => "↑"
-        2123.36, 1447.14 => "↓"
-        0, 0 => "="
-    '''
 
-    trend : str = None
-
-    if value_1 < value_2:
-        trend = "↑"
-    elif value_1 > value_2:
-        trend = "↓"
-    else:
-        trend = "="
-
-    return trend
-def add_trend_to_sas_by_street_price(sas_by_street_price_df : DataFrame, yeatrend : list) -> DataFrame:
-
-    '''
-        [...]
-
-        expanded_df:
-
-            2016	↕0	2017	↕1	2018	↕2	2019	↕3	2020	↕4	2021	↕5	2022	↕6	2023
-        0	1447.14	↑	2123.36	↓	1249.15	↓	748.7	↓	538.75	↓	169.92	↓	49.99	↓	5.0
-    '''  
-
-    expanded_df : DataFrame = sas_by_street_price_df.copy(deep=True)
-    new_column_names : list = copy.deepcopy(x = yeatrend)
-    new_column_names = [str(x) for x in new_column_names]
-
-    for i in range(len(yeatrend)):
-
-        if i != (len(yeatrend) - 1):
-
-            cn_trend : str = f"↕{i}"
-            cn_value_1 : str = str(yeatrend[i])       # 2016 => "2016"
-            cn_value_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
-            
-            expanded_df[cn_trend] = expanded_df.apply(lambda x : get_trend_when_float64(value_1 = x[cn_value_1], value_2 = x[cn_value_2]), axis = 1) 
-            
-            new_item_position : int = (new_column_names.index(cn_value_1) + 1)
-            new_column_names.insert(new_item_position, cn_trend)
-
-            expanded_df = expanded_df.reindex(columns = new_column_names)
-            
-    return expanded_df
-
-def get_sas_by_street_price(books_df : DataFrame, read_years : list, rounding_digits : int = 2) -> DataFrame:
-
-    '''
-        [...]
-    
-            ReadYear	StreetPrice
-        0	2016	    34.95
-        1	2016	    34.99
-        ...
-
-            ReadYear	StreetPrice
-        0	2016	    1447.14
-        1	2017	    2123.36
-        ...
-
-            2016	2017	2018	2019	2020	2021	2022	2023
-        0	1447.14	2123.36	1249.15	748.7	538.75	169.92	49.99	5.0
-
-            2016	↕0	2017	↕1	2018	↕2	2019	↕3	2020	↕4	2021	↕5	2022	↕6	2023
-        0	1447.14	↑	2123.36	↓	1249.15	↓	748.7	↓	538.75	↓	169.92	↓	49.99	↓	5.0
-
-            2016	↕	2017	↕	2018	↕	2019	↕	2020	↕	2021	↕	2022	↕	2023
-        0	1447.14	↑	2123.36	↓	1249.15	↓	748.7	↓	538.75	↓	169.92	↓	49.99	↓	5.0        
-
-            2016	    ↕	2017	    ↕	2018	    ↕	2019	↕	2020	↕	2021	↕	2022	↕	2023
-        0	$1447.14	↑	$2123.36	↓	$1249.15	↓	$748.70	↓	$538.75	↓	$169.92	↓	$49.99	↓	$5.00
-    '''
-
-    sas_by_street_price_df : DataFrame = books_df.copy(deep=True)
-
-    cn_readyear : str = "ReadYear"
-    cn_streetprice : str = "StreetPrice"
-
-    condition : Series = (sas_by_street_price_df[cn_readyear].isin(read_years))
-    sas_by_street_price_df = sas_by_street_price_df.loc[condition]
-    sas_by_street_price_df = sas_by_street_price_df[[cn_readyear, cn_streetprice]]
-
-    sas_by_street_price_df = sas_by_street_price_df.groupby([cn_readyear])[cn_streetprice].sum().sort_values(ascending = [False]).reset_index(name = cn_streetprice)
-    sas_by_street_price_df = sas_by_street_price_df.sort_values(by = cn_readyear, ascending = [True])
-    sas_by_street_price_df = sas_by_street_price_df.reset_index(drop = True)
-
-    sas_by_street_price_df = sas_by_street_price_df.set_index(cn_readyear).transpose()
-    sas_by_street_price_df.reset_index(drop = True, inplace = True)
-    sas_by_street_price_df.rename_axis(None, axis = 1, inplace = True)
-    sas_by_street_price_df.columns = sas_by_street_price_df.columns.astype(str)
-    
-    sas_by_street_price_df = add_trend_to_sas_by_street_price(sas_by_street_price_df = sas_by_street_price_df, yeatrend = read_years)
-    sas_by_street_price_df.rename(columns = (lambda x : __try_consolidate_trend_column_name(column_name = x)), inplace = True)
-
-    new_column_names : list = [str(x) for x in read_years]
-    for column_name in new_column_names:
-        sas_by_street_price_df[column_name] = sas_by_street_price_df[column_name].apply(lambda x : nwcc.format_usd_amount(amount = float64(x), rounding_digits = rounding_digits))
-
-    return sas_by_street_price_df
-def get_sas_by_year_street_price(sas_by_month_df : DataFrame, books_df : DataFrame, read_years : list) -> DataFrame:
-
-    '''
-            2016	    ↕	2017	    ↕	2018	    ↕	2019	    ↕	2020	    ↕	2021	    ↕	2022	↕	2023
-        0	43 (12322)	↑	63 (18726)	↓	48 (12646)	↓	42 (9952)	↓	23 (6602)	↓	13 (1901)	↓	1 (360)	=	1 (139)
-        1	$1447.14	↑	$2123.36	↓	$1249.15	↓	$748.70	    ↓	$538.75	    ↓	$169.92	    ↓	$49.99	↓	$5.00
-    '''
-
-    sas_by_year_df : DataFrame = get_sas_by_year(sas_by_month_df = sas_by_month_df)
-    sas_by_street_price_df : DataFrame = get_sas_by_street_price(books_df = books_df, read_years = read_years)
-
-    sas_by_year_street_price_df : DataFrame = pd.concat(objs = [sas_by_year_df, sas_by_street_price_df])
-    sas_by_year_street_price_df.reset_index(drop = True, inplace = True)
-
-    return sas_by_year_street_price_df
 
 def group_books_by_single_column(books_df : DataFrame, column_name : str) -> DataFrame:
 
