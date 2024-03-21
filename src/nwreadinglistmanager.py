@@ -611,6 +611,27 @@ class ReadingListManager():
                 expanded_df = expanded_df.reindex(columns = new_column_names)
                 
         return expanded_df
+    def __group_books_by_single_column(self, books_df : DataFrame, column_name : str) -> DataFrame:
+
+        '''Groups books according to the provided column name. The book titles act as unique identifiers.'''
+
+        cn_uniqueitemidentifier : str = "Title"
+        cn_items : str = "Books"
+
+        grouped_df : DataFrame = books_df.groupby([column_name])[cn_uniqueitemidentifier].size().sort_values(ascending = [False]).reset_index(name = cn_items)
+        
+        return grouped_df
+    def __group_books_by_multiple_columns(self, books_df : DataFrame, column_names : list[str]) -> DataFrame:
+
+        '''Groups books according to the provided column names (note: order matters). The book titles act as unique identifiers.'''
+
+        cn_uniqueitemidentifier : str = "Title"
+        cn_items : str = "Books"
+
+        grouped_df : DataFrame = books_df.groupby(by = column_names)[cn_uniqueitemidentifier].count().reset_index(name = cn_items)
+        grouped_df = grouped_df.sort_values(by = column_names, ascending = [True, True])
+
+        return grouped_df
 
 
 
@@ -832,7 +853,7 @@ class ReadingListManager():
                     amount = float64(x), rounding_digits = rounding_digits))
 
         return sas_by_street_price_df
-    def get_sas_by_year_street_price(sas_by_month_df : DataFrame, books_df : DataFrame, read_years : list) -> DataFrame:
+    def get_sas_by_year_street_price(self, sas_by_month_df : DataFrame, books_df : DataFrame, read_years : list) -> DataFrame:
 
         '''
                 2016	    ↕	2017	    ↕	2018	    ↕	2019	    ↕	2020	    ↕	2021	    ↕	2022	↕	2023
@@ -847,6 +868,116 @@ class ReadingListManager():
         sas_by_year_street_price_df.reset_index(drop = True, inplace = True)
 
         return sas_by_year_street_price_df
+    def get_sas_by_topic(self, books_df : DataFrame) -> DataFrame:
+
+        """
+            by_books_df:
+
+                    Topic	                Books
+                0   Software Engineering	61
+                1   C#	                    50
+                ... ...                     ...
+
+            by_pages_df:
+
+                    Topic	                Pages
+                0	Software Engineering	16776
+                1	C#	                    15772
+                ... ...                     ...
+
+            sas_by_topic_df:
+            
+                    Topic	                Books	Pages
+                0	Software Engineering	61	    16776
+                1	C#	                    50	    15772
+                ... ...                     ...     ...     
+        """
+
+        cn_topic : str = "Topic"  
+        cn_books : str = "Books"
+        by_books_df : DataFrame = books_df.groupby([cn_topic]).size().sort_values(ascending = [False]).reset_index(name = cn_books)
+
+        cn_pages = "Pages"
+        by_pages_df : DataFrame = books_df.groupby([cn_topic])[cn_pages].sum().sort_values(ascending = [False]).reset_index(name = cn_pages)
+
+        sas_by_topic_df : DataFrame = pd.merge(
+            left = by_books_df, 
+            right = by_pages_df, 
+            how = "inner", 
+            left_on = cn_topic, 
+            right_on = cn_topic)
+
+        return sas_by_topic_df
+    def get_sas_by_publisher(self, books_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+        
+        """
+            by_books_df:
+
+                    Publisher	Books
+                0	Syncfusion	38
+                1	O'Reilly	34
+                ... ...         ...
+
+            by_avgrating_df:
+
+                    Publisher	        AvgRating
+                0	Maker Media, Inc	4.00
+                1	Manning	            3.11
+                ... ...                 ...
+
+            sas_by_publisher_df:
+
+                    Publisher	Books	AvgRating	IsWorth
+                0	Syncfusion	38	    2.55	    Yes
+                1	O'Reilly	34	    2.18	    No
+                ... ...         ...     ...         ...
+
+            IsWorth criteria example: "Yes" if AvgRating >= 2.50 && Books >= 8
+
+        """
+
+        cn_publisher : str = "Publisher"
+        cn_title : str = "Title"    
+        cn_books : str = "Books"
+        by_books_df : DataFrame = books_df.groupby([cn_publisher])[cn_title].size().sort_values(ascending = [False]).reset_index(name = cn_books)
+        
+        cn_rating : str = "Rating"   
+        cn_avgrating : str = "AvgRating"
+        by_avgrating_df : DataFrame = books_df.groupby([cn_publisher])[cn_rating].mean().sort_values(ascending = [False]).reset_index(name = cn_avgrating)
+        by_avgrating_df[cn_avgrating] = by_avgrating_df[cn_avgrating].apply(lambda x : round(number = x, ndigits = 2)) # 2.5671 => 2.57
+
+        sas_by_publisher_df : DataFrame = pd.merge(
+            left = by_books_df, 
+            right = by_avgrating_df, 
+            how = "inner", 
+            left_on = cn_publisher, 
+            right_on = cn_publisher)
+
+        cn_isworth : str = "IsWorth"
+        sas_by_publisher_df[cn_isworth] = np.where(
+            (sas_by_publisher_df[cn_books] >= setting_bag.is_worth_min_books) & 
+            (sas_by_publisher_df[cn_avgrating] >= setting_bag.is_worth_min_avgrating), 
+            "Yes", "No")
+
+        return sas_by_publisher_df
+    def filter_by_is_worth(self, sas_by_publisher_df : DataFrame, is_worth : str = "Yes") -> DataFrame:
+
+        '''
+                Publisher	Books	AvgRating	IsWorth
+            0	Syncfusion	38	    2.55	    Yes
+            1	Wiley	    9	    2.78	    Yes
+            ... ...         ...     ...
+        '''
+
+        filtered_df : DataFrame = sas_by_publisher_df.copy(deep = True)
+
+        cn_isworth : str = "IsWorth"
+        condition : Series = (filtered_df[cn_isworth] == is_worth)
+        filtered_df = filtered_df.loc[condition]
+        
+        filtered_df.reset_index(drop = True, inplace = True)
+
+        return filtered_df
 
 
 # FUNCTIONS
@@ -855,138 +986,7 @@ class ReadingListManager():
 
 
 
-def group_books_by_single_column(books_df : DataFrame, column_name : str) -> DataFrame:
 
-    '''Groups books according to the provided column name. The book titles act as unique identifiers.'''
-
-    cn_uniqueitemidentifier : str = "Title"
-    cn_items : str = "Books"
-
-    grouped_df : DataFrame = books_df.groupby([column_name])[cn_uniqueitemidentifier].size().sort_values(ascending = [False]).reset_index(name = cn_items)
-    
-    return grouped_df
-def group_books_by_multiple_columns(books_df : DataFrame, column_names : list[str]) -> DataFrame:
-
-    '''Groups books according to the provided column names (note: order matters). The book titles act as unique identifiers.'''
-
-    cn_uniqueitemidentifier : str = "Title"
-    cn_items : str = "Books"
-
-    grouped_df : DataFrame = books_df.groupby(by = column_names)[cn_uniqueitemidentifier].count().reset_index(name = cn_items)
-    grouped_df = grouped_df.sort_values(by = column_names, ascending = [True, True])
-
-    return grouped_df
-
-def get_sas_by_topic(books_df : DataFrame) -> DataFrame:
-
-    """
-        by_books_df:
-
-                Topic	                Books
-            0   Software Engineering	61
-            1   C#	                    50
-            ... ...                     ...
-
-        by_pages_df:
-
-                Topic	                Pages
-            0	Software Engineering	16776
-            1	C#	                    15772
-            ... ...                     ...
-
-        sas_by_topic_df:
-        
-                Topic	                Books	Pages
-            0	Software Engineering	61	    16776
-            1	C#	                    50	    15772
-            ... ...                     ...     ...     
-    """
-
-    cn_topic : str = "Topic"  
-    cn_books : str = "Books"
-    by_books_df : DataFrame = books_df.groupby([cn_topic]).size().sort_values(ascending = [False]).reset_index(name = cn_books)
-
-    cn_pages = "Pages"
-    by_pages_df : DataFrame = books_df.groupby([cn_topic])[cn_pages].sum().sort_values(ascending = [False]).reset_index(name = cn_pages)
-
-    sas_by_topic_df : DataFrame = pd.merge(
-        left = by_books_df, 
-        right = by_pages_df, 
-        how = "inner", 
-        left_on = cn_topic, 
-        right_on = cn_topic)
-
-    return sas_by_topic_df
-def get_sas_by_publisher(books_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
-    
-    """
-        by_books_df:
-
-                Publisher	Books
-            0	Syncfusion	38
-            1	O'Reilly	34
-            ... ...         ...
-
-        by_avgrating_df:
-
-                Publisher	        AvgRating
-            0	Maker Media, Inc	4.00
-            1	Manning	            3.11
-            ... ...                 ...
-
-        sas_by_publisher_df:
-
-                Publisher	Books	AvgRating	IsWorth
-            0	Syncfusion	38	    2.55	    Yes
-            1	O'Reilly	34	    2.18	    No
-            ... ...         ...     ...         ...
-
-        IsWorth criteria example: "Yes" if AvgRating >= 2.50 && Books >= 8
-
-    """
-
-    cn_publisher : str = "Publisher"
-    cn_title : str = "Title"    
-    cn_books : str = "Books"
-    by_books_df : DataFrame = books_df.groupby([cn_publisher])[cn_title].size().sort_values(ascending = [False]).reset_index(name = cn_books)
-    
-    cn_rating : str = "Rating"   
-    cn_avgrating : str = "AvgRating"
-    by_avgrating_df : DataFrame = books_df.groupby([cn_publisher])[cn_rating].mean().sort_values(ascending = [False]).reset_index(name = cn_avgrating)
-    by_avgrating_df[cn_avgrating] = by_avgrating_df[cn_avgrating].apply(lambda x : round(number = x, ndigits = 2)) # 2.5671 => 2.57
-
-    sas_by_publisher_df : DataFrame = pd.merge(
-        left = by_books_df, 
-        right = by_avgrating_df, 
-        how = "inner", 
-        left_on = cn_publisher, 
-        right_on = cn_publisher)
-
-    cn_isworth : str = "IsWorth"
-    sas_by_publisher_df[cn_isworth] = np.where(
-        (sas_by_publisher_df[cn_books] >= setting_bag.is_worth_min_books) & 
-        (sas_by_publisher_df[cn_avgrating] >= setting_bag.is_worth_min_avgrating), 
-        "Yes", "No")
-
-    return sas_by_publisher_df
-def filter_by_is_worth(sas_by_publisher_df : DataFrame, is_worth : str = "Yes") -> DataFrame:
-
-    '''
-            Publisher	Books	AvgRating	IsWorth
-        0	Syncfusion	38	    2.55	    Yes
-        1	Wiley	    9	    2.78	    Yes
-        ... ...         ...     ...
-    '''
-
-    filtered_df : DataFrame = sas_by_publisher_df.copy(deep = True)
-
-    cn_isworth : str = "IsWorth"
-    condition : Series = (filtered_df[cn_isworth] == is_worth)
-    filtered_df = filtered_df.loc[condition]
-    
-    filtered_df.reset_index(drop = True, inplace = True)
-
-    return filtered_df
 
 def format_rating(rating : int) -> str:
 
@@ -1018,7 +1018,7 @@ def get_sas_by_rating(books_df : DataFrame, formatted_rating : bool) -> DataFram
 
     cn_rating : str = "Rating"
 
-    sas_by_rating_df : DataFrame = group_books_by_single_column(books_df = books_df, column_name = cn_rating)
+    sas_by_rating_df : DataFrame = __group_books_by_single_column(books_df = books_df, column_name = cn_rating)
     sas_by_rating_df.sort_values(by = cn_rating, ascending = False, inplace = True)
     sas_by_rating_df.reset_index(drop = True, inplace = True)
 
@@ -1231,7 +1231,7 @@ def get_books_by_topic_read_year(books_df : DataFrame, read_years : list[int]) -
     cn_read_year : str = "ReadYear"
     cn_books : str = "Books"    
 
-    books_by_topic_read_year_df : DataFrame = group_books_by_multiple_columns(books_df = books_df, column_names = [cn_topic, cn_read_year])
+    books_by_topic_read_year_df : DataFrame = __group_books_by_multiple_columns(books_df = books_df, column_names = [cn_topic, cn_read_year])
 
     topics_df : DataFrame = get_topics_dataframe(df = books_df)
     read_years_df : DataFrame = create_read_years_dataframe(read_years = read_years)
