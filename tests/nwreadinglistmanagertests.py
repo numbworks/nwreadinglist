@@ -356,7 +356,7 @@ class ExtractPagesFromTrendTestCase(unittest.TestCase):
         
         # Arrange
         # Act
-        actual : int = nwrlm.extract_pages_from_trend(trend = trend)
+        actual : int = nwrlm.__extract_pages_from_trend(trend = trend)
 
         # Assert
         self.assertEqual(expected, actual)
@@ -369,7 +369,7 @@ class FormatYearBooksColumnNameTestCase(unittest.TestCase):
         
         # Arrange
         # Act
-        actual : str = nwrlm.format_year_books_column_name(year_cn = year_cn)
+        actual : str = nwrlm.__format_year_books_column_name(year_cn = year_cn)
 
         # Assert
         self.assertEqual(expected, actual)
@@ -382,7 +382,7 @@ class FormatYearPagesColumnNameTestCase(unittest.TestCase):
         
         # Arrange
         # Act
-        actual : str = nwrlm.format_year_pages_column_name(year_cn = year_cn)
+        actual : str = nwrlm.__format_year_pages_column_name(year_cn = year_cn)
 
         # Assert
         self.assertEqual(expected, actual)
@@ -396,7 +396,7 @@ class ExtractYearFromColumnNameTestCase(unittest.TestCase):
         
         # Arrange
         # Act
-        actual : str = nwrlm.extract_year_from_column_name(column_name = column_name)
+        actual : str = nwrlm.__extract_year_from_column_name(column_name = column_name)
 
         # Assert
         self.assertEqual(expected, actual)

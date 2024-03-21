@@ -235,7 +235,7 @@ class ReadingListManager():
 
         if sa_by_year_df[cn_month].count() != 12:
 
-            default_df : DataFrame = __get_default_sa_by_year(read_year = read_year)
+            default_df : DataFrame = self.__get_default_sa_by_year(read_year = read_year)
             missing_df : DataFrame = default_df.loc[~default_df[cn_month].astype(str).isin(sa_by_year_df[cn_month].astype(str))]
 
             completed_df : DataFrame = pd.concat([sa_by_year_df, missing_df], ignore_index = True)
@@ -453,6 +453,93 @@ class ReadingListManager():
             return cn_trend
         
         return column_name
+    def __extract_pages_from_trend(self, trend : str) -> int:
+
+        '''
+            "13 (5157)" => ["13", "(5157)"] => "5157" => 5157
+        '''
+
+        tokens : list = trend.split(" ")
+        token : str = tokens[1].replace("(", "").replace(")", "")
+
+        return int(token)
+    def __format_year_books_column_name(self, year_cn : str) -> str:
+
+        '''
+            "2016" => "2016_Books"
+        '''
+
+        column_name : str = f"{year_cn}_Books"
+
+        return column_name
+    def __format_year_pages_column_name(self, year_cn : str) -> str:
+
+        '''
+            "2016" => "2016_Pages"
+        '''
+
+        column_name : str = f"{year_cn}_Pages"
+
+        return column_name
+    def __extract_year_from_column_name(self, column_name : str) -> str:
+
+        '''
+            "2016_Books" => "2016"
+            "2016_Pages" => "2016"        
+        '''
+
+        tokens : list = column_name.split("_")
+
+        return tokens[0]
+    def __add_trend_to_sas_by_year(self, sas_by_year_df : DataFrame, yeatrend : list) -> DataFrame:
+
+        '''
+            expanded_df:
+
+                    2016	    2017	    2018	    2019	    2020	    2021	    2022	2023
+                0	43 (12322)	63 (18726)	48 (12646)	42 (9952)	23 (6602)	13 (1901)	1 (360)	1 (139)
+
+            new_column_names:
+            
+                ["2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"]
+
+            i == 0, sas_by_year_df:
+
+                    2016	    2017	    2018	    2019	    2020	    2021	    2022	2023	↕0
+                0	43 (12322)	63 (18726)	48 (12646)	42 (9952)	23 (6602)	13 (1901)	1 (360)	1 (139)	↑ 
+
+            i == 0, new_column_names:
+                
+                ["2016", "↕0", "2017", "2018", "2019", "2020", "2021", "2022", "2023"]
+
+            [...]
+
+            expanded_df:        
+
+                2016	    ↕0	2017	    ↕1	2018	    ↕2	2019	    ↕3	2020	    ↕4	2021	    ↕5	2022	↕6	2023
+            0	43 (12322)	↑	63 (18726)	↓	48 (12646)	↓	42 (9952)	↓	23 (6602)	↓	13 (1901)	↓	1 (360)	=	1 (139)        
+
+        '''  
+
+        expanded_df : DataFrame = sas_by_year_df.copy(deep=True)
+        new_column_names : list = copy.deepcopy(x = yeatrend)
+
+        for i in range(len(yeatrend)):
+
+            if i != (len(yeatrend) - 1):
+
+                cn_trend : str = f"↕{i}"
+                cn_trend_1 : str = str(yeatrend[i])       # 2016 => "2016"
+                cn_trend_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
+                
+                expanded_df[cn_trend] = expanded_df.apply(lambda x : self.__get_trend_by_books(trend_1 = x[cn_trend_1], trend_2 = x[cn_trend_2]), axis = 1) 
+                
+                new_item_position : int = (new_column_names.index(cn_trend_1) + 1)
+                new_column_names.insert(new_item_position, cn_trend)
+
+                expanded_df = expanded_df.reindex(columns = new_column_names)
+                
+        return expanded_df
 
 
     def get_default_reading_list_path(self)-> str:
@@ -548,170 +635,79 @@ class ReadingListManager():
         sas_by_month_upd_df.iloc[:, idx_trend] = np.where(condition, new_value, sas_by_month_upd_df.iloc[:, idx_trend])
 
         return sas_by_month_upd_df
+    def get_sas_by_year(self, sas_by_month_df : DataFrame) -> DataFrame:
+
+        '''
+            sas_by_year_df:
+
+                    Month	2016	↕	2017	    ...	2022	↕	2023
+                0	1	    0 (0)	↑	13 (5157)	    0 (0)	=	0 (0)	
+                ...
+
+                    2016	2017	    ...	2022	2023
+                0	0 (0)	13 (5157)	...	0 (0)	0 (0)
+                ...
+
+                    2016	2017	    ... 2016_Books	2016_Pages	...	
+                0	0 (0)	13 (5157)	    0	        0	        ...
+                ...
+
+                    2016_Books	2016_Pages	2017_Books	2017_Pages ...
+                0	0	        0	        13	        5157
+                ...
+
+                    2016_Books	2016_Pages	2017_Books	2017_Pages	...
+                0	43	        12322	    63	        18726           
+
+                    2016_Books	2016_Pages	... 2016	    ...
+                0	43	        12322	        43 (12322)	
+
+                    2016	    2017	    2018	    2019	    2020	    2021	    2022	2023
+                0	43 (12322)	63 (18726)	48 (12646)	42 (9952)	23 (6602)	13 (1901)	1 (360)	1 (139)
+
+                [...]
+
+                    2016	    ↕	2017	    ↕	2018	    ↕	2019	    ↕	2020	    ↕	2021	    ↕	2022	↕	2023
+                0	43 (12322)	↑	63 (18726)	↓	48 (12646)	↓	42 (9952)	↓	23 (6602)	↓	13 (1901)	↓	1 (360)	=	1 (139)
+        '''
+
+        sas_by_year_df : DataFrame = sas_by_month_df.copy(deep = True)
+
+        cn_month : str = "Month"
+        cn_trend : str = "↕"
+        sas_by_year_df.drop(labels = cn_month, inplace = True, axis = 1)
+        sas_by_year_df.drop(labels = cn_trend, inplace = True, axis = 1)
+
+        yeatrend : list = sas_by_year_df.columns.to_list()
+        for year in yeatrend:
+
+            cn_year_books : str = self.__format_year_books_column_name(year_cn = year)
+            cn_year_pages : str = self.__format_year_pages_column_name(year_cn = year)
+
+            sas_by_year_df[cn_year_books] = sas_by_year_df[year].apply(lambda x : self.__extract_books_from_trend(trend = x))
+            sas_by_year_df[cn_year_pages] = sas_by_year_df[year].apply(lambda x : self.__extract_pages_from_trend(trend = x))
+
+            sas_by_year_df.drop(labels = year, inplace = True, axis = 1)
+
+        sas_by_year_df = sas_by_year_df.sum().to_frame().transpose()
+
+        for year in yeatrend:
+
+            cn_year_books : str = self.__format_year_books_column_name(year_cn = year)
+            cn_year_pages : str = self.__format_year_pages_column_name(year_cn = year)
+
+            sas_by_year_df[year] = sas_by_year_df.apply(lambda x : self.__format_reading_status(books = x[cn_year_books], pages = x[cn_year_pages]), axis = 1) 
+
+            sas_by_year_df.drop(labels = [cn_year_books, cn_year_pages], inplace = True, axis = 1)
+
+        sas_by_year_df = self.__add_trend_to_sas_by_year(sas_by_year_df = sas_by_year_df, yeatrend = yeatrend)
+        sas_by_year_df.rename(columns = (lambda x : self.__try_consolidate_trend_column_name(column_name = x)), inplace = True)
+
+        return sas_by_year_df
 
 
 # FUNCTIONS
 
-
-
-
-
-def extract_pages_from_trend(trend : str) -> int:
-
-    '''
-        "13 (5157)" => ["13", "(5157)"] => "5157" => 5157
-    '''
-
-    tokens : list = trend.split(" ")
-    token : str = tokens[1].replace("(", "").replace(")", "")
-
-    return int(token)
-def format_year_books_column_name(year_cn : str) -> str:
-
-    '''
-        "2016" => "2016_Books"
-    '''
-
-    column_name : str = f"{year_cn}_Books"
-
-    return column_name
-def format_year_pages_column_name(year_cn : str) -> str:
-
-    '''
-        "2016" => "2016_Pages"
-    '''
-
-    column_name : str = f"{year_cn}_Pages"
-
-    return column_name
-def extract_year_from_column_name(column_name : str) -> str:
-
-    '''
-        "2016_Books" => "2016"
-        "2016_Pages" => "2016"        
-    '''
-
-    tokens : list = column_name.split("_")
-
-    return tokens[0]
-def add_trend_to_sas_by_year(sas_by_year_df : DataFrame, yeatrend : list) -> DataFrame:
-
-    '''
-        expanded_df:
-
-                2016	    2017	    2018	    2019	    2020	    2021	    2022	2023
-            0	43 (12322)	63 (18726)	48 (12646)	42 (9952)	23 (6602)	13 (1901)	1 (360)	1 (139)
-
-        new_column_names:
-        
-            ["2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023"]
-
-        i == 0, sas_by_year_df:
-
-                2016	    2017	    2018	    2019	    2020	    2021	    2022	2023	↕0
-            0	43 (12322)	63 (18726)	48 (12646)	42 (9952)	23 (6602)	13 (1901)	1 (360)	1 (139)	↑ 
-
-        i == 0, new_column_names:
-            
-            ["2016", "↕0", "2017", "2018", "2019", "2020", "2021", "2022", "2023"]
-
-        [...]
-
-        expanded_df:        
-
-            2016	    ↕0	2017	    ↕1	2018	    ↕2	2019	    ↕3	2020	    ↕4	2021	    ↕5	2022	↕6	2023
-        0	43 (12322)	↑	63 (18726)	↓	48 (12646)	↓	42 (9952)	↓	23 (6602)	↓	13 (1901)	↓	1 (360)	=	1 (139)        
-
-    '''  
-
-    expanded_df : DataFrame = sas_by_year_df.copy(deep=True)
-    new_column_names : list = copy.deepcopy(x = yeatrend)
-
-    for i in range(len(yeatrend)):
-
-        if i != (len(yeatrend) - 1):
-
-            cn_trend : str = f"↕{i}"
-            cn_trend_1 : str = str(yeatrend[i])       # 2016 => "2016"
-            cn_trend_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
-            
-            expanded_df[cn_trend] = expanded_df.apply(lambda x : __get_trend_by_books(trend_1 = x[cn_trend_1], trend_2 = x[cn_trend_2]), axis = 1) 
-            
-            new_item_position : int = (new_column_names.index(cn_trend_1) + 1)
-            new_column_names.insert(new_item_position, cn_trend)
-
-            expanded_df = expanded_df.reindex(columns = new_column_names)
-            
-    return expanded_df
-def get_sas_by_year(sas_by_month_df : DataFrame) -> DataFrame:
-
-    '''
-        sas_by_year_df:
-
-                Month	2016	↕	2017	    ...	2022	↕	2023
-            0	1	    0 (0)	↑	13 (5157)	    0 (0)	=	0 (0)	
-            ...
-
-                2016	2017	    ...	2022	2023
-            0	0 (0)	13 (5157)	...	0 (0)	0 (0)
-            ...
-
-                2016	2017	    ... 2016_Books	2016_Pages	...	
-            0	0 (0)	13 (5157)	    0	        0	        ...
-            ...
-
-                2016_Books	2016_Pages	2017_Books	2017_Pages ...
-            0	0	        0	        13	        5157
-            ...
-
-                2016_Books	2016_Pages	2017_Books	2017_Pages	...
-            0	43	        12322	    63	        18726           
-
-                2016_Books	2016_Pages	... 2016	    ...
-            0	43	        12322	        43 (12322)	
-
-                2016	    2017	    2018	    2019	    2020	    2021	    2022	2023
-            0	43 (12322)	63 (18726)	48 (12646)	42 (9952)	23 (6602)	13 (1901)	1 (360)	1 (139)
-
-            [...]
-
-                2016	    ↕	2017	    ↕	2018	    ↕	2019	    ↕	2020	    ↕	2021	    ↕	2022	↕	2023
-            0	43 (12322)	↑	63 (18726)	↓	48 (12646)	↓	42 (9952)	↓	23 (6602)	↓	13 (1901)	↓	1 (360)	=	1 (139)
-    '''
-
-    sas_by_year_df : DataFrame = sas_by_month_df.copy(deep = True)
-
-    cn_month : str = "Month"
-    cn_trend : str = "↕"
-    sas_by_year_df.drop(labels = cn_month, inplace = True, axis = 1)
-    sas_by_year_df.drop(labels = cn_trend, inplace = True, axis = 1)
-
-    yeatrend : list = sas_by_year_df.columns.to_list()
-    for year in yeatrend:
-
-        cn_year_books : str = format_year_books_column_name(year_cn = year)
-        cn_year_pages : str = format_year_pages_column_name(year_cn = year)
-
-        sas_by_year_df[cn_year_books] = sas_by_year_df[year].apply(lambda x : __extract_books_from_trend(trend = x))
-        sas_by_year_df[cn_year_pages] = sas_by_year_df[year].apply(lambda x : extract_pages_from_trend(trend = x))
-
-        sas_by_year_df.drop(labels = year, inplace = True, axis = 1)
-
-    sas_by_year_df = sas_by_year_df.sum().to_frame().transpose()
-
-    for year in yeatrend:
-
-        cn_year_books : str = format_year_books_column_name(year_cn = year)
-        cn_year_pages : str = format_year_pages_column_name(year_cn = year)
-
-        sas_by_year_df[year] = sas_by_year_df.apply(lambda x : __format_reading_status(books = x[cn_year_books], pages = x[cn_year_pages]), axis = 1) 
-
-        sas_by_year_df.drop(labels = [cn_year_books, cn_year_pages], inplace = True, axis = 1)
-
-    sas_by_year_df = add_trend_to_sas_by_year(sas_by_year_df = sas_by_year_df, yeatrend = yeatrend)
-    sas_by_year_df.rename(columns = (lambda x : __try_consolidate_trend_column_name(column_name = x)), inplace = True)
-
-    return sas_by_year_df
 
 def get_trend_when_float64(value_1 : float64, value_2 : float64) -> str:
 
