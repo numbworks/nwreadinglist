@@ -1117,16 +1117,13 @@ class ReadingListManager():
             sas_by_rating_df[cn_rating] = sas_by_rating_df[cn_rating].apply(lambda x : __format_rating(rating = x))
 
         return sas_by_rating_df
+    def get_sas_by_kbsize(self) -> None:
+        
+        '''Implement it from the notebook.'''
+
+        pass
 
 # FUNCTIONS
-
-
-
-
-
-
-
-
 
 
 
