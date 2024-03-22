@@ -119,7 +119,7 @@ class ComponentBag():
         self.formatter = Formatter()
         self.converter = Converter()
         self.file_path_manager = FilePathManager()
-        self.file_manager = FileManager()
+        self.file_manager = FileManager(file_path_manager = FilePathManager())
         self.lambda_provider = LambdaProvider()
         self.logging_lambda = LambdaProvider().get_default_logging_lambda()
 class ReadingListManager():

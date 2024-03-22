@@ -26,8 +26,6 @@ from typing import Callable, Tuple
 from typing import Any
 
 # CONSTANTS
-DEFAULT_LOGGING_FUNCTION : 
-
 # STATIC CLASSES
 class MessageCollection():
 
