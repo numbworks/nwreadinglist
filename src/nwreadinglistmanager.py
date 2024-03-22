@@ -1481,115 +1481,103 @@ class MarkdownConverter():
                 file_name = setting_bag.reading_list_by_month_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
+    def process_reading_list_by_publisher_md(self, sas_by_publisher_flt_df : DataFrame, sas_by_publisher_df : DataFrame, setting_bag : SettingBag) -> None:
 
+        '''Performs all the tasks related to the "Reading List By Publisher" file.'''
 
-# FUNCTIONS
+        content : str = self.__get_reading_list_by_publisher_md(      
+            last_update = setting_bag.last_update, 
+            sas_by_publisher_flt_df = sas_by_publisher_flt_df, 
+            sas_by_publisher_df = sas_by_publisher_df)
 
+        if setting_bag.show_reading_list_by_publisher_md:
+            print(self.__format_file_name(file_name = setting_bag.reading_list_by_publisher_file_name))        
+            print(content)
 
+        if setting_bag.save_reading_lists_to_file:
 
+            file_path : str = self.__component_bag.file_path_manager.create_file_path(
+                folder_path = setting_bag.working_folder_path,
+                file_name = setting_bag.reading_list_by_publisher_file_name)
+            
+            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
+    def process_reading_list_by_rating_md(self, sas_by_rating_df : DataFrame, setting_bag : SettingBag) -> None:
 
+        '''Performs all the tasks related to the "Reading List By Rating" file.'''
 
+        content : str = self.__get_reading_list_by_rating_md(       
+            last_update = setting_bag.last_update, 
+            sas_by_rating_df = sas_by_rating_df)
 
+        if setting_bag.show_reading_list_by_rating_md:
+            print(self.__format_file_name(file_name = setting_bag.reading_list_by_rating_file_name))
+            print(content)
 
+        if setting_bag.save_reading_lists_to_file:
+            
+            file_path : str = self.__component_bag.file_path_manager.create_file_path(
+                folder_path = setting_bag.working_folder_path,
+                file_name = setting_bag.reading_list_by_rating_file_name)
+            
+            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
+    def process_reading_list_by_topic_md(self, sas_by_topic_df : DataFrame, setting_bag : SettingBag) -> None:
 
+        '''Performs all the tasks related to the "Reading List By Topic" file.'''
 
-def process_reading_list_by_publisher_md(sas_by_publisher_flt_df : DataFrame, sas_by_publisher_df : DataFrame, setting_bag : SettingBag) -> None:
+        content : str = self.__get_reading_list_by_topic_md( 
+            last_update = setting_bag.last_update, 
+            sas_by_topic_df = sas_by_topic_df)
 
-    '''Performs all the tasks related to the "Reading List By Publisher" file.'''
+        if setting_bag.show_reading_list_by_topic_md:
+            print(self.__format_file_name(file_name = setting_bag.reading_list_by_topic_file_name))
+            print(content)
 
-    content : str = __get_reading_list_by_publisher_md(      
-        last_update = setting_bag.last_update, 
-        sas_by_publisher_flt_df = sas_by_publisher_flt_df, 
-        sas_by_publisher_df = sas_by_publisher_df)
+        if setting_bag.save_reading_lists_to_file:
 
-    if setting_bag.show_reading_list_by_publisher_md:
-        print(__format_file_name(file_name = setting_bag.reading_list_by_publisher_file_name))        
-        print(content)
+            file_path : str = self.__component_bag.file_path_manager.create_file_path(
+                folder_path = setting_bag.working_folder_path,
+                file_name = setting_bag.reading_list_by_topic_file_name)
+            
+            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
+    def process_reading_list_md(self, books_df : DataFrame, setting_bag : SettingBag) -> None:
 
-    if setting_bag.save_reading_lists_to_file:
+        '''Performs all the tasks related to the "Reading List" file.'''
 
-        file_path : str = nwcc.create_file_path(
-            folder_path = setting_bag.working_folder_path,
-            file_name = setting_bag.reading_list_by_publisher_file_name)
-        
-        nwcc.save_content(content = content, file_path = file_path)
-def process_reading_list_by_rating_md(sas_by_rating_df : DataFrame, setting_bag : SettingBag) -> None:
+        content : str = self.__get_reading_list_md(
+            last_update = setting_bag.last_update, 
+            books_df = books_df,
+            use_smaller_font = setting_bag.use_smaller_font_for_reading_list_md)
 
-    '''Performs all the tasks related to the "Reading List By Rating" file.'''
+        if setting_bag.show_reading_list_md:
+            print(self.__format_file_name(file_name = setting_bag.reading_list_file_name))
+            print(content)
 
-    content : str = __get_reading_list_by_rating_md(       
-        last_update = setting_bag.last_update, 
-        sas_by_rating_df = sas_by_rating_df)
+        if setting_bag.save_reading_lists_to_file:
 
-    if setting_bag.show_reading_list_by_rating_md:
-        print(__format_file_name(file_name = setting_bag.reading_list_by_rating_file_name))
-        print(content)
+            file_path : str = self.__component_bag.file_path_manager.create_file_path(
+                folder_path = setting_bag.working_folder_path,
+                file_name = setting_bag.reading_list_file_name)
+            
+            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
+    def process_reading_list_topic_trend_md(self, yt_by_topic_df : DataFrame, setting_bag : SettingBag) -> None:
 
-    if setting_bag.save_reading_lists_to_file:
-        
-        file_path : str = nwcc.create_file_path(
-            folder_path = setting_bag.working_folder_path,
-            file_name = setting_bag.reading_list_by_rating_file_name)
-        
-        nwcc.save_content(content = content, file_path = file_path)
-def process_reading_list_by_topic_md(sas_by_topic_df : DataFrame, setting_bag : SettingBag) -> None:
+        '''Performs all the tasks related to the "Reading List Topic Trend" file.'''
 
-    '''Performs all the tasks related to the "Reading List By Topic" file.'''
+        content : str = self.__get_reading_list_topic_trend_md(
+            last_update = setting_bag.last_update, 
+            yt_by_topic_df = yt_by_topic_df)
 
-    content : str = __get_reading_list_by_topic_md( 
-        last_update = setting_bag.last_update, 
-        sas_by_topic_df = sas_by_topic_df)
+        if setting_bag.show_reading_list_topic_trend_md:
+            print(self.__format_file_name(file_name = setting_bag.reading_list_topic_trend_file_name))
+            print(content)
 
-    if setting_bag.show_reading_list_by_topic_md:
-        print(__format_file_name(file_name = setting_bag.reading_list_by_topic_file_name))
-        print(content)
-
-    if setting_bag.save_reading_lists_to_file:
-
-        file_path : str = nwcc.create_file_path(
-            folder_path = setting_bag.working_folder_path,
-            file_name = setting_bag.reading_list_by_topic_file_name)
-        
-        nwcc.save_content(content = content, file_path = file_path)
-def process_reading_list_md(books_df : DataFrame, setting_bag : SettingBag) -> None:
-
-    '''Performs all the tasks related to the "Reading List" file.'''
-
-    content : str = __get_reading_list_md(
-        last_update = setting_bag.last_update, 
-        books_df = books_df,
-        use_smaller_font = setting_bag.use_smaller_font_for_reading_list_md)
-
-    if setting_bag.show_reading_list_md:
-        print(__format_file_name(file_name = setting_bag.reading_list_file_name))
-        print(content)
-
-    if setting_bag.save_reading_lists_to_file:
-
-        file_path : str = nwcc.create_file_path(
-            folder_path = setting_bag.working_folder_path,
-            file_name = setting_bag.reading_list_file_name)
-        
-        nwcc.save_content(content = content, file_path = file_path)
-def process_reading_list_topic_trend_md(yt_by_topic_df : DataFrame, setting_bag : SettingBag) -> None:
-
-    '''Performs all the tasks related to the "Reading List Topic Trend" file.'''
-
-    content : str = __get_reading_list_topic_trend_md(
-        last_update = setting_bag.last_update, 
-        yt_by_topic_df = yt_by_topic_df)
-
-    if setting_bag.show_reading_list_topic_trend_md:
-        print(__format_file_name(file_name = setting_bag.reading_list_topic_trend_file_name))
-        print(content)
-
-    if setting_bag.save_reading_lists_to_file:
-        
-        file_path : str = nwcc.create_file_path(
-            folder_path = setting_bag.working_folder_path,
-            file_name = setting_bag.reading_list_topic_trend_file_name)
-        
-        nwcc.save_content(content = content, file_path = file_path)
+        if setting_bag.save_reading_lists_to_file:
+            
+            file_path : str = self.__component_bag.file_path_manager.create_file_path(
+                folder_path = setting_bag.working_folder_path,
+                file_name = setting_bag.reading_list_topic_trend_file_name)
+            
+            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
 
 # MAIN
 if __name__ == "__main__":
