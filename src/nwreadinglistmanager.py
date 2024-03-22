@@ -1049,7 +1049,7 @@ class ReadingListManager():
         new_column_names : list = [str(x) for x in read_years]
         for column_name in new_column_names:
             sas_by_street_price_df[column_name] = sas_by_street_price_df[column_name].apply(
-                lambda x : self.__component_bag.formatter.formatter.format_usd_amount(
+                lambda x : self.__component_bag.formatter.format_usd_amount(
                     amount = float64(x), rounding_digits = rounding_digits))
 
         return sas_by_street_price_df
@@ -1194,7 +1194,8 @@ class ReadingListManager():
         sas_by_rating_df.reset_index(drop = True, inplace = True)
 
         if formatted_rating:
-            sas_by_rating_df[cn_rating] = sas_by_rating_df[cn_rating].apply(lambda x : __format_rating(rating = x))
+            sas_by_rating_df[cn_rating] = sas_by_rating_df[cn_rating].apply(
+                lambda x : self.__component_bag.formatter.format_rating(rating = x))
 
         return sas_by_rating_df
     def get_reading_list_by_kbsize(self, books_df : DataFrame, n_by_kbsize : int) -> DataFrame:
@@ -1410,7 +1411,7 @@ class MarkdownConverter():
 
         md_paragraph_title : str = "Reading List Topic Trend"
 
-        markdown_header : str = __get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        markdown_header : str = self.__get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
         yt_by_topic_md : str = yt_by_topic_df.to_markdown(index = False)
 
         md_content : str = markdown_header
