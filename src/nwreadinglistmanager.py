@@ -30,22 +30,10 @@ from nwshared import LambdaProvider
 
 # CONSTANTS
 # DTOs
-@dataclass(frozen=True)
 class SettingBag():
 
     '''Represents a collection of settings.'''
 
-    read_years : list[int]
-    excel_path : str
-    excel_books_skiprows : int
-    excel_books_nrows : int
-    excel_books_tabname : str
-    excel_null_value : str
-    is_worth_min_books : int
-    is_worth_min_avgrating : float
-    n_generic : int
-    n_by_month : int
-    n_by_kbsize : int
     show_books_df : bool
     show_sas_by_month_upd_df : bool
     show_sas_by_year_street_price_df : bool
@@ -54,33 +42,156 @@ class SettingBag():
     show_sas_by_publisher_df : bool
     show_sas_by_publisher_flt_df : bool
     show_sas_by_rating_df : bool
-    last_update : datetime
+    show_reading_list_by_kbsize_df : bool
+    show_yearly_trend_by_topic_df : bool
+    show_books_by_year_box_plot : bool
+    show_reading_list_by_kbsize_box_plot : bool
     show_readme_md : bool
     show_reading_list_by_month_md : bool
     show_reading_list_by_publisher_md : bool
     show_reading_list_by_rating_md : bool
     show_reading_list_by_topic_md : bool
-    show_reading_list_md : bool
     show_reading_list_topic_trend_md : bool
-    formatted_rating : bool
-    now : datetime
+    show_reading_list_md : bool
+    save_reading_list_by_month_md : bool
+    save_reading_list_by_publisher_md : bool
+    save_reading_list_by_rating_md : bool
+    save_reading_list_by_topic_md : bool
+    save_reading_list_topic_trend_md : bool
+    save_reading_list_md : bool
     working_folder_path : str
+    read_years : list[int]
+    excel_path : str
+    excel_books_nrows : int
+
+    excel_books_skiprows : int
+    excel_books_tabname : str
+    excel_null_value : str
+    now : datetime
+    n_generic : int
+    n_by_month : int
+    n_by_kbsize : int
+    is_worth_min_books : int
+    is_worth_min_avgrating : float
+    formatted_rating : bool
+    enable_sparklines_maximum : bool
     reading_list_by_month_file_name : str
     reading_list_by_publisher_file_name : str
     reading_list_by_rating_file_name : str
     reading_list_by_topic_file_name : str
-    reading_list_file_name : str
     reading_list_topic_trend_file_name : str
-    save_reading_lists_to_file : bool
+    reading_list_file_name : str
+    reading_list_last_update : datetime
+    reading_list_smaller_font : bool
+    reading_list_by_month_smaller_font : bool
     definitions : dict
-    enable_sparklines_maximum : bool
-    show_books_by_year_box_plot : bool
-    show_reading_list_by_kbsize_box_plot : bool
-    show_reading_list_by_kbsize_df : bool
-    show_sliced_by_kbsize_asc_df : bool
-    show_yearly_trend_by_topic_df : bool
-    use_smaller_font_for_reading_list_md : bool = True
-    use_smaller_font_for_reading_list_by_month_md : bool = True
+
+    def __init__(
+        self,
+        show_books_df : bool,
+        show_sas_by_month_upd_df : bool,
+        show_sas_by_year_street_price_df : bool,
+        show_cumulative_df : bool,
+        show_sas_by_topic_df : bool,
+        show_sas_by_publisher_df : bool,
+        show_sas_by_publisher_flt_df : bool,
+        show_sas_by_rating_df : bool,
+        show_reading_list_by_kbsize_df : bool,
+        show_yearly_trend_by_topic_df : bool,
+        show_books_by_year_box_plot : bool,
+        show_reading_list_by_kbsize_box_plot : bool,
+        show_readme_md : bool,
+        show_reading_list_by_month_md : bool,
+        show_reading_list_by_publisher_md : bool,
+        show_reading_list_by_rating_md : bool,
+        show_reading_list_by_topic_md : bool,
+        show_reading_list_topic_trend_md : bool,
+        show_reading_list_md : bool,
+        save_reading_list_by_month_md : bool,
+        save_reading_list_by_publisher_md : bool,
+        save_reading_list_by_rating_md : bool,
+        save_reading_list_by_topic_md : bool,
+        save_reading_list_topic_trend_md : bool,
+        save_reading_list_md : bool,
+        working_folder_path : str,
+        read_years : list[int],
+        excel_path : str,
+        excel_books_nrows : int,
+        excel_books_skiprows : int,
+        excel_books_tabname : str,
+        excel_null_value : str,
+        now : datetime,
+        n_generic : int,
+        n_by_month : int,
+        n_by_kbsize : int,
+        is_worth_min_books : int,
+        is_worth_min_avgrating : float,
+        formatted_rating : bool,
+        enable_sparklines_maximum : bool,
+        reading_list_by_month_file_name : str,
+        reading_list_by_publisher_file_name : str,
+        reading_list_by_rating_file_name : str,
+        reading_list_by_topic_file_name : str,
+        reading_list_topic_trend_file_name : str,
+        reading_list_file_name : str,
+        reading_list_last_update : datetime,
+        reading_list_smaller_font : bool,
+        reading_list_by_month_smaller_font : bool,
+        definitions : dict        
+        ) -> None:
+
+        self.show_books_df = show_books_df
+        self.show_sas_by_month_upd_df = show_sas_by_month_upd_df
+        self.show_sas_by_year_street_price_df = show_sas_by_year_street_price_df
+        self.show_cumulative_df = show_cumulative_df
+        self.show_sas_by_topic_df = show_sas_by_topic_df
+        self.show_sas_by_publisher_df = show_sas_by_publisher_df
+        self.show_sas_by_publisher_flt_df = show_sas_by_publisher_flt_df
+        self.show_sas_by_rating_df = show_sas_by_rating_df
+        self.show_reading_list_by_kbsize_df = show_reading_list_by_kbsize_df
+        self.show_yearly_trend_by_topic_df = show_yearly_trend_by_topic_df
+        self.show_books_by_year_box_plot = show_books_by_year_box_plot
+        self.show_reading_list_by_kbsize_box_plot = show_reading_list_by_kbsize_box_plot
+        self.show_readme_md = show_readme_md
+        self.show_reading_list_by_month_md = show_reading_list_by_month_md
+        self.show_reading_list_by_publisher_md = show_reading_list_by_publisher_md
+        self.show_reading_list_by_rating_md = show_reading_list_by_rating_md
+        self.show_reading_list_by_topic_md = show_reading_list_by_topic_md
+        self.show_reading_list_topic_trend_md = show_reading_list_topic_trend_md
+        self.show_reading_list_md = show_reading_list_md
+        self.save_reading_list_by_month_md = save_reading_list_by_month_md
+        self.save_reading_list_by_publisher_md = save_reading_list_by_publisher_md
+        self.save_reading_list_by_rating_md = save_reading_list_by_rating_md
+        self.save_reading_list_by_topic_md = save_reading_list_by_topic_md
+        self.save_reading_list_topic_trend_md = save_reading_list_topic_trend_md
+        self.save_reading_list_md = save_reading_list_md
+        self.working_folder_path = working_folder_path
+        self.read_years = read_years
+        self.excel_path = excel_path
+        self.excel_books_nrows = excel_books_nrows
+
+        self.excel_books_skiprows = excel_books_skiprows
+        self.excel_books_tabname = excel_books_tabname 
+        self.excel_null_value = excel_null_value
+        self.now = now
+        self.n_generic = n_generic 
+        self.n_by_month = n_by_month
+        self.n_by_kbsize = n_by_kbsize
+        self.is_worth_min_books = is_worth_min_books
+        self.is_worth_min_avgrating = is_worth_min_avgrating
+        self.formatted_rating = formatted_rating
+        self.enable_sparklines_maximum = enable_sparklines_maximum
+        self.reading_list_by_month_file_name = reading_list_by_month_file_name
+        self.reading_list_by_publisher_file_name = reading_list_by_publisher_file_name 
+        self.reading_list_by_rating_file_name = reading_list_by_rating_file_name
+        self.reading_list_by_topic_file_name = reading_list_by_topic_file_name
+        self.reading_list_topic_trend_file_name = reading_list_topic_trend_file_name 
+        self.reading_list_file_name = reading_list_file_name
+        self.reading_list_last_update = reading_list_last_update
+        self.reading_list_smaller_font = reading_list_smaller_font
+        self.reading_list_by_month_smaller_font = reading_list_by_month_smaller_font
+        self.definitions = definitions
+
 
 # STATIC CLASSES
 # CLASSES
@@ -1475,10 +1586,10 @@ class MarkdownConverter():
         '''Performs all the tasks related to the "Reading List By Month" file.''' 
 
         content : str = self.__get_reading_list_by_month_md(      
-            last_update = setting_bag.last_update, 
+            last_update = setting_bag.reading_list_last_update, 
             sas_by_month_df = sas_by_month_df, 
             sas_by_year_street_price_df = sas_by_year_street_price_df,
-            use_smaller_font = setting_bag.use_smaller_font_for_reading_list_by_month_md)
+            use_smaller_font = setting_bag.reading_list_by_month_smaller_font)
 
         if setting_bag.show_reading_list_by_month_md:    
             self.__component_bag.logging_lambda(
@@ -1497,7 +1608,7 @@ class MarkdownConverter():
         '''Performs all the tasks related to the "Reading List By Publisher" file.'''
 
         content : str = self.__get_reading_list_by_publisher_md(      
-            last_update = setting_bag.last_update, 
+            last_update = setting_bag.reading_list_last_update, 
             sas_by_publisher_flt_df = sas_by_publisher_flt_df, 
             sas_by_publisher_df = sas_by_publisher_df)
 
@@ -1518,7 +1629,7 @@ class MarkdownConverter():
         '''Performs all the tasks related to the "Reading List By Rating" file.'''
 
         content : str = self.__get_reading_list_by_rating_md(       
-            last_update = setting_bag.last_update, 
+            last_update = setting_bag.reading_list_last_update, 
             sas_by_rating_df = sas_by_rating_df)
 
         if setting_bag.show_reading_list_by_rating_md:
@@ -1538,7 +1649,7 @@ class MarkdownConverter():
         '''Performs all the tasks related to the "Reading List By Topic" file.'''
 
         content : str = self.__get_reading_list_by_topic_md( 
-            last_update = setting_bag.last_update, 
+            last_update = setting_bag.reading_list_last_update, 
             sas_by_topic_df = sas_by_topic_df)
 
         if setting_bag.show_reading_list_by_topic_md:
@@ -1558,9 +1669,9 @@ class MarkdownConverter():
         '''Performs all the tasks related to the "Reading List" file.'''
 
         content : str = self.__get_reading_list_md(
-            last_update = setting_bag.last_update, 
+            last_update = setting_bag.reading_list_last_update, 
             books_df = books_df,
-            use_smaller_font = setting_bag.use_smaller_font_for_reading_list_md)
+            use_smaller_font = setting_bag.reading_list_smaller_font)
 
         if setting_bag.show_reading_list_md:
             self.__component_bag.logging_lambda(
@@ -1579,7 +1690,7 @@ class MarkdownConverter():
         '''Performs all the tasks related to the "Reading List Topic Trend" file.'''
 
         content : str = self.__get_reading_list_topic_trend_md(
-            last_update = setting_bag.last_update, 
+            last_update = setting_bag.reading_list_last_update, 
             yt_by_topic_df = yt_by_topic_df)
 
         if setting_bag.show_reading_list_topic_trend_md:
