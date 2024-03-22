@@ -4,6 +4,11 @@ A collection of components to handle "Reading List.xlsx".
 Alias: nwrlm
 '''
 
+# INFORMATION
+MODULE_ALIAS : str = "nwrlm"
+MODULE_NAME : str = "nwreadinglistmanager"
+MODULE_VERSION : str = "3.0.0"
+
 # GLOBAL MODULES
 import copy
 import numpy as np
@@ -21,12 +26,9 @@ from typing import Callable
 
 # LOCAL MODULES
 from nwshared import Formatter, Converter, FilePathManager, FileManager
+from nwshared import LambdaProvider
 
 # CONSTANTS
-MODULE_ALIAS : str = "nwrlm"
-MODULE_NAME : str = "nwreadinglistmanager"
-MODULE_VERSION : str = "3.0.0"
-
 # DTOs
 @dataclass(frozen=True)
 class SettingBag():
@@ -81,7 +83,6 @@ class SettingBag():
     use_smaller_font_for_reading_list_by_month_md : bool = True
 
 # STATIC CLASSES
-
 # CLASSES
 class ComponentBag():
 
@@ -94,8 +95,9 @@ class ComponentBag():
     formatter : Formatter
     converter : Converter
     file_path_manager : FilePathManager
-    file_manager = FileManager
-    logging_function : Callable[[str], None]
+    file_manager : FileManager
+    lambda_provider : LambdaProvider 
+    logging_lambda : Callable[[str], None]
 
     def __init__(
             self, 
@@ -103,20 +105,23 @@ class ComponentBag():
             converter : Converter, 
             file_path_manager : FilePathManager,
             file_manager : FileManager,
-            logging_function : Callable[[str], None]) -> None:
+            lambda_provider : LambdaProvider,
+            logging_lambda : Callable[[str], None]) -> None:
 
         self.formatter = formatter
         self.converter = converter
         self.file_path_manager = file_path_manager
         self.file_manager = file_manager
-        self.logging_function = logging_function
+        self.lambda_provider = lambda_provider
+        self.logging_lambda = logging_lambda
     def __init__(self) -> None:
         
         self.formatter = Formatter()
         self.converter = Converter()
         self.file_path_manager = FilePathManager()
         self.file_manager = FileManager()
-        self.logging_function = lambda msg : print(msg)
+        self.lambda_provider = LambdaProvider()
+        self.logging_lambda = LambdaProvider().get_default_logging_lambda()
 class ReadingListManager():
 
     '''Collects all the logic related to the management of "Reading List.xlsx".'''
@@ -1464,7 +1469,7 @@ class MarkdownConverter():
         content : str = self.__get_readme_md(cumulative_df = cumulative_df)
 
         if setting_bag.show_readme_md:
-            self.__component_bag.logging_function(content)
+            self.__component_bag.logging_lambda(content)
     def process_reading_list_by_month_md(self, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, setting_bag : SettingBag) -> None:
 
         '''Performs all the tasks related to the "Reading List By Month" file.''' 
@@ -1476,9 +1481,9 @@ class MarkdownConverter():
             use_smaller_font = setting_bag.use_smaller_font_for_reading_list_by_month_md)
 
         if setting_bag.show_reading_list_by_month_md:    
-            self.__component_bag.logging_function(
+            self.__component_bag.logging_lambda(
                 self.__format_file_name(file_name = setting_bag.reading_list_by_month_file_name))    
-            self.__component_bag.logging_function(content)
+            self.__component_bag.logging_lambda(content)
 
         if setting_bag.save_reading_lists_to_file:
 
@@ -1497,9 +1502,9 @@ class MarkdownConverter():
             sas_by_publisher_df = sas_by_publisher_df)
 
         if setting_bag.show_reading_list_by_publisher_md:
-            self.__component_bag.logging_function(
+            self.__component_bag.logging_lambda(
                 self.__format_file_name(file_name = setting_bag.reading_list_by_publisher_file_name))        
-            self.__component_bag.logging_function(content)
+            self.__component_bag.logging_lambda(content)
 
         if setting_bag.save_reading_lists_to_file:
 
@@ -1517,9 +1522,9 @@ class MarkdownConverter():
             sas_by_rating_df = sas_by_rating_df)
 
         if setting_bag.show_reading_list_by_rating_md:
-            self.__component_bag.logging_function(
+            self.__component_bag.logging_lambda(
                 self.__format_file_name(file_name = setting_bag.reading_list_by_rating_file_name))
-            self.__component_bag.logging_function(content)
+            self.__component_bag.logging_lambda(content)
 
         if setting_bag.save_reading_lists_to_file:
             
@@ -1537,9 +1542,9 @@ class MarkdownConverter():
             sas_by_topic_df = sas_by_topic_df)
 
         if setting_bag.show_reading_list_by_topic_md:
-            self.__component_bag.logging_function(
+            self.__component_bag.logging_lambda(
                 self.__format_file_name(file_name = setting_bag.reading_list_by_topic_file_name))
-            self.__component_bag.logging_function(content)
+            self.__component_bag.logging_lambda(content)
 
         if setting_bag.save_reading_lists_to_file:
 
@@ -1558,9 +1563,9 @@ class MarkdownConverter():
             use_smaller_font = setting_bag.use_smaller_font_for_reading_list_md)
 
         if setting_bag.show_reading_list_md:
-            self.__component_bag.logging_function(
+            self.__component_bag.logging_lambda(
                 self.__format_file_name(file_name = setting_bag.reading_list_file_name))
-            self.__component_bag.logging_function(content)
+            self.__component_bag.logging_lambda(content)
 
         if setting_bag.save_reading_lists_to_file:
 
@@ -1578,9 +1583,9 @@ class MarkdownConverter():
             yt_by_topic_df = yt_by_topic_df)
 
         if setting_bag.show_reading_list_topic_trend_md:
-            self.__component_bag.logging_function(
+            self.__component_bag.logging_lambda(
                 self.__format_file_name(file_name = setting_bag.reading_list_topic_trend_file_name))
-            self.__component_bag.logging_function(content)
+            self.__component_bag.logging_lambda(content)
 
         if setting_bag.save_reading_lists_to_file:
             
