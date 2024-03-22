@@ -656,43 +656,6 @@ class ReadingListManager():
         grouped_df = grouped_df.sort_values(by = column_names, ascending = [True, True])
 
         return grouped_df
-    def __get_cumulative(self, books_df : DataFrame, last_update : date, rounding_digits : bool = 2) -> DataFrame:
-
-        '''
-                Years	Books	Pages	TotalSpend  LastUpdate
-            0	8	    234	    62648	$6332.01    2023-09-23
-        '''
-
-        cn_read_year : str = "ReadYear"
-        count_years : int = books_df[cn_read_year].unique().size
-
-        cn_title : str = "Title"
-        count_books : int = books_df[cn_title].size
-
-        cn_pages : str = "Pages"
-        sum_pages : int = books_df[cn_pages].sum()
-
-        cn_street_price : str = "StreetPrice"
-        sum_street_price : float64 = books_df[cn_street_price].sum()
-
-        cn_years : str = "Years"
-        cn_books : str = "Books"
-        cn_pages : str = "Pages"
-        cn_total_spend : str = "TotalSpend"
-        cn_last_update : str = "LastUpdate"
-
-        cumulative_dict : dict = {
-            f"{cn_years}": f"{str(count_years)}",
-            f"{cn_books}": f"{str(count_books)}",
-            f"{cn_pages}": f"{str(sum_pages)}",
-            f"{cn_total_spend}": f"{self.__component_bag.formatter.format_usd_amount(amount = sum_street_price, rounding_digits = rounding_digits)}",
-            f"{cn_last_update}": f"{self.__component_bag.formatter.format_to_iso_8601(dt = self.__component_bag.converter.convert_date_to_datetime(dt = last_update))}"
-            }
-
-        cumulative_df : DataFrame = pd.DataFrame(cumulative_dict, index=[0])
-
-        return cumulative_df
-
     def __slice_by_kbsize(self, books_df : DataFrame, ascending : bool, remove_if_zero : bool) -> DataFrame:
 
         '''
@@ -929,6 +892,42 @@ class ReadingListManager():
         sas_by_month_upd_df.iloc[:, idx_trend] = np.where(condition, new_value, sas_by_month_upd_df.iloc[:, idx_trend])
 
         return sas_by_month_upd_df
+    def get_cumulative(self, books_df : DataFrame, last_update : date, rounding_digits : bool = 2) -> DataFrame:
+
+        '''
+                Years	Books	Pages	TotalSpend  LastUpdate
+            0	8	    234	    62648	$6332.01    2023-09-23
+        '''
+
+        cn_read_year : str = "ReadYear"
+        count_years : int = books_df[cn_read_year].unique().size
+
+        cn_title : str = "Title"
+        count_books : int = books_df[cn_title].size
+
+        cn_pages : str = "Pages"
+        sum_pages : int = books_df[cn_pages].sum()
+
+        cn_street_price : str = "StreetPrice"
+        sum_street_price : float64 = books_df[cn_street_price].sum()
+
+        cn_years : str = "Years"
+        cn_books : str = "Books"
+        cn_pages : str = "Pages"
+        cn_total_spend : str = "TotalSpend"
+        cn_last_update : str = "LastUpdate"
+
+        cumulative_dict : dict = {
+            f"{cn_years}": f"{str(count_years)}",
+            f"{cn_books}": f"{str(count_books)}",
+            f"{cn_pages}": f"{str(sum_pages)}",
+            f"{cn_total_spend}": f"{self.__component_bag.formatter.format_usd_amount(amount = sum_street_price, rounding_digits = rounding_digits)}",
+            f"{cn_last_update}": f"{self.__component_bag.formatter.format_to_iso_8601(dt = self.__component_bag.converter.convert_date_to_datetime(dt = last_update))}"
+            }
+
+        cumulative_df : DataFrame = pd.DataFrame(cumulative_dict, index=[0])
+
+        return cumulative_df    
     def get_sas_by_year(self, sas_by_month_df : DataFrame) -> DataFrame:
 
         '''
@@ -1210,11 +1209,11 @@ class ReadingListManager():
         ascending : bool = False
         remove_if_zero : bool = True
 
-        sliced_by_kbsize_desc_df : DataFrame = self.__slice_by_kbsize(books_df = books_df, ascending = ascending, remove_if_zero = remove_if_zero)
-        sliced_by_kbsize_desc_df = self.__component_bag.converter.convert_index_to_one_based(df = sliced_by_kbsize_desc_df)
-        sliced_by_kbsize_desc_df = sliced_by_kbsize_desc_df.head(n = n_by_kbsize)
+        sas_by_kbsize_df : DataFrame = self.__slice_by_kbsize(books_df = books_df, ascending = ascending, remove_if_zero = remove_if_zero)
+        sas_by_kbsize_df = self.__component_bag.converter.convert_index_to_one_based(df = sas_by_kbsize_df)
+        sas_by_kbsize_df = sas_by_kbsize_df.head(n = n_by_kbsize)
 
-        return sliced_by_kbsize_desc_df
+        return sas_by_kbsize_df
     def get_yearly_trend_by_topic(self, books_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
 
         '''
