@@ -1117,11 +1117,23 @@ class ReadingListManager():
             sas_by_rating_df[cn_rating] = sas_by_rating_df[cn_rating].apply(lambda x : __format_rating(rating = x))
 
         return sas_by_rating_df
-    def get_sas_by_kbsize(self) -> None:
+    def get_sas_by_kbsize(self, books_df : DataFrame, n_by_kbsize : int) -> DataFrame:
         
-        '''Implement it from the notebook.'''
+        '''
+            Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
+            1	    Machine Learning For Dummies	                2017	Data Analysis, Data Science, ML	Wiley	4	    3732	8
+            2	    Machine Learning Projects for .NET Developers	2017	Data Analysis, Data Science, ML	Apress	4	    3272	7        
+            ...
+        '''
 
-        pass
+        ascending : bool = False
+        remove_if_zero : bool = True
+
+        sliced_by_kbsize_desc_df : DataFrame = self.__slice_by_kbsize(books_df = books_df, ascending = ascending, remove_if_zero = remove_if_zero)
+        sliced_by_kbsize_desc_df = self.__component_bag.converter.convert_index_to_one_based(df = sliced_by_kbsize_desc_df)
+        sliced_by_kbsize_desc_df = sliced_by_kbsize_desc_df.head(n = n_by_kbsize)
+
+        return sliced_by_kbsize_desc_df
 
 # FUNCTIONS
 
