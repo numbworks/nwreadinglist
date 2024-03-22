@@ -75,8 +75,8 @@ class SettingBag():
     definitions : dict
     enable_sparklines_maximum : bool
     show_books_by_year_box_plot : bool
-    show_sliced_by_kbsize_box_plot : bool
-    show_sliced_by_kbsize_desc_df : bool
+    show_reading_list_by_kbsize_box_plot : bool
+    show_reading_list_by_kbsize_df : bool
     show_sliced_by_kbsize_asc_df : bool
     show_yearly_trend_by_topic_df : bool
     use_smaller_font_for_reading_list_md : bool = True
@@ -1197,7 +1197,7 @@ class ReadingListManager():
             sas_by_rating_df[cn_rating] = sas_by_rating_df[cn_rating].apply(lambda x : __format_rating(rating = x))
 
         return sas_by_rating_df
-    def get_sas_by_kbsize(self, books_df : DataFrame, n_by_kbsize : int) -> DataFrame:
+    def get_reading_list_by_kbsize(self, books_df : DataFrame, n_by_kbsize : int) -> DataFrame:
         
         '''
             Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
@@ -1209,11 +1209,11 @@ class ReadingListManager():
         ascending : bool = False
         remove_if_zero : bool = True
 
-        sas_by_kbsize_df : DataFrame = self.__slice_by_kbsize(books_df = books_df, ascending = ascending, remove_if_zero = remove_if_zero)
-        sas_by_kbsize_df = self.__component_bag.converter.convert_index_to_one_based(df = sas_by_kbsize_df)
-        sas_by_kbsize_df = sas_by_kbsize_df.head(n = n_by_kbsize)
+        rl_by_kbsize_df : DataFrame = self.__slice_by_kbsize(books_df = books_df, ascending = ascending, remove_if_zero = remove_if_zero)
+        rl_by_kbsize_df = self.__component_bag.converter.convert_index_to_one_based(df = rl_by_kbsize_df)
+        rl_by_kbsize_df = rl_by_kbsize_df.head(n = n_by_kbsize)
 
-        return sas_by_kbsize_df
+        return rl_by_kbsize_df
     def get_yearly_trend_by_topic(self, books_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
 
         '''

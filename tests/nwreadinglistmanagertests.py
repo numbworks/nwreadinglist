@@ -86,8 +86,8 @@ class ObjectMother():
             },
             enable_sparklines_maximum = True,
             show_books_by_year_box_plot = True,
-            show_sliced_by_kbsize_box_plot = True,
-            show_sliced_by_kbsize_desc_df = True,
+            show_reading_list_by_kbsize_box_plot = True,
+            show_reading_list_by_kbsize_df = True,
             show_sliced_by_kbsize_asc_df = True,
             show_yearly_trend_by_topic_df = True
         )
