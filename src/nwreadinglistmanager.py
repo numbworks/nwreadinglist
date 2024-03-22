@@ -19,7 +19,7 @@ from pandas import Series
 from sparklines import sparklines
 
 # LOCAL MODULES
-from nwshared import Formatter, Converter
+from nwshared import Formatter, Converter, FilePathManager, FileManager
 
 # CONSTANTS
 MODULE_ALIAS : str = "nwrlm"
@@ -92,15 +92,26 @@ class ComponentBag():
 
     formatter : Formatter
     converter : Converter
+    file_path_manager : FilePathManager
+    file_manager = FileManager
 
-    def __init__(self, formatter : Formatter, converter : Converter) -> None:
+    def __init__(
+            self, 
+            formatter : Formatter, 
+            converter : Converter, 
+            file_path_manager : FilePathManager,
+            file_manager = FileManager) -> None:
 
         self.formatter = formatter
         self.converter = converter
+        self.file_path_manager = file_path_manager
+        self.file_manager = file_manager
     def __init__(self) -> None:
         
         self.formatter = Formatter()
         self.converter = Converter()
+        self.file_path_manager = FilePathManager()
+        self.file_manager = FileManager()
 class ReadingListManager():
 
     '''Collects all the logic related to the management of "Reading List.xlsx".'''
@@ -635,25 +646,6 @@ class ReadingListManager():
         grouped_df = grouped_df.sort_values(by = column_names, ascending = [True, True])
 
         return grouped_df
-    def __format_rating(self, rating : int) -> str:
-
-        '''"★★★★★", "★★★★☆", ...'''
-
-        black_star : str = "★"
-        white_star : str = "☆"
-
-        if rating == 1:
-            return f"{black_star}{white_star*4}"
-        elif rating == 2:
-            return f"{black_star*2}{white_star*3}"
-        elif rating == 3:
-            return f"{black_star*3}{white_star*2}"
-        elif rating == 4:
-            return f"{black_star*4}{white_star*1}"
-        elif rating == 5:
-            return f"{black_star*5}"            
-        else:
-            return str(rating)
     def __get_cumulative(self, books_df : DataFrame, last_update : date, rounding_digits : bool = 2) -> DataFrame:
 
         '''
@@ -690,38 +682,7 @@ class ReadingListManager():
         cumulative_df : DataFrame = pd.DataFrame(cumulative_dict, index=[0])
 
         return cumulative_df
-    def __get_formatted_reading_list(self, books_df : DataFrame) -> DataFrame:
 
-        '''
-                Id	    Title	            Year	Pages	ReadDate	Publisher	    Rating    Topic
-            0	0	    Writing Solid Code	1993	288	    2016-05-28	Microsoft Press	★★☆☆☆  Software Engineering
-            1	1	    Git Essentials	    2015	168	    2016-06-05	Packt	        ★★☆☆☆  Git
-            ...    
-        '''
-
-        formatted_rl_df : DataFrame = pd.DataFrame()
-
-        cn_id : str = "Id"
-        cn_title : str = "Title"
-        cn_year : str = "Year"
-        cn_language : str = "Language"
-        cn_pages : str = "Pages"
-        cn_read_date : str = "ReadDate"
-        cn_publisher : str = "Publisher"
-        cn_rating : str = "Rating"
-        cn_topic : str = "Topic"
-
-        formatted_rl_df[cn_id] = books_df.index + 1
-        formatted_rl_df[cn_title] = books_df[cn_title]
-        formatted_rl_df[cn_year] = books_df[cn_year]
-        formatted_rl_df[cn_language] = books_df[cn_language]
-        formatted_rl_df[cn_pages] = books_df[cn_pages]
-        formatted_rl_df[cn_read_date] = books_df[cn_read_date]   
-        formatted_rl_df[cn_publisher] = books_df[cn_publisher]   
-        formatted_rl_df[cn_rating] = books_df[cn_rating].apply(lambda x : self.__format_rating(rating = x))
-        formatted_rl_df[cn_topic] = books_df[cn_topic]   
-
-        return formatted_rl_df
     def __slice_by_kbsize(self, books_df : DataFrame, ascending : bool, remove_if_zero : bool) -> DataFrame:
 
         '''
@@ -1434,7 +1395,7 @@ class MarkdownConverter():
         md_content += "\n"
 
         return md_content
-    def __get_reading_list_topic_trend_md(last_update : datetime, yt_by_topic_df : DataFrame) -> str:
+    def __get_reading_list_topic_trend_md(self, last_update : datetime, yt_by_topic_df : DataFrame) -> str:
 
         '''Creates the Markdown content for a "Reading List Topic Trend" file out of the provided dataframe.'''
 
@@ -1449,7 +1410,7 @@ class MarkdownConverter():
         md_content += "\n"
 
         return md_content
-    def __format_file_name(file_name : str) -> str:
+    def __format_file_name(self, file_name : str) -> str:
 
         '''Formats the provided file_name so that it can be displayed on the screen before the Markdown content.'''
 
@@ -1458,8 +1419,68 @@ class MarkdownConverter():
         md_content += ""
 
         return md_content
+    def __get_formatted_reading_list(self, books_df : DataFrame) -> DataFrame:
 
+        '''
+                Id	    Title	            Year	Pages	ReadDate	Publisher	    Rating    Topic
+            0	0	    Writing Solid Code	1993	288	    2016-05-28	Microsoft Press	★★☆☆☆  Software Engineering
+            1	1	    Git Essentials	    2015	168	    2016-06-05	Packt	        ★★☆☆☆  Git
+            ...    
+        '''
 
+        formatted_rl_df : DataFrame = pd.DataFrame()
+
+        cn_id : str = "Id"
+        cn_title : str = "Title"
+        cn_year : str = "Year"
+        cn_language : str = "Language"
+        cn_pages : str = "Pages"
+        cn_read_date : str = "ReadDate"
+        cn_publisher : str = "Publisher"
+        cn_rating : str = "Rating"
+        cn_topic : str = "Topic"
+
+        formatted_rl_df[cn_id] = books_df.index + 1
+        formatted_rl_df[cn_title] = books_df[cn_title]
+        formatted_rl_df[cn_year] = books_df[cn_year]
+        formatted_rl_df[cn_language] = books_df[cn_language]
+        formatted_rl_df[cn_pages] = books_df[cn_pages]
+        formatted_rl_df[cn_read_date] = books_df[cn_read_date]   
+        formatted_rl_df[cn_publisher] = books_df[cn_publisher]   
+        formatted_rl_df[cn_rating] = books_df[cn_rating].apply(lambda x : self.__component_bag.formatter.format_rating(rating = x))
+        formatted_rl_df[cn_topic] = books_df[cn_topic]   
+
+        return formatted_rl_df
+
+    def process_readme_md(self, cumulative_df : DataFrame, setting_bag : SettingBag) -> None:
+
+        '''Performs all the tasks related to the README file.'''
+
+        content : str = self.__get_readme_md(cumulative_df = cumulative_df)
+
+        if setting_bag.show_readme_md:
+            print(content)
+    def process_reading_list_by_month_md(self, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, setting_bag : SettingBag) -> None:
+
+        '''Performs all the tasks related to the "Reading List By Month" file.''' 
+
+        content : str = self.__get_reading_list_by_month_md(      
+            last_update = setting_bag.last_update, 
+            sas_by_month_df = sas_by_month_df, 
+            sas_by_year_street_price_df = sas_by_year_street_price_df,
+            use_smaller_font = setting_bag.use_smaller_font_for_reading_list_by_month_md)
+
+        if setting_bag.show_reading_list_by_month_md:    
+            print(self.__format_file_name(file_name = setting_bag.reading_list_by_month_file_name))    
+            print(content)
+
+        if setting_bag.save_reading_lists_to_file:
+
+            file_path : str = self.__component_bag.file_path_manager.create_file_path(
+                folder_path = setting_bag.working_folder_path,
+                file_name = setting_bag.reading_list_by_month_file_name)
+            
+            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
 
 
 # FUNCTIONS
@@ -1471,35 +1492,7 @@ class MarkdownConverter():
 
 
 
-def process_readme_md(cumulative_df : DataFrame, setting_bag : SettingBag) -> None:
 
-    '''Performs all the tasks related to the README file.'''
-
-    content : str = __get_readme_md(cumulative_df = cumulative_df)
-
-    if setting_bag.show_readme_md:
-        print(content)
-def process_reading_list_by_month_md(sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, setting_bag : SettingBag) -> None:
-
-    '''Performs all the tasks related to the "Reading List By Month" file.''' 
-
-    content : str = __get_reading_list_by_month_md(      
-        last_update = setting_bag.last_update, 
-        sas_by_month_df = sas_by_month_df, 
-        sas_by_year_street_price_df = sas_by_year_street_price_df,
-        use_smaller_font = setting_bag.use_smaller_font_for_reading_list_by_month_md)
-
-    if setting_bag.show_reading_list_by_month_md:    
-        print(__format_file_name(file_name = setting_bag.reading_list_by_month_file_name))    
-        print(content)
-
-    if setting_bag.save_reading_lists_to_file:
-
-        file_path : str = nwcc.create_file_path(
-            folder_path = setting_bag.working_folder_path,
-            file_name = setting_bag.reading_list_by_month_file_name)
-        
-        nwcc.save_content(content = content, file_path = file_path)
 def process_reading_list_by_publisher_md(sas_by_publisher_flt_df : DataFrame, sas_by_publisher_df : DataFrame, setting_bag : SettingBag) -> None:
 
     '''Performs all the tasks related to the "Reading List By Publisher" file.'''

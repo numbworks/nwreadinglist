@@ -6,7 +6,7 @@ Alias: nwsh
 # Constants
 MODULE_ALIAS : str = "nwsh"
 MODULE_NAME : str = "nwshared"
-MODULE_VERSION : str = "1.0.0"
+MODULE_VERSION : str = "1.1.0"
 
 # Global Modules
 import base64
@@ -426,6 +426,25 @@ class Formatter():
         formatted : str = f"${rounded:.2f}"
 
         return formatted
+    def format_rating(self, rating : int) -> str:
+
+        '''"★★★★★", "★★★★☆", ...'''
+
+        black_star : str = "★"
+        white_star : str = "☆"
+
+        if rating == 1:
+            return f"{black_star}{white_star*4}"
+        elif rating == 2:
+            return f"{black_star*2}{white_star*3}"
+        elif rating == 3:
+            return f"{black_star*3}{white_star*2}"
+        elif rating == 4:
+            return f"{black_star*4}{white_star*1}"
+        elif rating == 5:
+            return f"{black_star*5}"            
+        else:
+            return str(rating)
 class Converter():
 
     '''Collects all the logic related to converting tasks.'''
