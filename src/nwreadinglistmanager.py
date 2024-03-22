@@ -865,7 +865,6 @@ class ReadingListManager():
 
         return sparklined_df
 
-
     def get_default_reading_list_path(self)-> str:
 
         r'''
@@ -1270,6 +1269,196 @@ class ReadingListManager():
             sparklined_df : DataFrame = self.__add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend)
 
         return sparklined_df
+class MarkdownConverter():
+
+    '''Collects all the logic related to the conversion of dataframes to Markdown format.'''
+
+    __component_bag : ComponentBag
+
+    def __init__(self, component_bag : ComponentBag) -> None:
+
+        self.__component_bag = component_bag
+
+    def __get_markdown_header(self, last_update : datetime, paragraph_title : str) -> str:
+        
+        '''
+            ## Revision History
+
+            |Date|Author|Description|
+            |---|---|---|
+            |2020-12-22|numbworks|Created.|
+            |2023-04-28|numbworks|Last update.|
+
+            ## Reading List By Month
+        '''
+
+        lines : list[str] = [
+            "## Revision History", 
+            "", 
+            "|Date|Author|Description|", 
+            "|---|---|---|",
+            "|2020-12-22|numbworks|Created.|",
+            f"|{self.__component_bag.formatter.format_to_iso_8601(dt = last_update)}|numbworks|Last update.|",
+            "",
+            f"## {paragraph_title}",
+            ""
+            ]
+
+        markdown_header : str = "\n".join(lines)
+
+        return markdown_header
+    def __add_subscript_tags_to_value(self, value : str) -> str:
+
+        '''
+        "49.99" => "<sub>49.99</sub>"
+        '''
+
+        tagged : str = f"<sub>{value}</sub>"
+
+        return tagged
+    def __add_subscript_tags_to_dataframe(self, df : DataFrame) -> DataFrame:
+
+        '''Adds subscript tags to every cell and column name of the provided DataFrame.'''
+
+        tagged_df = df.copy(deep=True)
+        
+        tagged_df = tagged_df.map(func = self.__add_subscript_tags_to_value)
+        tagged_df = tagged_df.rename(columns = lambda column_name : self.__add_subscript_tags_to_value(value = column_name))
+
+        return tagged_df
+    def __get_readme_md(self, cumulative_df : DataFrame) -> str:
+
+        '''Creates the Markdown content for a README file out of the provided dataframe.'''
+
+        cumulative_md : str = cumulative_df.to_markdown(index = False)
+
+        md_content : str = cumulative_md
+        md_content += "\n"
+
+        return md_content
+    def __get_reading_list_by_month_md(self, last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, use_smaller_font : bool) -> str:
+
+        '''Creates the Markdown content for a "Reading List By Month" file out of the provided dataframes.'''
+
+        copy_of_sas_by_month_df : DataFrame = sas_by_month_df.copy(deep=True)
+        copy_of_sas_by_year_street_price_df : DataFrame = sas_by_year_street_price_df.copy(deep=True)
+        if use_smaller_font:
+            copy_of_sas_by_month_df = self.__add_subscript_tags_to_dataframe(df = copy_of_sas_by_month_df)
+            copy_of_sas_by_year_street_price_df = self.__add_subscript_tags_to_dataframe(df = copy_of_sas_by_year_street_price_df)
+
+        md_paragraph_title : str = "Reading List By Month"
+
+        markdown_header : str = self.__get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        sas_by_month_md : str = copy_of_sas_by_month_df.to_markdown(index = False)
+        sas_by_year_street_price_md  : str = copy_of_sas_by_year_street_price_df.to_markdown(index = False)
+
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += sas_by_month_md
+        md_content += "\n"
+        md_content += ""
+        md_content += "\n"
+        md_content += sas_by_year_street_price_md
+        md_content += "\n"
+        md_content += ""
+
+        return md_content
+    def __get_reading_list_by_publisher_md(self, last_update : datetime, sas_by_publisher_flt_df : DataFrame, sas_by_publisher_df : DataFrame) -> str:
+
+        '''Creates the Markdown content for a "Reading List By Publisher" file out of the provided dataframes.'''
+
+        md_paragraph_title : str = "Reading List By Publisher"
+
+        markdown_header : str = self.__get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        sas_by_publisher_flt_md : str = sas_by_publisher_flt_df.to_markdown(index = False)
+        sas_by_publisher_md : str = sas_by_publisher_df.to_markdown(index = False)
+
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += sas_by_publisher_flt_md
+        md_content += "\n"
+        md_content += ""
+        md_content += "\n"
+        md_content += sas_by_publisher_md
+        md_content += "\n"
+        md_content += ""
+
+        return md_content
+    def __get_reading_list_by_rating_md(self, last_update : datetime, sas_by_rating_df : DataFrame) -> str:
+
+        '''Creates the Markdown content for a "Reading List By Rating" file out of the provided dataframe.'''
+
+        md_paragraph_title : str = "Reading List By Rating"
+
+        markdown_header : str = self.__get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        sas_by_rating_md : str = sas_by_rating_df.to_markdown(index = False)
+
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += sas_by_rating_md
+        md_content += "\n"
+
+        return md_content
+    def __get_reading_list_by_topic_md(self, last_update : datetime, sas_by_topic_df : DataFrame) -> str:
+
+        '''Creates the Markdown content for a "Reading List By Topic" file out of the provided dataframe.'''
+
+        md_paragraph_title : str = "Reading List By Topic"
+
+        markdown_header : str = self.__get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        sas_by_topic_md : str = sas_by_topic_df.to_markdown(index = False)
+
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += sas_by_topic_md
+        md_content += "\n"
+
+        return md_content
+    def __get_reading_list_md(self, last_update : datetime, books_df : DataFrame, use_smaller_font : bool) -> str:
+
+        '''Creates the Markdown content for a "Reading List" file out of the provided dataframe.'''
+
+        md_paragraph_title : str = "Reading List"
+
+        markdown_header : str = self.__get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        formatted_rl_df : DataFrame = self.__get_formatted_reading_list(books_df = books_df)
+
+        if use_smaller_font:
+            formatted_rl_df = self.__add_subscript_tags_to_dataframe(df = formatted_rl_df)    
+
+        formatted_rl_md : str = formatted_rl_df.to_markdown(index = False)
+
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += formatted_rl_md
+        md_content += "\n"
+
+        return md_content
+    def __get_reading_list_topic_trend_md(last_update : datetime, yt_by_topic_df : DataFrame) -> str:
+
+        '''Creates the Markdown content for a "Reading List Topic Trend" file out of the provided dataframe.'''
+
+        md_paragraph_title : str = "Reading List Topic Trend"
+
+        markdown_header : str = __get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        yt_by_topic_md : str = yt_by_topic_df.to_markdown(index = False)
+
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += yt_by_topic_md
+        md_content += "\n"
+
+        return md_content
+    def __format_file_name(file_name : str) -> str:
+
+        '''Formats the provided file_name so that it can be displayed on the screen before the Markdown content.'''
+
+        md_content : str = file_name
+        md_content += "\n"
+        md_content += ""
+
+        return md_content
+
 
 
 
@@ -1278,195 +1467,15 @@ class ReadingListManager():
 
 
 
-def get_markdown_header(last_update : datetime, paragraph_title : str) -> str:
-    
-    '''
-        ## Revision History
-
-        |Date|Author|Description|
-        |---|---|---|
-        |2020-12-22|numbworks|Created.|
-        |2023-04-28|numbworks|Last update.|
-
-        ## Reading List By Month
-    '''
-
-    lines : list[str] = [
-        "## Revision History", 
-        "", 
-        "|Date|Author|Description|", 
-        "|---|---|---|",
-        "|2020-12-22|numbworks|Created.|",
-        f"|{nwcc.format_to_iso_8601(dt = last_update)}|numbworks|Last update.|",
-        "",
-        f"## {paragraph_title}",
-        ""
-        ]
-
-    markdown_header : str = "\n".join(lines)
-
-    return markdown_header
-def add_subscript_tags_to_value(value : str) -> str:
-
-	'''
-	"49.99" => "<sub>49.99</sub>"
-	'''
-
-	tagged : str = f"<sub>{value}</sub>"
-
-	return tagged
-def add_subscript_tags_to_dataframe(df : DataFrame) -> DataFrame:
-
-	'''Adds subscript tags to every cell and column name of the provided DataFrame.'''
-
-	tagged_df = df.copy(deep=True)
-	
-	tagged_df = tagged_df.map(func = add_subscript_tags_to_value)
-	tagged_df = tagged_df.rename(columns = lambda column_name : add_subscript_tags_to_value(value = column_name))
-
-	return tagged_df
 
 
 
-
-def get_readme_md(cumulative_df : DataFrame) -> str:
-
-    '''Creates the Markdown content for a README file out of the provided dataframe.'''
-
-    cumulative_md : str = cumulative_df.to_markdown(index = False)
-
-    md_content : str = cumulative_md
-    md_content += "\n"
-
-    return md_content
-def get_reading_list_by_month_md(last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, use_smaller_font : bool) -> str:
-
-    '''Creates the Markdown content for a "Reading List By Month" file out of the provided dataframes.'''
-
-    copy_of_sas_by_month_df : DataFrame = sas_by_month_df.copy(deep=True)
-    copy_of_sas_by_year_street_price_df : DataFrame = sas_by_year_street_price_df.copy(deep=True)
-    if use_smaller_font:
-        copy_of_sas_by_month_df = add_subscript_tags_to_dataframe(df = copy_of_sas_by_month_df)
-        copy_of_sas_by_year_street_price_df = add_subscript_tags_to_dataframe(df = copy_of_sas_by_year_street_price_df)
-
-    md_paragraph_title : str = "Reading List By Month"
-
-    markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-    sas_by_month_md : str = copy_of_sas_by_month_df.to_markdown(index = False)
-    sas_by_year_street_price_md  : str = copy_of_sas_by_year_street_price_df.to_markdown(index = False)
-
-    md_content : str = markdown_header
-    md_content += "\n"
-    md_content += sas_by_month_md
-    md_content += "\n"
-    md_content += ""
-    md_content += "\n"
-    md_content += sas_by_year_street_price_md
-    md_content += "\n"
-    md_content += ""
-
-    return md_content
-def get_reading_list_by_publisher_md(last_update : datetime, sas_by_publisher_flt_df : DataFrame, sas_by_publisher_df : DataFrame) -> str:
-
-    '''Creates the Markdown content for a "Reading List By Publisher" file out of the provided dataframes.'''
-
-    md_paragraph_title : str = "Reading List By Publisher"
-
-    markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-    sas_by_publisher_flt_md : str = sas_by_publisher_flt_df.to_markdown(index = False)
-    sas_by_publisher_md : str = sas_by_publisher_df.to_markdown(index = False)
-
-    md_content : str = markdown_header
-    md_content += "\n"
-    md_content += sas_by_publisher_flt_md
-    md_content += "\n"
-    md_content += ""
-    md_content += "\n"
-    md_content += sas_by_publisher_md
-    md_content += "\n"
-    md_content += ""
-
-    return md_content
-def get_reading_list_by_rating_md(last_update : datetime, sas_by_rating_df : DataFrame) -> str:
-
-    '''Creates the Markdown content for a "Reading List By Rating" file out of the provided dataframe.'''
-
-    md_paragraph_title : str = "Reading List By Rating"
-
-    markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-    sas_by_rating_md : str = sas_by_rating_df.to_markdown(index = False)
-
-    md_content : str = markdown_header
-    md_content += "\n"
-    md_content += sas_by_rating_md
-    md_content += "\n"
-
-    return md_content
-def get_reading_list_by_topic_md(last_update : datetime, sas_by_topic_df : DataFrame) -> str:
-
-    '''Creates the Markdown content for a "Reading List By Topic" file out of the provided dataframe.'''
-
-    md_paragraph_title : str = "Reading List By Topic"
-
-    markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-    sas_by_topic_md : str = sas_by_topic_df.to_markdown(index = False)
-
-    md_content : str = markdown_header
-    md_content += "\n"
-    md_content += sas_by_topic_md
-    md_content += "\n"
-
-    return md_content
-def get_reading_list_md(last_update : datetime, books_df : DataFrame, use_smaller_font : bool) -> str:
-
-    '''Creates the Markdown content for a "Reading List" file out of the provided dataframe.'''
-
-    md_paragraph_title : str = "Reading List"
-
-    markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-    formatted_rl_df : DataFrame = __get_formatted_reading_list(books_df = books_df)
-
-    if use_smaller_font:
-        formatted_rl_df = add_subscript_tags_to_dataframe(df = formatted_rl_df)    
-
-    formatted_rl_md : str = formatted_rl_df.to_markdown(index = False)
-
-    md_content : str = markdown_header
-    md_content += "\n"
-    md_content += formatted_rl_md
-    md_content += "\n"
-
-    return md_content
-def get_reading_list_topic_trend_md(last_update : datetime, yt_by_topic_df : DataFrame) -> str:
-
-    '''Creates the Markdown content for a "Reading List Topic Trend" file out of the provided dataframe.'''
-
-    md_paragraph_title : str = "Reading List Topic Trend"
-
-    markdown_header : str = get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-    yt_by_topic_md : str = yt_by_topic_df.to_markdown(index = False)
-
-    md_content : str = markdown_header
-    md_content += "\n"
-    md_content += yt_by_topic_md
-    md_content += "\n"
-
-    return md_content
-def format_file_name(file_name : str) -> str:
-
-    '''Formats the provided file_name so that it can be displayed on the screen before the Markdown content.'''
-
-    md_content : str = file_name
-    md_content += "\n"
-    md_content += ""
-
-    return md_content
 
 def process_readme_md(cumulative_df : DataFrame, setting_bag : SettingBag) -> None:
 
     '''Performs all the tasks related to the README file.'''
 
-    content : str = get_readme_md(cumulative_df = cumulative_df)
+    content : str = __get_readme_md(cumulative_df = cumulative_df)
 
     if setting_bag.show_readme_md:
         print(content)
@@ -1474,14 +1483,14 @@ def process_reading_list_by_month_md(sas_by_month_df : DataFrame, sas_by_year_st
 
     '''Performs all the tasks related to the "Reading List By Month" file.''' 
 
-    content : str = get_reading_list_by_month_md(      
+    content : str = __get_reading_list_by_month_md(      
         last_update = setting_bag.last_update, 
         sas_by_month_df = sas_by_month_df, 
         sas_by_year_street_price_df = sas_by_year_street_price_df,
         use_smaller_font = setting_bag.use_smaller_font_for_reading_list_by_month_md)
 
     if setting_bag.show_reading_list_by_month_md:    
-        print(format_file_name(file_name = setting_bag.reading_list_by_month_file_name))    
+        print(__format_file_name(file_name = setting_bag.reading_list_by_month_file_name))    
         print(content)
 
     if setting_bag.save_reading_lists_to_file:
@@ -1495,13 +1504,13 @@ def process_reading_list_by_publisher_md(sas_by_publisher_flt_df : DataFrame, sa
 
     '''Performs all the tasks related to the "Reading List By Publisher" file.'''
 
-    content : str = get_reading_list_by_publisher_md(      
+    content : str = __get_reading_list_by_publisher_md(      
         last_update = setting_bag.last_update, 
         sas_by_publisher_flt_df = sas_by_publisher_flt_df, 
         sas_by_publisher_df = sas_by_publisher_df)
 
     if setting_bag.show_reading_list_by_publisher_md:
-        print(format_file_name(file_name = setting_bag.reading_list_by_publisher_file_name))        
+        print(__format_file_name(file_name = setting_bag.reading_list_by_publisher_file_name))        
         print(content)
 
     if setting_bag.save_reading_lists_to_file:
@@ -1515,12 +1524,12 @@ def process_reading_list_by_rating_md(sas_by_rating_df : DataFrame, setting_bag 
 
     '''Performs all the tasks related to the "Reading List By Rating" file.'''
 
-    content : str = get_reading_list_by_rating_md(       
+    content : str = __get_reading_list_by_rating_md(       
         last_update = setting_bag.last_update, 
         sas_by_rating_df = sas_by_rating_df)
 
     if setting_bag.show_reading_list_by_rating_md:
-        print(format_file_name(file_name = setting_bag.reading_list_by_rating_file_name))
+        print(__format_file_name(file_name = setting_bag.reading_list_by_rating_file_name))
         print(content)
 
     if setting_bag.save_reading_lists_to_file:
@@ -1534,12 +1543,12 @@ def process_reading_list_by_topic_md(sas_by_topic_df : DataFrame, setting_bag : 
 
     '''Performs all the tasks related to the "Reading List By Topic" file.'''
 
-    content : str = get_reading_list_by_topic_md( 
+    content : str = __get_reading_list_by_topic_md( 
         last_update = setting_bag.last_update, 
         sas_by_topic_df = sas_by_topic_df)
 
     if setting_bag.show_reading_list_by_topic_md:
-        print(format_file_name(file_name = setting_bag.reading_list_by_topic_file_name))
+        print(__format_file_name(file_name = setting_bag.reading_list_by_topic_file_name))
         print(content)
 
     if setting_bag.save_reading_lists_to_file:
@@ -1553,13 +1562,13 @@ def process_reading_list_md(books_df : DataFrame, setting_bag : SettingBag) -> N
 
     '''Performs all the tasks related to the "Reading List" file.'''
 
-    content : str = get_reading_list_md(
+    content : str = __get_reading_list_md(
         last_update = setting_bag.last_update, 
         books_df = books_df,
         use_smaller_font = setting_bag.use_smaller_font_for_reading_list_md)
 
     if setting_bag.show_reading_list_md:
-        print(format_file_name(file_name = setting_bag.reading_list_file_name))
+        print(__format_file_name(file_name = setting_bag.reading_list_file_name))
         print(content)
 
     if setting_bag.save_reading_lists_to_file:
@@ -1573,12 +1582,12 @@ def process_reading_list_topic_trend_md(yt_by_topic_df : DataFrame, setting_bag 
 
     '''Performs all the tasks related to the "Reading List Topic Trend" file.'''
 
-    content : str = get_reading_list_topic_trend_md(
+    content : str = __get_reading_list_topic_trend_md(
         last_update = setting_bag.last_update, 
         yt_by_topic_df = yt_by_topic_df)
 
     if setting_bag.show_reading_list_topic_trend_md:
-        print(format_file_name(file_name = setting_bag.reading_list_topic_trend_file_name))
+        print(__format_file_name(file_name = setting_bag.reading_list_topic_trend_file_name))
         print(content)
 
     if setting_bag.save_reading_lists_to_file:

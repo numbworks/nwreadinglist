@@ -494,7 +494,7 @@ class GetMarkdownHeaderTestCase(unittest.TestCase):
         expected : str = "\n".join(lines)
 
         # Act
-        actual : str = nwrlm.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
+        actual : str = nwrlm.__get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
 
         # Assert
         self.assertEqual(expected, actual)
@@ -507,7 +507,7 @@ class AddSubscriptTagsToValueTestCase(unittest.TestCase):
         
         # Arrange
         # Act
-        actual : str = nwrlm.add_subscript_tags_to_value(value = value)
+        actual : str = nwrlm.__add_subscript_tags_to_value(value = value)
 
         # Assert
         self.assertEqual(expected, actual)
