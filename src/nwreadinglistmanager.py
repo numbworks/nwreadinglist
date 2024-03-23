@@ -73,7 +73,9 @@ class SettingBag():
     rounding_digits : int
     is_worth_min_books : int
     is_worth_min_avgrating : float
-    is_worth_criteria : str    
+    is_worth_criteria : str
+    kbsize_ascending : bool
+    kbsize_remove_if_zero : bool
     formatted_rating : bool
     enable_sparklines_maximum : bool
     reading_list_by_month_file_name : str
@@ -127,7 +129,9 @@ class SettingBag():
         rounding_digits : int = 2,
         is_worth_min_books : int = 8,
         is_worth_min_avgrating : float = 2.50,
-        is_worth_criteria : str = "Yes",        
+        is_worth_criteria : str = "Yes",
+        kbsize_ascending : bool = False,
+        kbsize_remove_if_zero : bool = True,      
         formatted_rating : bool = True,
         enable_sparklines_maximum : bool = True,
         reading_list_by_month_file_name : str = "READINGLISTBYMONTH.md",
@@ -185,6 +189,8 @@ class SettingBag():
         self.is_worth_min_books = is_worth_min_books
         self.is_worth_min_avgrating = is_worth_min_avgrating
         self.is_worth_criteria = is_worth_criteria
+        self.kbsize_ascending = kbsize_ascending
+        self.kbsize_remove_if_zero = kbsize_remove_if_zero
         self.formatted_rating = formatted_rating
         self.enable_sparklines_maximum = enable_sparklines_maximum
         self.reading_list_by_month_file_name = reading_list_by_month_file_name
@@ -1362,7 +1368,7 @@ class ReadingListManager():
                 lambda x : self.__component_bag.formatter.format_rating(rating = x))
 
         return sas_by_rating_df    
-    def get_reading_list_by_kbsize(self, books_df : DataFrame, n_by_kbsize : int) -> DataFrame:
+    def get_reading_list_by_kbsize(self, books_df : DataFrame) -> DataFrame:
         
         '''
             Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
@@ -1371,12 +1377,13 @@ class ReadingListManager():
             ...
         '''
 
-        ascending : bool = False
-        remove_if_zero : bool = True
-
-        rl_by_kbsize_df : DataFrame = self.__slice_by_kbsize(books_df = books_df, ascending = ascending, remove_if_zero = remove_if_zero)
+        rl_by_kbsize_df : DataFrame = self.__slice_by_kbsize(
+            books_df = books_df, 
+            ascending = self.__setting_bag.kbsize_ascending, 
+            remove_if_zero = self.__setting_bag.kbsize_remove_if_zero)
+        
         rl_by_kbsize_df = self.__component_bag.converter.convert_index_to_one_based(df = rl_by_kbsize_df)
-        rl_by_kbsize_df = rl_by_kbsize_df.head(n = n_by_kbsize)
+        rl_by_kbsize_df = rl_by_kbsize_df.head(n = self.__setting_bag.n_by_kbsize)
 
         return rl_by_kbsize_df
     def get_yearly_trend_by_topic(self, books_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
