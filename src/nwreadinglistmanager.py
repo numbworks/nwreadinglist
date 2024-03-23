@@ -952,7 +952,7 @@ class ReadingListManager():
             excel_null_value = self.__setting_bag.excel_null_value)
 
         return books_df
-    def get_sas_by_month(self, books_df : DataFrame, read_years : list) -> DataFrame:
+    def get_sas_by_month(self, books_df : DataFrame) -> DataFrame:
 
         '''
                 Month	2016	↕1	2017	    ↕2	2018
@@ -967,6 +967,9 @@ class ReadingListManager():
         '''
 
         sas_by_month_df : DataFrame = None
+        read_years : list[int] = self.__setting_bag.read_years
+        add_trend : bool = True
+
         for i in range(len(read_years)):
 
             if i == 0:
@@ -977,9 +980,11 @@ class ReadingListManager():
                     read_years = read_years, 
                     sas_by_month_df = sas_by_month_df, 
                     i = i, 
-                    add_trend = True)
+                    add_trend = add_trend)
 
-        sas_by_month_df.rename(columns = (lambda x : self.__try_consolidate_trend_column_name(column_name = x)), inplace = True)
+        sas_by_month_df.rename(
+            columns = (lambda x : self.__try_consolidate_trend_column_name(column_name = x)), 
+            inplace = True)
 
         return sas_by_month_df
     def update_future_rs_to_empty(self, sas_by_month_df : DataFrame, now : datetime) -> DataFrame:
