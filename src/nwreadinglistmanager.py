@@ -1386,7 +1386,7 @@ class ReadingListManager():
         rl_by_kbsize_df = rl_by_kbsize_df.head(n = self.__setting_bag.n_by_kbsize)
 
         return rl_by_kbsize_df
-    def get_yearly_trend_by_topic(self, books_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+    def get_yearly_trend_by_topic(self, books_df : DataFrame) -> DataFrame:
 
         '''
             Get yearly trend by topic as numbers and sparklines.
@@ -1401,16 +1401,20 @@ class ReadingListManager():
         cn_books : str = "Books"
         cn_trend : str = "Trend"
 
-        by_topic_read_year_df : DataFrame = self.__get_books_by_topic_read_year(books_df = books_df, read_years = setting_bag.read_years)
-        pivoted_df : DataFrame = self.__pivot_column_values_to_cell(df = by_topic_read_year_df, cn_index = cn_topic, cn_values = cn_books)
+        by_topic_read_year_df : DataFrame = self.__get_books_by_topic_read_year(
+            books_df = books_df, 
+            read_years = self.__setting_bag.read_years)
+        
+        pivoted_df : DataFrame = self.__pivot_column_values_to_cell(
+            df = by_topic_read_year_df, 
+            cn_index = cn_topic, 
+            cn_values = cn_books)
 
-        if setting_bag.enable_sparklines_maximum:
+        if self.__setting_bag.enable_sparklines_maximum:
             maximum : int = by_topic_read_year_df[cn_books].max()
-            sparklined_df : DataFrame = self.__add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend, maximum = maximum)
+            return self.__add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend, maximum = maximum)
         else: 
-            sparklined_df : DataFrame = self.__add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend)
-
-        return sparklined_df
+            return self.__add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend)
 class MarkdownProcessor():
 
     '''Collects all the logic related to the processing of Markdown content.'''
