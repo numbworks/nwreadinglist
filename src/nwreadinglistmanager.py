@@ -1353,9 +1353,9 @@ class ReadingListManager():
             sparklined_df : DataFrame = self.__add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend)
 
         return sparklined_df
-class MarkdownConverter():
+class MarkdownProcessor():
 
-    '''Collects all the logic related to the conversion of dataframes to Markdown format.'''
+    '''Collects all the logic related to the processing of Markdown content.'''
 
     __component_bag : ComponentBag
 
@@ -1575,7 +1575,7 @@ class MarkdownConverter():
 
         return formatted_rl_df
 
-    def process_readme_md(self, cumulative_df : DataFrame, setting_bag : SettingBag) -> None:
+    def try_show_readme_md(self, cumulative_df : DataFrame, setting_bag : SettingBag) -> None:
 
         '''Performs all the tasks related to the README file.'''
 
@@ -1583,7 +1583,7 @@ class MarkdownConverter():
 
         if setting_bag.show_readme_md:
             self.__component_bag.logging_lambda(content)
-    def process_reading_list_by_month_md(self, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, setting_bag : SettingBag) -> None:
+    def try_show_and_save_reading_list_by_month_md(self, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, setting_bag : SettingBag) -> None:
 
         '''Performs all the tasks related to the "Reading List By Month" file.''' 
 
@@ -1605,7 +1605,7 @@ class MarkdownConverter():
                 file_name = setting_bag.reading_list_by_month_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_reading_list_by_publisher_md(self, sas_by_publisher_flt_df : DataFrame, sas_by_publisher_df : DataFrame, setting_bag : SettingBag) -> None:
+    def try_show_and_save_reading_list_by_publisher_md(self, sas_by_publisher_flt_df : DataFrame, sas_by_publisher_df : DataFrame, setting_bag : SettingBag) -> None:
 
         '''Performs all the tasks related to the "Reading List By Publisher" file.'''
 
@@ -1626,7 +1626,7 @@ class MarkdownConverter():
                 file_name = setting_bag.reading_list_by_publisher_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_reading_list_by_rating_md(self, sas_by_rating_df : DataFrame, setting_bag : SettingBag) -> None:
+    def try_show_and_save_reading_list_by_rating_md(self, sas_by_rating_df : DataFrame, setting_bag : SettingBag) -> None:
 
         '''Performs all the tasks related to the "Reading List By Rating" file.'''
 
@@ -1646,7 +1646,7 @@ class MarkdownConverter():
                 file_name = setting_bag.reading_list_by_rating_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_reading_list_by_topic_md(self, sas_by_topic_df : DataFrame, setting_bag : SettingBag) -> None:
+    def try_show_and_save_reading_list_by_topic_md(self, sas_by_topic_df : DataFrame, setting_bag : SettingBag) -> None:
 
         '''Performs all the tasks related to the "Reading List By Topic" file.'''
 
@@ -1666,7 +1666,7 @@ class MarkdownConverter():
                 file_name = setting_bag.reading_list_by_topic_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_reading_list_topic_trend_md(self, yt_by_topic_df : DataFrame, setting_bag : SettingBag) -> None:
+    def try_show_and_save_reading_list_topic_trend_md(self, yt_by_topic_df : DataFrame, setting_bag : SettingBag) -> None:
 
         '''Performs all the tasks related to the "Reading List Topic Trend" file.'''
 
@@ -1686,7 +1686,7 @@ class MarkdownConverter():
                 file_name = setting_bag.reading_list_topic_trend_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_reading_list_md(self, books_df : DataFrame, setting_bag : SettingBag) -> None:
+    def try_show_and_save_reading_list_md(self, books_df : DataFrame, setting_bag : SettingBag) -> None:
 
         '''Performs all the tasks related to the "Reading List" file.'''
 
