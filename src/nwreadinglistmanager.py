@@ -15,7 +15,6 @@ import numpy as np
 import openpyxl
 import os
 import pandas as pd
-from dataclasses import dataclass
 from datetime import datetime
 from datetime import date
 from numpy import float64
@@ -1420,10 +1419,12 @@ class MarkdownProcessor():
     '''Collects all the logic related to the processing of Markdown content.'''
 
     __component_bag : ComponentBag
+    __setting_bag : SettingBag    
 
-    def __init__(self, component_bag : ComponentBag) -> None:
+    def __init__(self, component_bag : ComponentBag, setting_bag : SettingBag) -> None:
 
         self.__component_bag = component_bag
+        self.__setting_bag = setting_bag
 
     def __get_markdown_header(self, last_update : datetime, paragraph_title : str) -> str:
         
@@ -1595,7 +1596,7 @@ class MarkdownProcessor():
         md_content += "\n"
 
         return md_content
-    def __format_file_name(self, file_name : str) -> str:
+    def __format_file_name_as_content(self, file_name : str) -> str:
 
         '''Formats the provided file_name so that it can be displayed on the screen before the Markdown content.'''
 
@@ -1637,135 +1638,129 @@ class MarkdownProcessor():
 
         return formatted_rl_df
 
-    def try_show_readme_md(self, rolling_total_df : DataFrame, setting_bag : SettingBag) -> None:
+    def try_show_readme_md(self, rolling_total_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the README file.'''
 
         content : str = self.__get_readme_md(cumulative_df = rolling_total_df)
 
-        if setting_bag.show_readme_md:
+        if self.__setting_bag.show_readme_md:
             self.__component_bag.logging_lambda(content)
-    def try_show_and_save_reading_list_by_month_md(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], sas_by_year_street_price_df : DataFrame, setting_bag : SettingBag) -> None:
+    def try_show_and_save_reading_list_by_month_md(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], sas_by_year_street_price_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List By Month" file.''' 
 
         content : str = self.__get_reading_list_by_month_md(      
-            last_update = setting_bag.reading_list_last_update, 
+            last_update = self.__setting_bag.reading_list_last_update, 
             sas_by_month_df = sas_by_month_tpl[0], 
             sas_by_year_street_price_df = sas_by_year_street_price_df,
-            use_smaller_font = setting_bag.reading_list_by_month_smaller_font)
+            use_smaller_font = self.__setting_bag.reading_list_by_month_smaller_font)
 
-        if setting_bag.show_reading_list_by_month_md:    
-            self.__component_bag.logging_lambda(
-                self.__format_file_name(file_name = setting_bag.reading_list_by_month_file_name))    
+        if self.__setting_bag.show_reading_list_by_month_md:
+            file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_month_file_name)
+            self.__component_bag.logging_lambda(file_name_content)    
             self.__component_bag.logging_lambda(content)
 
-        if setting_bag.save_reading_list_by_month_md:
-
+        if self.__setting_bag.save_reading_list_by_month_md:
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = setting_bag.working_folder_path,
-                file_name = setting_bag.reading_list_by_month_file_name)
+                folder_path = self.__setting_bag.working_folder_path,
+                file_name = self.__setting_bag.reading_list_by_month_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def try_show_and_save_reading_list_by_publisher_md(self, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame], setting_bag : SettingBag) -> None:
+    def try_show_and_save_reading_list_by_publisher_md(self, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> None:
 
         '''Performs all the tasks related to the "Reading List By Publisher" file.'''
 
         content : str = self.__get_reading_list_by_publisher_md(      
-            last_update = setting_bag.reading_list_last_update, 
+            last_update = self.__setting_bag.reading_list_last_update, 
             sas_by_publisher_tpl = sas_by_publisher_tpl)
 
-        if setting_bag.show_reading_list_by_publisher_md:
-            self.__component_bag.logging_lambda(
-                self.__format_file_name(file_name = setting_bag.reading_list_by_publisher_file_name))        
+        if self.__setting_bag.show_reading_list_by_publisher_md:
+            file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_publisher_file_name)
+            self.__component_bag.logging_lambda(file_name_content)        
             self.__component_bag.logging_lambda(content)
 
-        if setting_bag.save_reading_list_by_publisher_md:
-
+        if self.__setting_bag.save_reading_list_by_publisher_md:
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = setting_bag.working_folder_path,
-                file_name = setting_bag.reading_list_by_publisher_file_name)
+                folder_path = self.__setting_bag.working_folder_path,
+                file_name = self.__setting_bag.reading_list_by_publisher_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def try_show_and_save_reading_list_by_rating_md(self, sas_by_rating_df : DataFrame, setting_bag : SettingBag) -> None:
+    def try_show_and_save_reading_list_by_rating_md(self, sas_by_rating_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List By Rating" file.'''
 
         content : str = self.__get_reading_list_by_rating_md(       
-            last_update = setting_bag.reading_list_last_update, 
+            last_update = self.__setting_bag.reading_list_last_update, 
             sas_by_rating_df = sas_by_rating_df)
 
-        if setting_bag.show_reading_list_by_rating_md:
-            self.__component_bag.logging_lambda(
-                self.__format_file_name(file_name = setting_bag.reading_list_by_rating_file_name))
+        if self.__setting_bag.show_reading_list_by_rating_md:
+            file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_rating_file_name)
+            self.__component_bag.logging_lambda(file_name_content)
             self.__component_bag.logging_lambda(content)
 
-        if setting_bag.save_reading_list_by_rating_md:
-            
+        if self.__setting_bag.save_reading_list_by_rating_md:            
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = setting_bag.working_folder_path,
-                file_name = setting_bag.reading_list_by_rating_file_name)
+                folder_path = self.__setting_bag.working_folder_path,
+                file_name = self.__setting_bag.reading_list_by_rating_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def try_show_and_save_reading_list_by_topic_md(self, sas_by_topic_df : DataFrame, setting_bag : SettingBag) -> None:
+    def try_show_and_save_reading_list_by_topic_md(self, sas_by_topic_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List By Topic" file.'''
 
         content : str = self.__get_reading_list_by_topic_md( 
-            last_update = setting_bag.reading_list_last_update, 
+            last_update = self.__setting_bag.reading_list_last_update, 
             sas_by_topic_df = sas_by_topic_df)
 
-        if setting_bag.show_reading_list_by_topic_md:
-            self.__component_bag.logging_lambda(
-                self.__format_file_name(file_name = setting_bag.reading_list_by_topic_file_name))
+        if self.__setting_bag.show_reading_list_by_topic_md:
+            file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_topic_file_name)
+            self.__component_bag.logging_lambda(file_name_content)
             self.__component_bag.logging_lambda(content)
 
-        if setting_bag.save_reading_list_by_topic_md:
-
+        if self.__setting_bag.save_reading_list_by_topic_md:
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = setting_bag.working_folder_path,
-                file_name = setting_bag.reading_list_by_topic_file_name)
+                folder_path = self.__setting_bag.working_folder_path,
+                file_name = self.__setting_bag.reading_list_by_topic_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def try_show_and_save_reading_list_topic_trend_md(self, yt_by_topic_df : DataFrame, setting_bag : SettingBag) -> None:
+    def try_show_and_save_reading_list_topic_trend_md(self, yt_by_topic_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List Topic Trend" file.'''
 
         content : str = self.__get_reading_list_topic_trend_md(
-            last_update = setting_bag.reading_list_last_update, 
+            last_update = self.__setting_bag.reading_list_last_update, 
             yt_by_topic_df = yt_by_topic_df)
 
-        if setting_bag.show_reading_list_topic_trend_md:
-            self.__component_bag.logging_lambda(
-                self.__format_file_name(file_name = setting_bag.reading_list_topic_trend_file_name))
+        if self.__setting_bag.show_reading_list_topic_trend_md:
+            file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_topic_trend_file_name)           
+            self.__component_bag.logging_lambda(file_name_content)
             self.__component_bag.logging_lambda(content)
 
-        if setting_bag.save_reading_list_topic_trend_md:
-            
+        if self.__setting_bag.save_reading_list_topic_trend_md:           
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = setting_bag.working_folder_path,
-                file_name = setting_bag.reading_list_topic_trend_file_name)
+                folder_path = self.__setting_bag.working_folder_path,
+                file_name = self.__setting_bag.reading_list_topic_trend_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def try_show_and_save_reading_list_md(self, books_df : DataFrame, setting_bag : SettingBag) -> None:
+    def try_show_and_save_reading_list_md(self, books_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List" file.'''
 
         content : str = self.__get_reading_list_md(
-            last_update = setting_bag.reading_list_last_update, 
+            last_update = self.__setting_bag.reading_list_last_update, 
             books_df = books_df,
-            use_smaller_font = setting_bag.reading_list_smaller_font)
+            use_smaller_font = self.__setting_bag.reading_list_smaller_font)
 
-        if setting_bag.show_reading_list_md:
-            self.__component_bag.logging_lambda(
-                self.__format_file_name(file_name = setting_bag.reading_list_file_name))
+        if self.__setting_bag.show_reading_list_md:
+            file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_file_name)
+            self.__component_bag.logging_lambda(file_name_content)
             self.__component_bag.logging_lambda(content)
 
-        if setting_bag.save_reading_list_md:
-
+        if self.__setting_bag.save_reading_list_md:
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = setting_bag.working_folder_path,
-                file_name = setting_bag.reading_list_file_name)
+                folder_path = self.__setting_bag.working_folder_path,
+                file_name = self.__setting_bag.reading_list_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
 
