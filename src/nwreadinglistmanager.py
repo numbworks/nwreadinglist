@@ -22,7 +22,7 @@ from numpy import float64
 from pandas import DataFrame
 from pandas import Series
 from sparklines import sparklines
-from typing import Callable
+from typing import Callable, Tuple
 
 # LOCAL MODULES
 from nwshared import Formatter, Converter, FilePathManager, FileManager
@@ -40,7 +40,6 @@ class SettingBag():
     show_rolling_total_df : bool
     show_sas_by_topic_df : bool
     show_sas_by_publisher_df : bool
-    show_sas_by_publisher_flt_df : bool
     show_sas_by_rating_df : bool
     show_reading_list_by_kbsize_df : bool
     show_yearly_trend_by_topic_df : bool
@@ -74,6 +73,7 @@ class SettingBag():
     rounding_digits : int
     is_worth_min_books : int
     is_worth_min_avgrating : float
+    is_worth_criteria : str    
     formatted_rating : bool
     enable_sparklines_maximum : bool
     update_future_rs_to_empty : bool    
@@ -96,7 +96,6 @@ class SettingBag():
         show_rolling_total_df : bool,
         show_sas_by_topic_df : bool,
         show_sas_by_publisher_df : bool,
-        show_sas_by_publisher_flt_df : bool,
         show_sas_by_rating_df : bool,
         show_reading_list_by_kbsize_df : bool,
         show_yearly_trend_by_topic_df : bool,
@@ -129,6 +128,7 @@ class SettingBag():
         rounding_digits : int = 2,
         is_worth_min_books : int = 8,
         is_worth_min_avgrating : float = 2.50,
+        is_worth_criteria : str = "Yes",        
         formatted_rating : bool = True,
         enable_sparklines_maximum : bool = True,
         update_future_rs_to_empty : bool = True,
@@ -153,7 +153,6 @@ class SettingBag():
         self.show_rolling_total_df = show_rolling_total_df
         self.show_sas_by_topic_df = show_sas_by_topic_df
         self.show_sas_by_publisher_df = show_sas_by_publisher_df
-        self.show_sas_by_publisher_flt_df = show_sas_by_publisher_flt_df
         self.show_sas_by_rating_df = show_sas_by_rating_df
         self.show_reading_list_by_kbsize_df = show_reading_list_by_kbsize_df
         self.show_yearly_trend_by_topic_df = show_yearly_trend_by_topic_df
@@ -187,6 +186,7 @@ class SettingBag():
         self.rounding_digits = rounding_digits
         self.is_worth_min_books = is_worth_min_books
         self.is_worth_min_avgrating = is_worth_min_avgrating
+        self.is_worth_criteria = is_worth_criteria
         self.formatted_rating = formatted_rating
         self.enable_sparklines_maximum = enable_sparklines_maximum
         self.update_future_rs_to_empty = update_future_rs_to_empty
@@ -1126,6 +1126,24 @@ class ReadingListManager():
                     amount = float64(x), rounding_digits = rounding_digits))
 
         return sas_by_street_price_df
+    def __filter_by_is_worth(self, sas_by_publisher_df : DataFrame) -> DataFrame:
+
+        '''
+                Publisher	Books	AvgRating	IsWorth
+            0	Syncfusion	38	    2.55	    Yes
+            1	Wiley	    9	    2.78	    Yes
+            ... ...         ...     ...
+        '''
+
+        filtered_df : DataFrame = sas_by_publisher_df.copy(deep = True)
+
+        cn_isworth : str = "IsWorth"
+        condition : Series = (filtered_df[cn_isworth] == self.__setting_bag.is_worth_criteria)
+        filtered_df = filtered_df.loc[condition]
+        
+        filtered_df.reset_index(drop = True, inplace = True)
+
+        return filtered_df
 
     def get_books_dataset(self) -> DataFrame:
         
@@ -1284,32 +1302,37 @@ class ReadingListManager():
             right_on = cn_topic)
 
         return sas_by_topic_df
-    def get_sas_by_publisher(self, books_df : DataFrame) -> DataFrame:
+    def get_sas_by_publisher_tpl(self, books_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
         
         """
-            by_books_df:
+            The method returns a tuple of dataframes (sas_by_publisher_df, sas_by_publisher_flt_df), 
+            where the first item contains the full dataset while the second one only the rows filtered 
+            by setting_bag.is_worth_criteria.
 
-                    Publisher	Books
-                0	Syncfusion	38
-                1	O'Reilly	34
-                ... ...         ...
+            Example:
 
-            by_avgrating_df:
+                by_books_df:
 
-                    Publisher	        AvgRating
-                0	Maker Media, Inc	4.00
-                1	Manning	            3.11
-                ... ...                 ...
+                        Publisher	Books
+                    0	Syncfusion	38
+                    1	O'Reilly	34
+                    ... ...         ...
 
-            sas_by_publisher_df:
+                by_avgrating_df:
 
-                    Publisher	Books	AvgRating	IsWorth
-                0	Syncfusion	38	    2.55	    Yes
-                1	O'Reilly	34	    2.18	    No
-                ... ...         ...     ...         ...
+                        Publisher	        AvgRating
+                    0	Maker Media, Inc	4.00
+                    1	Manning	            3.11
+                    ... ...                 ...
+
+                sas_by_publisher_df:
+
+                        Publisher	Books	AvgRating	IsWorth
+                    0	Syncfusion	38	    2.55	    Yes
+                    1	O'Reilly	34	    2.18	    No
+                    ... ...         ...     ...         ...
 
             IsWorth criteria example: "Yes" if AvgRating >= 2.50 && Books >= 8
-
         """
 
         cn_publisher : str = "Publisher"
@@ -1336,25 +1359,9 @@ class ReadingListManager():
             (sas_by_publisher_df[cn_avgrating] >= self.__setting_bag.is_worth_min_avgrating), 
             "Yes", "No")
 
-        return sas_by_publisher_df
-    def filter_by_is_worth(self, sas_by_publisher_df : DataFrame, is_worth : str = "Yes") -> DataFrame:
+        sas_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(sas_by_publisher_df = sas_by_publisher_df)
 
-        '''
-                Publisher	Books	AvgRating	IsWorth
-            0	Syncfusion	38	    2.55	    Yes
-            1	Wiley	    9	    2.78	    Yes
-            ... ...         ...     ...
-        '''
-
-        filtered_df : DataFrame = sas_by_publisher_df.copy(deep = True)
-
-        cn_isworth : str = "IsWorth"
-        condition : Series = (filtered_df[cn_isworth] == is_worth)
-        filtered_df = filtered_df.loc[condition]
-        
-        filtered_df.reset_index(drop = True, inplace = True)
-
-        return filtered_df
+        return (sas_by_publisher_df, sas_by_publisher_flt_df)       
     def get_sas_by_rating(self, books_df : DataFrame) -> DataFrame:
 
         '''
@@ -1374,7 +1381,7 @@ class ReadingListManager():
             sas_by_rating_df[cn_rating] = sas_by_rating_df[cn_rating].apply(
                 lambda x : self.__component_bag.formatter.format_rating(rating = x))
 
-        return sas_by_rating_df
+        return sas_by_rating_df    
     def get_reading_list_by_kbsize(self, books_df : DataFrame, n_by_kbsize : int) -> DataFrame:
         
         '''
@@ -1511,15 +1518,15 @@ class MarkdownProcessor():
         md_content += ""
 
         return md_content
-    def __get_reading_list_by_publisher_md(self, last_update : datetime, sas_by_publisher_flt_df : DataFrame, sas_by_publisher_df : DataFrame) -> str:
+    def __get_reading_list_by_publisher_md(self, last_update : datetime, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> str:
 
         '''Creates the Markdown content for a "Reading List By Publisher" file out of the provided dataframes.'''
 
         md_paragraph_title : str = "Reading List By Publisher"
 
         markdown_header : str = self.__get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-        sas_by_publisher_flt_md : str = sas_by_publisher_flt_df.to_markdown(index = False)
-        sas_by_publisher_md : str = sas_by_publisher_df.to_markdown(index = False)
+        sas_by_publisher_flt_md : str = sas_by_publisher_tpl[1].to_markdown(index = False)
+        sas_by_publisher_md : str = sas_by_publisher_tpl[0].to_markdown(index = False)
 
         md_content : str = markdown_header
         md_content += "\n"
@@ -1669,14 +1676,13 @@ class MarkdownProcessor():
                 file_name = setting_bag.reading_list_by_month_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def try_show_and_save_reading_list_by_publisher_md(self, sas_by_publisher_flt_df : DataFrame, sas_by_publisher_df : DataFrame, setting_bag : SettingBag) -> None:
+    def try_show_and_save_reading_list_by_publisher_md(self, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame], setting_bag : SettingBag) -> None:
 
         '''Performs all the tasks related to the "Reading List By Publisher" file.'''
 
         content : str = self.__get_reading_list_by_publisher_md(      
             last_update = setting_bag.reading_list_last_update, 
-            sas_by_publisher_flt_df = sas_by_publisher_flt_df, 
-            sas_by_publisher_df = sas_by_publisher_df)
+            sas_by_publisher_tpl = sas_by_publisher_tpl)
 
         if setting_bag.show_reading_list_by_publisher_md:
             self.__component_bag.logging_lambda(
