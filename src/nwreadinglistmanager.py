@@ -1355,7 +1355,7 @@ class ReadingListManager():
         filtered_df.reset_index(drop = True, inplace = True)
 
         return filtered_df
-    def get_sas_by_rating(self, books_df : DataFrame, formatted_rating : bool) -> DataFrame:
+    def get_sas_by_rating(self, books_df : DataFrame) -> DataFrame:
 
         '''
                 Rating  Books
@@ -1370,7 +1370,7 @@ class ReadingListManager():
         sas_by_rating_df.sort_values(by = cn_rating, ascending = False, inplace = True)
         sas_by_rating_df.reset_index(drop = True, inplace = True)
 
-        if formatted_rating:
+        if self.__setting_bag.formatted_rating:
             sas_by_rating_df[cn_rating] = sas_by_rating_df[cn_rating].apply(
                 lambda x : self.__component_bag.formatter.format_rating(rating = x))
 
