@@ -56,7 +56,7 @@ class ObjectMother():
             n_by_month = 12,
             n_by_kbsize = 10,
             show_books_df = False,
-            show_sas_by_month_upd_df = True,
+            show_sas_by_month_df = True,
             show_sas_by_year_street_price_df = True,
             show_cumulative_df = True,
             show_sas_by_topic_df = True,

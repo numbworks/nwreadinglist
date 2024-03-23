@@ -35,7 +35,7 @@ class SettingBag():
     '''Represents a collection of settings.'''
 
     show_books_df : bool
-    show_sas_by_month_upd_df : bool
+    show_sas_by_month_df : bool
     show_sas_by_year_street_price_df : bool
     show_cumulative_df : bool
     show_sas_by_topic_df : bool
@@ -90,7 +90,7 @@ class SettingBag():
     def __init__(
         self,
         show_books_df : bool,
-        show_sas_by_month_upd_df : bool,
+        show_sas_by_month_df : bool,
         show_sas_by_year_street_price_df : bool,
         show_cumulative_df : bool,
         show_sas_by_topic_df : bool,
@@ -146,7 +146,7 @@ class SettingBag():
         ) -> None:
 
         self.show_books_df = show_books_df
-        self.show_sas_by_month_upd_df = show_sas_by_month_upd_df
+        self.show_sas_by_month_df = show_sas_by_month_df
         self.show_sas_by_year_street_price_df = show_sas_by_year_street_price_df
         self.show_cumulative_df = show_cumulative_df
         self.show_sas_by_topic_df = show_sas_by_topic_df
@@ -329,64 +329,6 @@ class ReadingListManager():
         books_df = books_df.astype({column_names[19]: int})
 
         return books_df
-    def __update_future_rs_to_empty(self, sas_by_month_df : DataFrame, now : datetime) -> DataFrame:
-
-        '''	
-            If now is 2023-08-09:
-
-                Month	2022	↕	2023
-                ...
-                8	    0 (0)	=	0 (0)
-                9	    1 (360)	↓	0 (0)
-                10	    0 (0)	=	0 (0)
-                11	    0 (0)	=	0 (0)
-                12	    0 (0)	=	0 (0)		            
-
-                Month	2022	↕	2023
-                ...
-                8	    0 (0)	=	0 (0)
-                9	    1 (360)		
-                10	    0 (0)		
-                11	    0 (0)		
-                12	    0 (0)
-        '''
-
-        sas_by_month_upd_df : DataFrame = sas_by_month_df.copy(deep = True)
-
-        now_year : int = now.year
-        now_month : int = now.month	
-        cn_year : str = str(now_year)
-        cn_month : str = "Month"
-        new_value : str = ""
-
-        condition : Series = (sas_by_month_upd_df[cn_month] > now_month)
-        sas_by_month_upd_df[cn_year] = np.where(condition, new_value, sas_by_month_upd_df[cn_year])
-            
-        idx_year : int = sas_by_month_upd_df.columns.get_loc(cn_year)
-        idx_trend : int = (idx_year - 1)
-        sas_by_month_upd_df.iloc[:, idx_trend] = np.where(condition, new_value, sas_by_month_upd_df.iloc[:, idx_trend])
-
-        return sas_by_month_upd_df
-    def __restore_future_rs(self, sas_by_month_df : DataFrame, now : datetime) -> DataFrame:
-
-        '''
-            Restores future rs fields from empty to "0 (0)" to allow calculations.
-            
-            Note: trend fields are not restored.
-        '''
-
-        sas_by_month_upd_df : DataFrame = sas_by_month_df.copy(deep = True)
-
-        now_year : int = now.year
-        now_month : int = now.month	
-        cn_year : str = str(now_year)
-        cn_month : str = "Month"
-        new_value : str = "0 (0)"
-
-        condition : Series = (sas_by_month_upd_df[cn_month] > now_month)
-        sas_by_month_upd_df[cn_year] = np.where(condition, new_value, sas_by_month_upd_df[cn_year])
-
-        return sas_by_month_upd_df       
     def __format_reading_status(self, books : int, pages : int) -> str:
 
         '''
@@ -995,99 +937,65 @@ class ReadingListManager():
         sparklined_df[cn_sparklines] = sparklined_df[cn_values].apply(lambda numbers : sparklines(numbers = numbers, maximum = maximum)[0])
 
         return sparklined_df
+    def __update_future_rs_to_empty(self, sas_by_month_df : DataFrame, now : datetime) -> DataFrame:
 
-    def get_books_dataset(self) -> DataFrame:
-        
-        '''Retrieves the content of the "Books" tab and returns it as a Dataframe.'''
+        '''	
+            If now is 2023-08-09:
 
-        books_df = pd.read_excel(
-            io = self.__setting_bag.excel_path, 	
-            skiprows = self.__setting_bag.excel_books_skiprows,
-            nrows = self.__setting_bag.excel_books_nrows,
-            sheet_name = self.__setting_bag.excel_books_tabname, 
-            engine = 'openpyxl'
-            )
-        
-        books_df = self.__enforce_dataframe_definition_for_books_df(
-            books_df = books_df, 
-            excel_null_value = self.__setting_bag.excel_null_value)
+                Month	2022	↕	2023
+                ...
+                8	    0 (0)	=	0 (0)
+                9	    1 (360)	↓	0 (0)
+                10	    0 (0)	=	0 (0)
+                11	    0 (0)	=	0 (0)
+                12	    0 (0)	=	0 (0)		            
 
-        return books_df
-    def get_sas_by_month(self, books_df : DataFrame) -> DataFrame:
-
-        '''
-                Month	2016	↕1	2017	    ↕2	2018
-            0	1	    0 (0)	↑	13 (5157)	↓	0 (0)
-            1	2	    0 (0)	↑	1 (106)	    ↓	0 (0)
-            ...
-
-                Month	2016	↕   2017	    ↕	2018
-            0	1	    0 (0)	↑	13 (5157)	↓	0 (0)
-            1	2	    0 (0)	↑	1 (106)	    ↓	0 (0)
-            ...
+                Month	2022	↕	2023
+                ...
+                8	    0 (0)	=	0 (0)
+                9	    1 (360)		
+                10	    0 (0)		
+                11	    0 (0)		
+                12	    0 (0)
         '''
 
-        sas_by_month_df : DataFrame = None
-        read_years : list[int] = self.__setting_bag.read_years
-        add_trend : bool = True
+        sas_by_month_upd_df : DataFrame = sas_by_month_df.copy(deep = True)
 
-        for i in range(len(read_years)):
+        now_year : int = now.year
+        now_month : int = now.month	
+        cn_year : str = str(now_year)
+        cn_month : str = "Month"
+        new_value : str = ""
 
-            if i == 0:
-                sas_by_month_df = self.__get_sa_by_year(books_df = books_df, read_year = read_years[i])
-            else:
-                sas_by_month_df = self.__expand_sa_by_year(
-                    books_df = books_df, 
-                    read_years = read_years, 
-                    sas_by_month_df = sas_by_month_df, 
-                    i = i, 
-                    add_trend = add_trend)
+        condition : Series = (sas_by_month_upd_df[cn_month] > now_month)
+        sas_by_month_upd_df[cn_year] = np.where(condition, new_value, sas_by_month_upd_df[cn_year])
+            
+        idx_year : int = sas_by_month_upd_df.columns.get_loc(cn_year)
+        idx_trend : int = (idx_year - 1)
+        sas_by_month_upd_df.iloc[:, idx_trend] = np.where(condition, new_value, sas_by_month_upd_df.iloc[:, idx_trend])
 
-        sas_by_month_df.rename(
-            columns = (lambda x : self.__try_consolidate_trend_column_name(column_name = x)), 
-            inplace = True)
-        
-        if self.__setting_bag.update_future_rs_to_empty == True:
-            return self.__update_future_rs_to_empty(sas_by_month_df = sas_by_month_df , now = self.__setting_bag.now)
-
-        return sas_by_month_df
-    def get_cumulative(self, books_df : DataFrame, last_update : date, rounding_digits : bool = 2) -> DataFrame:
+        return sas_by_month_upd_df
+    def __restore_future_rs(self, sas_by_month_df : DataFrame, now : datetime) -> DataFrame:
 
         '''
-                Years	Books	Pages	TotalSpend  LastUpdate
-            0	8	    234	    62648	$6332.01    2023-09-23
+            Restores future rs fields from empty to "0 (0)" to allow calculations.
+            
+            Note: trend fields are not restored.
         '''
 
-        cn_read_year : str = "ReadYear"
-        count_years : int = books_df[cn_read_year].unique().size
+        sas_by_month_upd_df : DataFrame = sas_by_month_df.copy(deep = True)
 
-        cn_title : str = "Title"
-        count_books : int = books_df[cn_title].size
+        now_year : int = now.year
+        now_month : int = now.month	
+        cn_year : str = str(now_year)
+        cn_month : str = "Month"
+        new_value : str = "0 (0)"
 
-        cn_pages : str = "Pages"
-        sum_pages : int = books_df[cn_pages].sum()
+        condition : Series = (sas_by_month_upd_df[cn_month] > now_month)
+        sas_by_month_upd_df[cn_year] = np.where(condition, new_value, sas_by_month_upd_df[cn_year])
 
-        cn_street_price : str = "StreetPrice"
-        sum_street_price : float64 = books_df[cn_street_price].sum()
-
-        cn_years : str = "Years"
-        cn_books : str = "Books"
-        cn_pages : str = "Pages"
-        cn_total_spend : str = "TotalSpend"
-        cn_last_update : str = "LastUpdate"
-
-        cumulative_dict : dict = {
-            f"{cn_years}": f"{str(count_years)}",
-            f"{cn_books}": f"{str(count_books)}",
-            f"{cn_pages}": f"{str(sum_pages)}",
-            f"{cn_total_spend}": f"{self.__component_bag.formatter.format_usd_amount(amount = sum_street_price, rounding_digits = rounding_digits)}",
-            f"{cn_last_update}": f"{self.__component_bag.formatter.format_to_iso_8601(dt = self.__component_bag.converter.convert_date_to_datetime(dt = last_update))}"
-            }
-
-        cumulative_df : DataFrame = pd.DataFrame(cumulative_dict, index=[0])
-
-        return cumulative_df    
-    def get_sas_by_year(self, sas_by_month_df : DataFrame) -> DataFrame:
+        return sas_by_month_upd_df           
+    def __get_sas_by_year(self, sas_by_month_df : DataFrame) -> DataFrame:
 
         '''
             sas_by_year_df:
@@ -1159,7 +1067,7 @@ class ReadingListManager():
         sas_by_year_df.rename(columns = (lambda x : self.__try_consolidate_trend_column_name(column_name = x)), inplace = True)
 
         return sas_by_year_df
-    def get_sas_by_street_price(self, books_df : DataFrame, read_years : list, rounding_digits : int = 2) -> DataFrame:
+    def __get_sas_by_street_price(self, books_df : DataFrame, read_years : list, rounding_digits : int = 2) -> DataFrame:
 
         '''
             [...]
@@ -1215,6 +1123,62 @@ class ReadingListManager():
                     amount = float64(x), rounding_digits = rounding_digits))
 
         return sas_by_street_price_df
+
+    def get_books_dataset(self) -> DataFrame:
+        
+        '''Retrieves the content of the "Books" tab and returns it as a Dataframe.'''
+
+        books_df = pd.read_excel(
+            io = self.__setting_bag.excel_path, 	
+            skiprows = self.__setting_bag.excel_books_skiprows,
+            nrows = self.__setting_bag.excel_books_nrows,
+            sheet_name = self.__setting_bag.excel_books_tabname, 
+            engine = 'openpyxl'
+            )
+        
+        books_df = self.__enforce_dataframe_definition_for_books_df(
+            books_df = books_df, 
+            excel_null_value = self.__setting_bag.excel_null_value)
+
+        return books_df
+    def get_sas_by_month(self, books_df : DataFrame) -> DataFrame:
+
+        '''
+                Month	2016	↕1	2017	    ↕2	2018
+            0	1	    0 (0)	↑	13 (5157)	↓	0 (0)
+            1	2	    0 (0)	↑	1 (106)	    ↓	0 (0)
+            ...
+
+                Month	2016	↕   2017	    ↕	2018
+            0	1	    0 (0)	↑	13 (5157)	↓	0 (0)
+            1	2	    0 (0)	↑	1 (106)	    ↓	0 (0)
+            ...
+        '''
+
+        sas_by_month_df : DataFrame = None
+        read_years : list[int] = self.__setting_bag.read_years
+        add_trend : bool = True
+
+        for i in range(len(read_years)):
+
+            if i == 0:
+                sas_by_month_df = self.__get_sa_by_year(books_df = books_df, read_year = read_years[i])
+            else:
+                sas_by_month_df = self.__expand_sa_by_year(
+                    books_df = books_df, 
+                    read_years = read_years, 
+                    sas_by_month_df = sas_by_month_df, 
+                    i = i, 
+                    add_trend = add_trend)
+
+        sas_by_month_df.rename(
+            columns = (lambda x : self.__try_consolidate_trend_column_name(column_name = x)), 
+            inplace = True)
+        
+        if self.__setting_bag.update_future_rs_to_empty == True:
+            return self.__update_future_rs_to_empty(sas_by_month_df = sas_by_month_df , now = self.__setting_bag.now)
+
+        return sas_by_month_df
     def get_sas_by_year_street_price(self, sas_by_month_df : DataFrame, books_df : DataFrame, read_years : list) -> DataFrame:
 
         '''
@@ -1223,13 +1187,49 @@ class ReadingListManager():
             1	$1447.14	↑	$2123.36	↓	$1249.15	↓	$748.70	    ↓	$538.75	    ↓	$169.92	    ↓	$49.99	↓	$5.00
         '''
 
-        sas_by_year_df : DataFrame = self.get_sas_by_year(sas_by_month_df = sas_by_month_df)
-        sas_by_street_price_df : DataFrame = self.get_sas_by_street_price(books_df = books_df, read_years = read_years)
+        sas_by_year_df : DataFrame = self.__get_sas_by_year(sas_by_month_df = sas_by_month_df)
+        sas_by_street_price_df : DataFrame = self.__get_sas_by_street_price(books_df = books_df, read_years = read_years)
 
         sas_by_year_street_price_df : DataFrame = pd.concat(objs = [sas_by_year_df, sas_by_street_price_df])
         sas_by_year_street_price_df.reset_index(drop = True, inplace = True)
 
-        return sas_by_year_street_price_df
+        return sas_by_year_street_price_df    
+    def get_cumulative(self, books_df : DataFrame, last_update : date, rounding_digits : bool = 2) -> DataFrame:
+
+        '''
+                Years	Books	Pages	TotalSpend  LastUpdate
+            0	8	    234	    62648	$6332.01    2023-09-23
+        '''
+
+        cn_read_year : str = "ReadYear"
+        count_years : int = books_df[cn_read_year].unique().size
+
+        cn_title : str = "Title"
+        count_books : int = books_df[cn_title].size
+
+        cn_pages : str = "Pages"
+        sum_pages : int = books_df[cn_pages].sum()
+
+        cn_street_price : str = "StreetPrice"
+        sum_street_price : float64 = books_df[cn_street_price].sum()
+
+        cn_years : str = "Years"
+        cn_books : str = "Books"
+        cn_pages : str = "Pages"
+        cn_total_spend : str = "TotalSpend"
+        cn_last_update : str = "LastUpdate"
+
+        cumulative_dict : dict = {
+            f"{cn_years}": f"{str(count_years)}",
+            f"{cn_books}": f"{str(count_books)}",
+            f"{cn_pages}": f"{str(sum_pages)}",
+            f"{cn_total_spend}": f"{self.__component_bag.formatter.format_usd_amount(amount = sum_street_price, rounding_digits = rounding_digits)}",
+            f"{cn_last_update}": f"{self.__component_bag.formatter.format_to_iso_8601(dt = self.__component_bag.converter.convert_date_to_datetime(dt = last_update))}"
+            }
+
+        cumulative_df : DataFrame = pd.DataFrame(cumulative_dict, index=[0])
+
+        return cumulative_df    
     def get_sas_by_topic(self, books_df : DataFrame) -> DataFrame:
 
         """
