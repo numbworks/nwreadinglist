@@ -75,6 +75,7 @@ class SettingBag():
     is_worth_min_avgrating : float
     formatted_rating : bool
     enable_sparklines_maximum : bool
+    update_future_rs_to_empty : bool    
     reading_list_by_month_file_name : str
     reading_list_by_publisher_file_name : str
     reading_list_by_rating_file_name : str
@@ -128,6 +129,7 @@ class SettingBag():
         is_worth_min_avgrating : float = 2.50,
         formatted_rating : bool = True,
         enable_sparklines_maximum : bool = True,
+        update_future_rs_to_empty : bool = True,
         reading_list_by_month_file_name : str = "READINGLISTBYMONTH.md",
         reading_list_by_publisher_file_name : str = "READINGLISTBYPUBLISHER.md",
         reading_list_by_rating_file_name : str = "READINGLISTBYRATING.md",
@@ -184,6 +186,7 @@ class SettingBag():
         self.is_worth_min_avgrating = is_worth_min_avgrating
         self.formatted_rating = formatted_rating
         self.enable_sparklines_maximum = enable_sparklines_maximum
+        self.update_future_rs_to_empty = update_future_rs_to_empty
         self.reading_list_by_month_file_name = reading_list_by_month_file_name
         self.reading_list_by_publisher_file_name = reading_list_by_publisher_file_name 
         self.reading_list_by_rating_file_name = reading_list_by_rating_file_name
@@ -326,6 +329,64 @@ class ReadingListManager():
         books_df = books_df.astype({column_names[19]: int})
 
         return books_df
+    def __update_future_rs_to_empty(self, sas_by_month_df : DataFrame, now : datetime) -> DataFrame:
+
+        '''	
+            If now is 2023-08-09:
+
+                Month	2022	↕	2023
+                ...
+                8	    0 (0)	=	0 (0)
+                9	    1 (360)	↓	0 (0)
+                10	    0 (0)	=	0 (0)
+                11	    0 (0)	=	0 (0)
+                12	    0 (0)	=	0 (0)		            
+
+                Month	2022	↕	2023
+                ...
+                8	    0 (0)	=	0 (0)
+                9	    1 (360)		
+                10	    0 (0)		
+                11	    0 (0)		
+                12	    0 (0)
+        '''
+
+        sas_by_month_upd_df : DataFrame = sas_by_month_df.copy(deep = True)
+
+        now_year : int = now.year
+        now_month : int = now.month	
+        cn_year : str = str(now_year)
+        cn_month : str = "Month"
+        new_value : str = ""
+
+        condition : Series = (sas_by_month_upd_df[cn_month] > now_month)
+        sas_by_month_upd_df[cn_year] = np.where(condition, new_value, sas_by_month_upd_df[cn_year])
+            
+        idx_year : int = sas_by_month_upd_df.columns.get_loc(cn_year)
+        idx_trend : int = (idx_year - 1)
+        sas_by_month_upd_df.iloc[:, idx_trend] = np.where(condition, new_value, sas_by_month_upd_df.iloc[:, idx_trend])
+
+        return sas_by_month_upd_df
+    def __restore_future_rs(self, sas_by_month_df : DataFrame, now : datetime) -> DataFrame:
+
+        '''
+            Restores future rs fields from empty to "0 (0)" to allow calculations.
+            
+            Note: trend fields are not restored.
+        '''
+
+        sas_by_month_upd_df : DataFrame = sas_by_month_df.copy(deep = True)
+
+        now_year : int = now.year
+        now_month : int = now.month	
+        cn_year : str = str(now_year)
+        cn_month : str = "Month"
+        new_value : str = "0 (0)"
+
+        condition : Series = (sas_by_month_upd_df[cn_month] > now_month)
+        sas_by_month_upd_df[cn_year] = np.where(condition, new_value, sas_by_month_upd_df[cn_year])
+
+        return sas_by_month_upd_df       
     def __format_reading_status(self, books : int, pages : int) -> str:
 
         '''
@@ -985,46 +1046,11 @@ class ReadingListManager():
         sas_by_month_df.rename(
             columns = (lambda x : self.__try_consolidate_trend_column_name(column_name = x)), 
             inplace = True)
+        
+        if self.__setting_bag.update_future_rs_to_empty == True:
+            return self.__update_future_rs_to_empty(sas_by_month_df = sas_by_month_df , now = self.__setting_bag.now)
 
         return sas_by_month_df
-    def update_future_rs_to_empty(self, sas_by_month_df : DataFrame, now : datetime) -> DataFrame:
-
-        '''	
-            If now is 2023-08-09:
-
-                Month	2022	↕	2023
-                ...
-                8	    0 (0)	=	0 (0)
-                9	    1 (360)	↓	0 (0)
-                10	    0 (0)	=	0 (0)
-                11	    0 (0)	=	0 (0)
-                12	    0 (0)	=	0 (0)		            
-
-                Month	2022	↕	2023
-                ...
-                8	    0 (0)	=	0 (0)
-                9	    1 (360)		
-                10	    0 (0)		
-                11	    0 (0)		
-                12	    0 (0)
-        '''
-
-        sas_by_month_upd_df : DataFrame = sas_by_month_df.copy(deep = True)
-
-        now_year : int = now.year
-        now_month : int = now.month	
-        cn_year : str = str(now_year)
-        cn_month : str = "Month"
-        new_value : str = ""
-
-        condition : Series = (sas_by_month_upd_df[cn_month] > now_month)
-        sas_by_month_upd_df[cn_year] = np.where(condition, new_value, sas_by_month_upd_df[cn_year])
-            
-        idx_year : int = sas_by_month_upd_df.columns.get_loc(cn_year)
-        idx_trend : int = (idx_year - 1)
-        sas_by_month_upd_df.iloc[:, idx_trend] = np.where(condition, new_value, sas_by_month_upd_df.iloc[:, idx_trend])
-
-        return sas_by_month_upd_df
     def get_cumulative(self, books_df : DataFrame, last_update : date, rounding_digits : bool = 2) -> DataFrame:
 
         '''
@@ -1098,6 +1124,9 @@ class ReadingListManager():
         '''
 
         sas_by_year_df : DataFrame = sas_by_month_df.copy(deep = True)
+
+        if self.__setting_bag.update_future_rs_to_empty == True:
+            sas_by_year_df = self.__restore_future_rs(sas_by_month_df = sas_by_year_df, now = self.__setting_bag.now)
 
         cn_month : str = "Month"
         cn_trend : str = "↕"
