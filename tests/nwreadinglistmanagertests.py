@@ -1,7 +1,9 @@
 # GLOBAL MODULES
-import unittest
+import os
+import sys
 import numpy as np
 import pandas as pd
+import unittest
 from datetime import datetime
 from datetime import date
 from datetime import timedelta
@@ -12,11 +14,9 @@ from parameterized import parameterized
 from unittest.mock import patch
 
 # LOCAL MODULES
-import sys, os
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-import nwreadinglistmanager as nwrlm
-import nwcorecomponents as nwcc
-from nwreadinglistmanager import SettingBag
+from nwreadinglistmanager import DefaultPathProvider, YearProvider, SettingBag, ComponentBag
+from nwreadinglistmanager import ReadingListManager, MarkdownProcessor
 
 # SUPPORT METHODS
 class SupportMethodProvider():
@@ -229,7 +229,7 @@ class ObjectMother():
         }, index=pd.RangeIndex(start=0, stop=3, step=1))
 
 # TEST CLASSES
-class GetDefaultReadingListPathTestCase(unittest.TestCase):
+class DefaultPathProviderTestCase(unittest.TestCase):
 
     def test_getdefaultreadinglistpath_shouldreturnexpectedpath_wheninvoked(self):
         
@@ -240,10 +240,12 @@ class GetDefaultReadingListPathTestCase(unittest.TestCase):
 
         # Act
         with patch.object(os, 'getcwd', return_value="C:/project_dir/src/") as mocked_context:
-            actual : str = nwrlm.get_default_reading_list_path()
+            actual : str = DefaultPathProvider().get_default_reading_list_path()
 
         # Assert
         self.assertEqual(expected, actual)
+
+
 class GetBookssDfTestCase(unittest.TestCase):
 
     def test_getbooksdf_shouldreturnexpecteddataframe_wheninvoked(self):
