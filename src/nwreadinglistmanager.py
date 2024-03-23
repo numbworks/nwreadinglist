@@ -1598,7 +1598,7 @@ class MarkdownConverter():
                 self.__format_file_name(file_name = setting_bag.reading_list_by_month_file_name))    
             self.__component_bag.logging_lambda(content)
 
-        if setting_bag.save_reading_lists_to_file:
+        if setting_bag.save_reading_list_by_month_md:
 
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
                 folder_path = setting_bag.working_folder_path,
@@ -1619,7 +1619,7 @@ class MarkdownConverter():
                 self.__format_file_name(file_name = setting_bag.reading_list_by_publisher_file_name))        
             self.__component_bag.logging_lambda(content)
 
-        if setting_bag.save_reading_lists_to_file:
+        if setting_bag.save_reading_list_by_publisher_md:
 
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
                 folder_path = setting_bag.working_folder_path,
@@ -1639,7 +1639,7 @@ class MarkdownConverter():
                 self.__format_file_name(file_name = setting_bag.reading_list_by_rating_file_name))
             self.__component_bag.logging_lambda(content)
 
-        if setting_bag.save_reading_lists_to_file:
+        if setting_bag.save_reading_list_by_rating_md:
             
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
                 folder_path = setting_bag.working_folder_path,
@@ -1659,11 +1659,31 @@ class MarkdownConverter():
                 self.__format_file_name(file_name = setting_bag.reading_list_by_topic_file_name))
             self.__component_bag.logging_lambda(content)
 
-        if setting_bag.save_reading_lists_to_file:
+        if setting_bag.save_reading_list_by_topic_md:
 
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
                 folder_path = setting_bag.working_folder_path,
                 file_name = setting_bag.reading_list_by_topic_file_name)
+            
+            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
+    def process_reading_list_topic_trend_md(self, yt_by_topic_df : DataFrame, setting_bag : SettingBag) -> None:
+
+        '''Performs all the tasks related to the "Reading List Topic Trend" file.'''
+
+        content : str = self.__get_reading_list_topic_trend_md(
+            last_update = setting_bag.reading_list_last_update, 
+            yt_by_topic_df = yt_by_topic_df)
+
+        if setting_bag.show_reading_list_topic_trend_md:
+            self.__component_bag.logging_lambda(
+                self.__format_file_name(file_name = setting_bag.reading_list_topic_trend_file_name))
+            self.__component_bag.logging_lambda(content)
+
+        if setting_bag.save_reading_list_topic_trend_md:
+            
+            file_path : str = self.__component_bag.file_path_manager.create_file_path(
+                folder_path = setting_bag.working_folder_path,
+                file_name = setting_bag.reading_list_topic_trend_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
     def process_reading_list_md(self, books_df : DataFrame, setting_bag : SettingBag) -> None:
@@ -1680,31 +1700,11 @@ class MarkdownConverter():
                 self.__format_file_name(file_name = setting_bag.reading_list_file_name))
             self.__component_bag.logging_lambda(content)
 
-        if setting_bag.save_reading_lists_to_file:
+        if setting_bag.save_reading_list_md:
 
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
                 folder_path = setting_bag.working_folder_path,
                 file_name = setting_bag.reading_list_file_name)
-            
-            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_reading_list_topic_trend_md(self, yt_by_topic_df : DataFrame, setting_bag : SettingBag) -> None:
-
-        '''Performs all the tasks related to the "Reading List Topic Trend" file.'''
-
-        content : str = self.__get_reading_list_topic_trend_md(
-            last_update = setting_bag.reading_list_last_update, 
-            yt_by_topic_df = yt_by_topic_df)
-
-        if setting_bag.show_reading_list_topic_trend_md:
-            self.__component_bag.logging_lambda(
-                self.__format_file_name(file_name = setting_bag.reading_list_topic_trend_file_name))
-            self.__component_bag.logging_lambda(content)
-
-        if setting_bag.save_reading_lists_to_file:
-            
-            file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = setting_bag.working_folder_path,
-                file_name = setting_bag.reading_list_topic_trend_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
 
