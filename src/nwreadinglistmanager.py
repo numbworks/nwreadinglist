@@ -249,6 +249,17 @@ class DefaultPathProvider():
         path = os.path.join(path, "Reading List.xlsx")
 
         return path
+class YearProvider():
+
+    '''Collects all the logic related to the retrieval of year-related information.'''
+
+    def get_all_years(self) -> list[int]:
+
+        '''Returns a list of years.'''
+
+        years : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
+
+        return years
 class ReadingListManager():
 
     '''Collects all the logic related to the management of "Reading List.xlsx".'''
