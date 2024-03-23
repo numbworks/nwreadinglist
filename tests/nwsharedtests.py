@@ -409,6 +409,23 @@ class FormatterTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(expected, actual)
+
+    @parameterized.expand([
+        [5, "★★★★★"],
+        [4, "★★★★☆"],
+        [3, "★★★☆☆"],
+        [2, "★★☆☆☆"],
+        [1, "★☆☆☆☆"],
+        [0, "0"]
+    ])
+    def test_formatrating_shouldreturnexpectedstring_wheninvoked(self, rating : int, expected : str):
+        
+        # Arrange
+        # Act
+        actual : str = Formatter().format_rating(rating = rating)
+
+        # Assert
+        self.assertEqual(expected, actual)
 class ConverterTestCase(unittest.TestCase):
 
     @parameterized.expand([
