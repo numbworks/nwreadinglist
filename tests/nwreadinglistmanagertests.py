@@ -1,7 +1,9 @@
 # GLOBAL MODULES
-import unittest
+import os
+import sys
 import numpy as np
 import pandas as pd
+import unittest
 from datetime import datetime
 from datetime import date
 from datetime import timedelta
@@ -12,11 +14,9 @@ from parameterized import parameterized
 from unittest.mock import patch
 
 # LOCAL MODULES
-import sys, os
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-import nwreadinglistmanager as nwrlm
-import nwcorecomponents as nwcc
-from nwreadinglistmanager import SettingBag
+from nwreadinglistmanager import DefaultPathProvider, YearProvider, SettingBag, ComponentBag
+from nwreadinglistmanager import ReadingListManager, MarkdownProcessor
 
 # SUPPORT METHODS
 class SupportMethodProvider():
@@ -44,53 +44,53 @@ class ObjectMother():
     def create_setting_bag() -> SettingBag:
         
         return SettingBag(
-            read_years = [2016, 2017 , 2018, 2019, 2020, 2021, 2022, 2023, 2024],
-            excel_path = "C:/project_dir/data/Reading List.xlsx",
-            excel_books_skiprows = 0,
-            excel_books_nrows = 275,
-            excel_books_tabname = "Books",
-            excel_null_value = "-",
-            is_worth_min_books = 8,
-            is_worth_min_avgrating = 2.50,
-            n_generic = 5,
-            n_by_month = 12,
-            n_by_kbsize = 10,
+
             show_books_df = False,
-            show_sas_by_month_upd_df = True,
+            show_sas_by_month_df = True,
             show_sas_by_year_street_price_df = True,
-            show_cumulative_df = True,
+            show_rolling_total_df = True,
             show_sas_by_topic_df = True,
-            show_sas_by_publisher_df = False,
-            show_sas_by_publisher_flt_df = True,
+            show_sas_by_publisher_df = True,
             show_sas_by_rating_df = True,
-            last_update = datetime.now(),
+            show_reading_list_by_kbsize_df = True,
+            show_yearly_trend_by_topic_df = True,
+            show_books_by_year_box_plot = True,
+            show_reading_list_by_kbsize_box_plot = True,
             show_readme_md = True,
             show_reading_list_by_month_md = False,
             show_reading_list_by_publisher_md = False,
             show_reading_list_by_rating_md = False,
             show_reading_list_by_topic_md = False,
-            show_reading_list_md = False,
             show_reading_list_topic_trend_md = False,
-            formatted_rating = True,
-            now  = datetime.now(),
+            show_reading_list_md = False,
+            save_reading_list_by_month_md = False,
+            save_reading_list_by_publisher_md = False,
+            save_reading_list_by_rating_md = False,
+            save_reading_list_by_topic_md = False,
+            save_reading_list_topic_trend_md = False,
+            save_reading_list_md = False,
             working_folder_path = "c:/Users/Rubèn/Desktop/",
-            reading_list_by_month_file_name = "READINGLISTBYMONTH.md",
-            reading_list_by_publisher_file_name = "READINGLISTBYPUBLISHER.md",
-            reading_list_by_rating_file_name = "READINGLISTBYRATING.md",
-            reading_list_by_topic_file_name = "READINGLISTBYTOPIC.md",
-            reading_list_file_name = "READINGLIST.md",
-            reading_list_topic_trend_file_name = "READINGLISTTOPICTREND.md",
-            save_reading_lists_to_file = False,
-            definitions = { 
-                "KBSize": "This metric is the word count of the notes I took about a given book."
-            },
-            enable_sparklines_maximum = True,
-            show_books_by_year_box_plot = True,
-            show_sliced_by_kbsize_box_plot = True,
-            show_sliced_by_kbsize_desc_df = True,
-            show_sliced_by_kbsize_asc_df = True,
-            show_yearly_trend_by_topic_df = True
+            read_years = YearProvider().get_all_years(),
+            excel_path = "C:/project_dir/data/Reading List.xlsx",
+            excel_books_nrows = 275,
+            now = datetime(2024, 3, 4),
+            reading_list_last_update = datetime(2024, 3, 4)
         )
+
+    @staticmethod
+    def create_reading_list_manager() -> ReadingListManager:
+
+        return ReadingListManager(
+            component_bag = ComponentBag(), 
+            setting_bag = ObjectMother().create_setting_bag())
+    
+    @staticmethod
+    def create_markdown_processor() -> MarkdownProcessor:
+
+        return MarkdownProcessor(
+            component_bag = ComponentBag(), 
+            setting_bag = ObjectMother().create_setting_bag())
+      
 
     @staticmethod
     def create_books_df() -> DataFrame:
@@ -229,7 +229,7 @@ class ObjectMother():
         }, index=pd.RangeIndex(start=0, stop=3, step=1))
 
 # TEST CLASSES
-class GetDefaultReadingListPathTestCase(unittest.TestCase):
+class DefaultPathProviderTestCase(unittest.TestCase):
 
     def test_getdefaultreadinglistpath_shouldreturnexpectedpath_wheninvoked(self):
         
@@ -240,29 +240,23 @@ class GetDefaultReadingListPathTestCase(unittest.TestCase):
 
         # Act
         with patch.object(os, 'getcwd', return_value="C:/project_dir/src/") as mocked_context:
-            actual : str = nwrlm.get_default_reading_list_path()
+            actual : str = DefaultPathProvider().get_default_reading_list_path()
 
         # Assert
         self.assertEqual(expected, actual)
-class GetBookssDfTestCase(unittest.TestCase):
+class YearProviderTestCase(unittest.TestCase):
 
-    def test_getbooksdf_shouldreturnexpecteddataframe_wheninvoked(self):
+    def test_getallyears_shouldreturnexpectedlist_wheninvoked(self):
 
         # Arrange
-        books_df : DataFrame = ObjectMother().create_books_df()
-        setting_bag : SettingBag = ObjectMother().create_setting_bag()
-        expected_column_names : list[str] = ObjectMother().create_books_df_column_names()
-        expected_dtype_names : list[str] = ObjectMother().create_books_df_dtype_names()
+        expected : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
 
         # Act
-        actual_df : DataFrame = pd.DataFrame()
-        with patch.object(pd, 'read_excel', return_value = books_df) as mocked_context:
-            actual_df = nwrlm.get_books_df(setting_bag = setting_bag)
+        actual : list[int] = YearProvider().get_all_years()
 
         # Assert
-        self.assertEqual(expected_column_names, actual_df.columns.tolist())
-        self.assertEqual(expected_dtype_names, SupportMethodProvider().get_dtype_names(df = actual_df))
-class FormatReadingStatusTestCase(unittest.TestCase):
+        self.assertEqual(expected, actual)
+class ReadingListManagerTestCase(unittest.TestCase):
 
     @parameterized.expand([
         [0, 0, "0 (0)"],
@@ -271,25 +265,13 @@ class FormatReadingStatusTestCase(unittest.TestCase):
     def test_formatreadingstatus_shouldreturnexpectedstring_wheninvoked(self, books : int, pages : int, expected : str):
         
         # Arrange
+        reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
+
         # Act
-        actual : str = nwrlm.format_reading_status(books = books, pages = pages)
+        actual : str = reading_list_manager._ReadingListManager__format_reading_status(books = books, pages = pages)
 
         # Assert
         self.assertEqual(expected, actual)
-class GetDefaultSAByYearTestCase(unittest.TestCase):
-
-    def test_getdefaultsabyyear_shouldreturnexpecteddataframe_wheninvoked(self):
-        
-        # Arrange
-        expected_df : DataFrame = ObjectMother().create_default_sa_by_2024_df()
-
-        # Act
-        actual_df : DataFrame = nwrlm.get_default_sa_by_year(read_year = 2024)
-
-        # Assert
-        assert_frame_equal(expected_df, actual_df)
-class ExtractBooksFromTrendTestCase(unittest.TestCase):
-
     @parameterized.expand([
         ["0 (0)", 0],
         ["13 (5157)", 13]
@@ -297,13 +279,13 @@ class ExtractBooksFromTrendTestCase(unittest.TestCase):
     def test_extractbooksfromtrend_shouldreturnexpectedint_wheninvoked(self, trend : str, expected : int):
         
         # Arrange
+        reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
+
         # Act
-        actual : int = nwrlm.extract_books_from_trend(trend = trend)
+        actual : int = reading_list_manager._ReadingListManager__extract_books_from_trend(trend = trend)
 
         # Assert
-        self.assertEqual(expected, actual)
-class GetTrendTestCase(unittest.TestCase):
-
+        self.assertEqual(expected, actual)    
     @parameterized.expand([
         [13, 16, "↑"],
         [16, 13, "↓"],
@@ -312,13 +294,13 @@ class GetTrendTestCase(unittest.TestCase):
     def test_gettrend_shouldreturnexpectedstring_wheninvoked(self, value_1 : int, value_2 : int, expected : str):
         
         # Arrange
+        reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
+
         # Act
-        actual : str = nwrlm.get_trend(value_1 = value_1, value_2 = value_2)
+        actual : str = reading_list_manager._ReadingListManager__get_trend(value_1 = value_1, value_2 = value_2)
 
         # Assert
         self.assertEqual(expected, actual)
-class GetTrendByBooksTestCase(unittest.TestCase):
-
     @parameterized.expand([
         ["13 (5157)", "16 (3816)", "↑"],
         ["16 (3816)", "13 (5157)", "↓"],
@@ -327,13 +309,13 @@ class GetTrendByBooksTestCase(unittest.TestCase):
     def test_gettrendbybooks_shouldreturnexpectedstring_wheninvoked(self, trend_1 : str, trend_2 : str, expected : str):
         
         # Arrange
+        reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
+
         # Act
-        actual : str = nwrlm.get_trend_by_books(trend_1 = trend_1, trend_2 = trend_2)
+        actual : str = reading_list_manager._ReadingListManager__get_trend_by_books(trend_1 = trend_1, trend_2 = trend_2)
 
         # Assert
         self.assertEqual(expected, actual)
-class TryConsolidateTrendColumnNameTestCase(unittest.TestCase):
-
     @parameterized.expand([
         ["2016", "2016"],
         ["↕1", "↕"]
@@ -341,13 +323,13 @@ class TryConsolidateTrendColumnNameTestCase(unittest.TestCase):
     def test_tryconsolidatetrendcolumnname_shouldreturnexpectedstring_wheninvoked(self, column_name : str, expected : str):
         
         # Arrange
+        reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
+
         # Act
-        actual : str = nwrlm.try_consolidate_trend_column_name(column_name = column_name)
+        actual : str = reading_list_manager._ReadingListManager__try_consolidate_trend_column_name(column_name = column_name)
 
         # Assert
         self.assertEqual(expected, actual)
-class ExtractPagesFromTrendTestCase(unittest.TestCase):
-
     @parameterized.expand([
         ["13 (5157)", 5157],
         ["0 (0)", 0]
@@ -355,39 +337,39 @@ class ExtractPagesFromTrendTestCase(unittest.TestCase):
     def test_extractpagesfromtrend_shouldreturnexpectedint_wheninvoked(self, trend : str, expected : int):
         
         # Arrange
+        reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
+
         # Act
-        actual : int = nwrlm.extract_pages_from_trend(trend = trend)
+        actual : int = reading_list_manager._ReadingListManager__extract_pages_from_trend(trend = trend)
 
         # Assert
         self.assertEqual(expected, actual)
-class FormatYearBooksColumnNameTestCase(unittest.TestCase):
-
     @parameterized.expand([
         ["2016", "2016_Books"]
     ])
     def test_formatyearbookscolumnname_shouldreturnexpectedstring_wheninvoked(self, year_cn : str, expected : str):
         
         # Arrange
+        reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
+
         # Act
-        actual : str = nwrlm.format_year_books_column_name(year_cn = year_cn)
+        actual : str = reading_list_manager._ReadingListManager__format_year_books_column_name(year_cn = year_cn)
 
         # Assert
         self.assertEqual(expected, actual)
-class FormatYearPagesColumnNameTestCase(unittest.TestCase):
-
     @parameterized.expand([
         ["2016", "2016_Pages"]
     ])
     def test_formatyearpagescolumnname_shouldreturnexpectedstring_wheninvoked(self, year_cn : str, expected : str):
         
         # Arrange
+        reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
+
         # Act
-        actual : str = nwrlm.format_year_pages_column_name(year_cn = year_cn)
+        actual : str = reading_list_manager._ReadingListManager__format_year_pages_column_name(year_cn = year_cn)
 
         # Assert
         self.assertEqual(expected, actual)
-class ExtractYearFromColumnNameTestCase(unittest.TestCase):
-
     @parameterized.expand([
         ["2016_Books", "2016"],
         ["2016_Pages", "2016"]
@@ -395,13 +377,13 @@ class ExtractYearFromColumnNameTestCase(unittest.TestCase):
     def test_extractyearfromcolumnname_shouldreturnexpectedstring_wheninvoked(self, column_name : str, expected : str):
         
         # Arrange
+        reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
+
         # Act
-        actual : str = nwrlm.extract_year_from_column_name(column_name = column_name)
+        actual : str = reading_list_manager._ReadingListManager__extract_year_from_column_name(column_name = column_name)
 
         # Assert
         self.assertEqual(expected, actual)
-class GetTrendWhenFloat64TestCase(unittest.TestCase):
-
     @parameterized.expand([
         [1447.14, 2123.36, "↑"],
         [2123.36, 1447.14, "↓"],
@@ -410,69 +392,91 @@ class GetTrendWhenFloat64TestCase(unittest.TestCase):
     def test_gettrendwhenfloat64_shouldreturnexpectedstring_wheninvoked(self, value_1 : float64, value_2 : float64, expected : str):
         
         # Arrange
+        reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
+
         # Act
-        actual : str = nwrlm.get_trend_when_float64(value_1 = value_1, value_2 = value_2)
+        actual : str = reading_list_manager._ReadingListManager__get_trend_when_float64(value_1 = value_1, value_2 = value_2)
 
         # Assert
         self.assertEqual(expected, actual)
-class GetSASByTopicTestCase(unittest.TestCase):
+    
+    def test_getdefaultsabyyear_shouldreturnexpecteddataframe_wheninvoked(self):
+        
+        # Arrange
+        expected_df : DataFrame = ObjectMother().create_default_sa_by_2024_df()
+        reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
 
+        # Act
+        actual_df : DataFrame = reading_list_manager._ReadingListManager__get_default_sa_by_year(read_year = 2024)
+
+        # Assert
+        assert_frame_equal(expected_df, actual_df)
+
+    def test_getbooksdataset_shouldreturnexpecteddataframe_wheninvoked(self):
+
+        # Arrange
+        books_df : DataFrame = ObjectMother().create_books_df()
+        expected_column_names : list[str] = ObjectMother().create_books_df_column_names()
+        expected_dtype_names : list[str] = ObjectMother().create_books_df_dtype_names()
+        reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
+
+        # Act
+        actual_df : DataFrame = pd.DataFrame()
+        with patch.object(pd, 'read_excel', return_value = books_df) as mocked_context:
+            actual_df = reading_list_manager.get_books_dataset()
+
+        # Assert
+        self.assertEqual(expected_column_names, actual_df.columns.tolist())
+        self.assertEqual(expected_dtype_names, SupportMethodProvider().get_dtype_names(df = actual_df))
     def test_getsasbytopic_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
         books_df : DataFrame = ObjectMother().create_books_df()
         expected_df : DataFrame = ObjectMother().create_sas_by_topic_df()
+        reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
 
         # Act
-        actual_df : DataFrame = nwrlm.get_sas_by_topic(books_df = books_df)
+        actual_df : DataFrame = reading_list_manager.get_sas_by_topic(books_df = books_df)
 
         # Assert
         assert_frame_equal(expected_df, actual_df)
-class FormatRatingTestCase(unittest.TestCase):
-
-    @parameterized.expand([
-        [5, "★★★★★"],
-        [4, "★★★★☆"],
-        [3, "★★★☆☆"],
-        [2, "★★☆☆☆"],
-        [1, "★☆☆☆☆"],
-        [0, "0"]
-    ])
-    def test_formatrating_shouldreturnexpectedstring_wheninvoked(self, rating : int, expected : str):
-        
-        # Arrange
-        # Act
-        actual : str = nwrlm.format_rating(rating = rating)
-
-        # Assert
-        self.assertEqual(expected, actual)
-class GetSASByRatingTestCase(unittest.TestCase):
-
     def test_getsasbyrating_shouldreturnexpecteddataframe_whenformattedratingequalstotrue(self):
         
         # Arrange
         books_df : DataFrame = ObjectMother().create_books_df()
         expected_df : DataFrame = ObjectMother().create_sas_by_rating_df()
+        reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
 
         # Act
-        actual_df : DataFrame = nwrlm.get_sas_by_rating(books_df = books_df, formatted_rating = True)
+        actual_df : DataFrame = reading_list_manager.get_sas_by_rating(books_df = books_df)
 
         # Assert
         assert_frame_equal(expected_df, actual_df)
-class GetCumulativeTestCase(unittest.TestCase):
-
-    def test_getcumulative_shouldreturnexpecteddataframe_wheninvoked(self):
+    def test_getrollingtotal_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
         books_df : DataFrame = ObjectMother().create_books_df()
         expected_df : DataFrame = ObjectMother().create_cumulative_df()
+        reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
 
         # Act
-        actual_df : DataFrame = nwrlm.get_cumulative(books_df = books_df, last_update = datetime(2024, 3, 4))
+        actual_df : DataFrame = reading_list_manager.get_rolling_total(books_df = books_df)
 
         # Assert
         assert_frame_equal(expected_df, actual_df)
-class GetMarkdownHeaderTestCase(unittest.TestCase):
+    def test_getyearlytrendbytopic_shouldreturnexpecteddataframe_wheninvoked(self):
+        
+        # Arrange
+        books_df : DataFrame = ObjectMother().create_books_df()
+        expected_df : DataFrame = ObjectMother().create_yt_by_topic_df()
+        reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
+
+        # Act
+        actual_df : DataFrame = reading_list_manager.get_yearly_trend_by_topic(books_df = books_df)
+
+        # Assert
+        assert_frame_equal(expected_df, actual_df)
+class MarkdownProcessorTestCase(unittest.TestCase):
 
     def test_getmarkdownheader_shouldreturnexpectedstring_wheninvoked(self):
         
@@ -492,13 +496,13 @@ class GetMarkdownHeaderTestCase(unittest.TestCase):
             ""
         ]
         expected : str = "\n".join(lines)
+        markdown_processor : MarkdownProcessor = ObjectMother().create_markdown_processor()
 
         # Act
-        actual : str = nwrlm.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
+        actual : str = markdown_processor._MarkdownProcessor__get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
 
         # Assert
         self.assertEqual(expected, actual)
-class AddSubscriptTagsToValueTestCase(unittest.TestCase):
 
     @parameterized.expand([
         ["49.99", "<sub>49.99</sub>"]
@@ -506,25 +510,13 @@ class AddSubscriptTagsToValueTestCase(unittest.TestCase):
     def test_addsubscripttagstovalue_shouldreturnexpectedstring_wheninvoked(self, value : str, expected : str):
         
         # Arrange
+        markdown_processor : MarkdownProcessor = ObjectMother().create_markdown_processor()
+
         # Act
-        actual : str = nwrlm.add_subscript_tags_to_value(value = value)
+        actual : str = markdown_processor._MarkdownProcessor__add_subscript_tags_to_value(value = value)
 
         # Assert
         self.assertEqual(expected, actual)
-class GetYearlyTrendByTopicTestCase(unittest.TestCase):
-
-    def test_getyearlytrendbytopic_shouldreturnexpecteddataframe_wheninvoked(self):
-        
-        # Arrange
-        setting_bag : SettingBag = ObjectMother().create_setting_bag()
-        books_df : DataFrame = ObjectMother().create_books_df()
-        expected_df : DataFrame = ObjectMother().create_yt_by_topic_df()
-
-        # Act
-        actual_df : DataFrame = nwrlm.get_yearly_trend_by_topic(books_df = books_df, setting_bag = setting_bag)
-
-        # Assert
-        assert_frame_equal(expected_df, actual_df)
 
 # MAIN
 if __name__ == "__main__":

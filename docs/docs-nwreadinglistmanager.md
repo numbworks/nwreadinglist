@@ -8,6 +8,7 @@ Contact: numbworks@gmail.com
 | 2023-08-10 | numbworks | Created. |
 | 2023-09-24 | numbworks | Updated to v1.6.0. |
 | 2024-01-21 | numbworks | Updated to v2.0.0. |
+| 2024-03-24 | numbworks | Updated to v3.0.0. |
 
 ## Introduction
 
@@ -29,7 +30,7 @@ In order to run this Jupyter Notebook:
     - ```python.exe -m pip install --upgrade pip```
 5. Launch Visual Studio Code and open `src/nwreadinglistmanager.ipynb`;
 6. Edit the `install_dependencies` flag in the `Setup` section according to your needs;
-7. Edit the `SettingCollection` object according to your needs;
+7. Edit the `SettingBag` object according to your needs;
 8. Click on `Run All`;
 9. Done!
 
@@ -38,7 +39,7 @@ If, for some reason the `Setup` block doesn't work, you can open a terminal and 
 To run the unit tests, open a terminal and run the following commands:
 
 - `cd <base_folder>\nwreadinglistmanager\tests`
-- `coverage run -m unittest nwcorecomponentstests.py`
+- `coverage run -m unittest nwsharedtests.py`
 - `coverage run -a nwreadinglistmanagertests.py`
 - `coverage report`
 
