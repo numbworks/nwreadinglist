@@ -71,6 +71,7 @@ class SettingBag():
     n_generic : int
     n_by_month : int
     n_by_kbsize : int
+    rounding_digits : int
     is_worth_min_books : int
     is_worth_min_avgrating : float
     formatted_rating : bool
@@ -125,6 +126,7 @@ class SettingBag():
         n_generic : int = 5,
         n_by_month : int = 12,
         n_by_kbsize : int = 10,
+        rounding_digits : int = 2,
         is_worth_min_books : int = 8,
         is_worth_min_avgrating : float = 2.50,
         formatted_rating : bool = True,
@@ -182,6 +184,7 @@ class SettingBag():
         self.n_generic = n_generic 
         self.n_by_month = n_by_month
         self.n_by_kbsize = n_by_kbsize
+        self.rounding_digits = rounding_digits
         self.is_worth_min_books = is_worth_min_books
         self.is_worth_min_avgrating = is_worth_min_avgrating
         self.formatted_rating = formatted_rating
@@ -1141,6 +1144,49 @@ class ReadingListManager():
             excel_null_value = self.__setting_bag.excel_null_value)
 
         return books_df
+    def get_rolling_total(self, books_df : DataFrame) -> DataFrame:
+
+        '''
+                Years	Books	Pages	TotalSpend  LastUpdate
+            0	8	    234	    62648	$6332.01    2023-09-23
+        '''
+
+        cn_read_year : str = "ReadYear"
+        count_years : int = books_df[cn_read_year].unique().size
+
+        cn_title : str = "Title"
+        count_books : int = books_df[cn_title].size
+
+        cn_pages : str = "Pages"
+        sum_pages : int = books_df[cn_pages].sum()
+
+        cn_street_price : str = "StreetPrice"
+        sum_street_price : float64 = books_df[cn_street_price].sum()
+
+        cn_years : str = "Years"
+        cn_books : str = "Books"
+        cn_pages : str = "Pages"
+        cn_total_spend : str = "TotalSpend"
+        cn_last_update : str = "LastUpdate"
+
+        total_spend_str : str = self.__component_bag.formatter.format_usd_amount(
+            amount = sum_street_price, 
+            rounding_digits = self.__setting_bag.rounding_digits)
+        
+        last_update_str : str = self.__component_bag.formatter.format_to_iso_8601(dt = self.__setting_bag.now)
+
+        rolling_total_dict : dict = {
+            f"{cn_years}": f"{str(count_years)}",
+            f"{cn_books}": f"{str(count_books)}",
+            f"{cn_pages}": f"{str(sum_pages)}",
+            f"{cn_total_spend}": f"{total_spend_str}",
+            f"{cn_last_update}": f"{last_update_str}"
+            }
+
+        rolling_total_df : DataFrame = pd.DataFrame(rolling_total_dict, index=[0])
+        
+        return rolling_total_df     
+    
     def get_sas_by_month(self, books_df : DataFrame) -> DataFrame:
 
         '''
@@ -1199,42 +1245,7 @@ class ReadingListManager():
         sas_by_year_street_price_df.reset_index(drop = True, inplace = True)
 
         return sas_by_year_street_price_df    
-    def get_rolling_total(self, books_df : DataFrame, last_update : date, rounding_digits : bool = 2) -> DataFrame:
-
-        '''
-                Years	Books	Pages	TotalSpend  LastUpdate
-            0	8	    234	    62648	$6332.01    2023-09-23
-        '''
-
-        cn_read_year : str = "ReadYear"
-        count_years : int = books_df[cn_read_year].unique().size
-
-        cn_title : str = "Title"
-        count_books : int = books_df[cn_title].size
-
-        cn_pages : str = "Pages"
-        sum_pages : int = books_df[cn_pages].sum()
-
-        cn_street_price : str = "StreetPrice"
-        sum_street_price : float64 = books_df[cn_street_price].sum()
-
-        cn_years : str = "Years"
-        cn_books : str = "Books"
-        cn_pages : str = "Pages"
-        cn_total_spend : str = "TotalSpend"
-        cn_last_update : str = "LastUpdate"
-
-        rolling_total_dict : dict = {
-            f"{cn_years}": f"{str(count_years)}",
-            f"{cn_books}": f"{str(count_books)}",
-            f"{cn_pages}": f"{str(sum_pages)}",
-            f"{cn_total_spend}": f"{self.__component_bag.formatter.format_usd_amount(amount = sum_street_price, rounding_digits = rounding_digits)}",
-            f"{cn_last_update}": f"{self.__component_bag.formatter.format_to_iso_8601(dt = self.__component_bag.converter.convert_date_to_datetime(dt = last_update))}"
-            }
-
-        rolling_total_df : DataFrame = pd.DataFrame(rolling_total_dict, index=[0])
-
-        return rolling_total_df    
+   
     def get_sas_by_topic(self, books_df : DataFrame) -> DataFrame:
 
         """
