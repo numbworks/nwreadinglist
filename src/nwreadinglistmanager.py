@@ -37,7 +37,7 @@ class SettingBag():
     show_books_df : bool
     show_sas_by_month_df : bool
     show_sas_by_year_street_price_df : bool
-    show_cumulative_df : bool
+    show_rolling_total_df : bool
     show_sas_by_topic_df : bool
     show_sas_by_publisher_df : bool
     show_sas_by_publisher_flt_df : bool
@@ -92,7 +92,7 @@ class SettingBag():
         show_books_df : bool,
         show_sas_by_month_df : bool,
         show_sas_by_year_street_price_df : bool,
-        show_cumulative_df : bool,
+        show_rolling_total_df : bool,
         show_sas_by_topic_df : bool,
         show_sas_by_publisher_df : bool,
         show_sas_by_publisher_flt_df : bool,
@@ -148,7 +148,7 @@ class SettingBag():
         self.show_books_df = show_books_df
         self.show_sas_by_month_df = show_sas_by_month_df
         self.show_sas_by_year_street_price_df = show_sas_by_year_street_price_df
-        self.show_cumulative_df = show_cumulative_df
+        self.show_rolling_total_df = show_rolling_total_df
         self.show_sas_by_topic_df = show_sas_by_topic_df
         self.show_sas_by_publisher_df = show_sas_by_publisher_df
         self.show_sas_by_publisher_flt_df = show_sas_by_publisher_flt_df
@@ -1199,7 +1199,7 @@ class ReadingListManager():
         sas_by_year_street_price_df.reset_index(drop = True, inplace = True)
 
         return sas_by_year_street_price_df    
-    def get_cumulative(self, books_df : DataFrame, last_update : date, rounding_digits : bool = 2) -> DataFrame:
+    def get_rolling_total(self, books_df : DataFrame, last_update : date, rounding_digits : bool = 2) -> DataFrame:
 
         '''
                 Years	Books	Pages	TotalSpend  LastUpdate
@@ -1224,7 +1224,7 @@ class ReadingListManager():
         cn_total_spend : str = "TotalSpend"
         cn_last_update : str = "LastUpdate"
 
-        cumulative_dict : dict = {
+        rolling_total_dict : dict = {
             f"{cn_years}": f"{str(count_years)}",
             f"{cn_books}": f"{str(count_books)}",
             f"{cn_pages}": f"{str(sum_pages)}",
@@ -1232,9 +1232,9 @@ class ReadingListManager():
             f"{cn_last_update}": f"{self.__component_bag.formatter.format_to_iso_8601(dt = self.__component_bag.converter.convert_date_to_datetime(dt = last_update))}"
             }
 
-        cumulative_df : DataFrame = pd.DataFrame(cumulative_dict, index=[0])
+        rolling_total_df : DataFrame = pd.DataFrame(rolling_total_dict, index=[0])
 
-        return cumulative_df    
+        return rolling_total_df    
     def get_sas_by_topic(self, books_df : DataFrame) -> DataFrame:
 
         """
@@ -1629,11 +1629,11 @@ class MarkdownProcessor():
 
         return formatted_rl_df
 
-    def try_show_readme_md(self, cumulative_df : DataFrame, setting_bag : SettingBag) -> None:
+    def try_show_readme_md(self, rolling_total_df : DataFrame, setting_bag : SettingBag) -> None:
 
         '''Performs all the tasks related to the README file.'''
 
-        content : str = self.__get_readme_md(cumulative_df = cumulative_df)
+        content : str = self.__get_readme_md(cumulative_df = rolling_total_df)
 
         if setting_bag.show_readme_md:
             self.__component_bag.logging_lambda(content)

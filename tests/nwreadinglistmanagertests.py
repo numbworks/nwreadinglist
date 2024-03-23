@@ -58,7 +58,7 @@ class ObjectMother():
             show_books_df = False,
             show_sas_by_month_df = True,
             show_sas_by_year_street_price_df = True,
-            show_cumulative_df = True,
+            show_rolling_total_df = True,
             show_sas_by_topic_df = True,
             show_sas_by_publisher_df = False,
             show_sas_by_publisher_flt_df = True,
