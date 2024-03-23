@@ -235,6 +235,20 @@ class ComponentBag():
 
 # STATIC CLASSES
 # CLASSES
+class DefaultPathProvider():
+
+    '''Responsible for proviving the default path to the dataset.'''
+
+    def get_default_reading_list_path(self)-> str:
+
+        r'''
+            "c:\...\nwreadinglistmanager\data\Reading List.xlsx"
+        '''
+        
+        path : str = os.getcwd().replace("src", "data")
+        path = os.path.join(path, "Reading List.xlsx")
+
+        return path
 class ReadingListManager():
 
     '''Collects all the logic related to the management of "Reading List.xlsx".'''
@@ -912,16 +926,6 @@ class ReadingListManager():
 
         return sparklined_df
 
-    def get_default_reading_list_path(self)-> str:
-
-        r'''
-            "c:\...\nwreadinglistmanager\data\Reading List.xlsx"
-        '''
-        
-        path : str = os.getcwd().replace("src", "data")
-        path = os.path.join(path, "Reading List.xlsx")
-
-        return path
     def get_books_dataset(self, setting_bag : SettingBag) -> DataFrame:
         
         '''Retrieves the content of the "Books" tab and returns it as a Dataframe.'''
