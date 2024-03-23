@@ -219,12 +219,12 @@ class ComponentBag():
 
     def __init__(
             self, 
-            formatter : Formatter, 
-            converter : Converter, 
-            file_path_manager : FilePathManager,
-            file_manager : FileManager,
-            lambda_provider : LambdaProvider,
-            logging_lambda : Callable[[str], None]) -> None:
+            formatter : Formatter = Formatter(), 
+            converter : Converter = Converter(), 
+            file_path_manager : FilePathManager = FilePathManager(),
+            file_manager : FileManager = FileManager(file_path_manager = FilePathManager()),
+            lambda_provider : LambdaProvider = LambdaProvider(),
+            logging_lambda : Callable[[str], None] = LambdaProvider().get_default_logging_lambda()) -> None:
 
         self.formatter = formatter
         self.converter = converter
@@ -232,14 +232,6 @@ class ComponentBag():
         self.file_manager = file_manager
         self.lambda_provider = lambda_provider
         self.logging_lambda = logging_lambda
-    def __init__(self) -> None:
-        
-        self.formatter = Formatter()
-        self.converter = Converter()
-        self.file_path_manager = FilePathManager()
-        self.file_manager = FileManager(file_path_manager = FilePathManager())
-        self.lambda_provider = LambdaProvider()
-        self.logging_lambda = LambdaProvider().get_default_logging_lambda()
 
 # STATIC CLASSES
 # CLASSES
