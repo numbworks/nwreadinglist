@@ -1067,7 +1067,7 @@ class ReadingListManager():
         sas_by_year_df.rename(columns = (lambda x : self.__try_consolidate_trend_column_name(column_name = x)), inplace = True)
 
         return sas_by_year_df
-    def __get_sas_by_street_price(self, books_df : DataFrame, read_years : list, rounding_digits : int = 2) -> DataFrame:
+    def __get_sas_by_street_price(self, books_df : DataFrame, read_years : list, rounding_digits : int) -> DataFrame:
 
         '''
             [...]
@@ -1179,7 +1179,7 @@ class ReadingListManager():
             return self.__update_future_rs_to_empty(sas_by_month_df = sas_by_month_df , now = self.__setting_bag.now)
 
         return sas_by_month_df
-    def get_sas_by_year_street_price(self, sas_by_month_df : DataFrame, books_df : DataFrame, read_years : list) -> DataFrame:
+    def get_sas_by_year_street_price(self, sas_by_month_df : DataFrame, books_df : DataFrame) -> DataFrame:
 
         '''
                 2016	    ↕	2017	    ↕	2018	    ↕	2019	    ↕	2020	    ↕	2021	    ↕	2022	↕	2023
@@ -1188,7 +1188,12 @@ class ReadingListManager():
         '''
 
         sas_by_year_df : DataFrame = self.__get_sas_by_year(sas_by_month_df = sas_by_month_df)
-        sas_by_street_price_df : DataFrame = self.__get_sas_by_street_price(books_df = books_df, read_years = read_years)
+
+        rounding_digits : int = 2
+        sas_by_street_price_df : DataFrame = self.__get_sas_by_street_price(
+            books_df = books_df, 
+            read_years = self.__setting_bag.read_years,
+            rounding_digits = rounding_digits)
 
         sas_by_year_street_price_df : DataFrame = pd.concat(objs = [sas_by_year_df, sas_by_street_price_df])
         sas_by_year_street_price_df.reset_index(drop = True, inplace = True)
