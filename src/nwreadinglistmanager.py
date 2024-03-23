@@ -1185,8 +1185,7 @@ class ReadingListManager():
 
         rolling_total_df : DataFrame = pd.DataFrame(rolling_total_dict, index=[0])
         
-        return rolling_total_df     
-    
+        return rolling_total_df        
     def get_sas_by_month(self, books_df : DataFrame) -> DataFrame:
 
         '''
@@ -1244,8 +1243,7 @@ class ReadingListManager():
         sas_by_year_street_price_df : DataFrame = pd.concat(objs = [sas_by_year_df, sas_by_street_price_df])
         sas_by_year_street_price_df.reset_index(drop = True, inplace = True)
 
-        return sas_by_year_street_price_df    
-   
+        return sas_by_year_street_price_df      
     def get_sas_by_topic(self, books_df : DataFrame) -> DataFrame:
 
         """
@@ -1286,7 +1284,7 @@ class ReadingListManager():
             right_on = cn_topic)
 
         return sas_by_topic_df
-    def get_sas_by_publisher(self, books_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+    def get_sas_by_publisher(self, books_df : DataFrame) -> DataFrame:
         
         """
             by_books_df:
@@ -1322,7 +1320,8 @@ class ReadingListManager():
         cn_rating : str = "Rating"   
         cn_avgrating : str = "AvgRating"
         by_avgrating_df : DataFrame = books_df.groupby([cn_publisher])[cn_rating].mean().sort_values(ascending = [False]).reset_index(name = cn_avgrating)
-        by_avgrating_df[cn_avgrating] = by_avgrating_df[cn_avgrating].apply(lambda x : round(number = x, ndigits = 2)) # 2.5671 => 2.57
+        by_avgrating_df[cn_avgrating] = by_avgrating_df[cn_avgrating].apply(
+            lambda x : round(number = x, ndigits = self.__setting_bag.rounding_digits)) # 2.5671 => 2.57
 
         sas_by_publisher_df : DataFrame = pd.merge(
             left = by_books_df, 
@@ -1333,8 +1332,8 @@ class ReadingListManager():
 
         cn_isworth : str = "IsWorth"
         sas_by_publisher_df[cn_isworth] = np.where(
-            (sas_by_publisher_df[cn_books] >= setting_bag.is_worth_min_books) & 
-            (sas_by_publisher_df[cn_avgrating] >= setting_bag.is_worth_min_avgrating), 
+            (sas_by_publisher_df[cn_books] >= self.__setting_bag.is_worth_min_books) & 
+            (sas_by_publisher_df[cn_avgrating] >= self.__setting_bag.is_worth_min_avgrating), 
             "Yes", "No")
 
         return sas_by_publisher_df
