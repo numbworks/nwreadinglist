@@ -117,27 +117,30 @@ class SettingBag():
         read_years : list[int],
         excel_path : str,
         excel_books_nrows : int,
-        excel_books_skiprows : int,
-        excel_books_tabname : str,
-        excel_null_value : str,
-        now : datetime,
-        n_generic : int,
-        n_by_month : int,
-        n_by_kbsize : int,
-        is_worth_min_books : int,
-        is_worth_min_avgrating : float,
-        formatted_rating : bool,
-        enable_sparklines_maximum : bool,
-        reading_list_by_month_file_name : str,
-        reading_list_by_publisher_file_name : str,
-        reading_list_by_rating_file_name : str,
-        reading_list_by_topic_file_name : str,
-        reading_list_topic_trend_file_name : str,
-        reading_list_file_name : str,
-        reading_list_last_update : datetime,
-        reading_list_smaller_font : bool,
-        reading_list_by_month_smaller_font : bool,
-        definitions : dict        
+        excel_books_skiprows : int = 0,
+        excel_books_tabname : str = "Books",
+        excel_null_value : str = "-",
+        now : datetime  = datetime.now(),
+        n_generic : int = 5,
+        n_by_month : int = 12,
+        n_by_kbsize : int = 10,
+        is_worth_min_books : int = 8,
+        is_worth_min_avgrating : float = 2.50,
+        formatted_rating : bool = True,
+        enable_sparklines_maximum : bool = True,
+        reading_list_by_month_file_name : str = "READINGLISTBYMONTH.md",
+        reading_list_by_publisher_file_name : str = "READINGLISTBYPUBLISHER.md",
+        reading_list_by_rating_file_name : str = "READINGLISTBYRATING.md",
+        reading_list_by_topic_file_name : str = "READINGLISTBYTOPIC.md",
+        reading_list_topic_trend_file_name : str = "READINGLISTTOPICTREND.md",
+        reading_list_file_name : str = "READINGLIST.md",
+        reading_list_last_update : datetime = datetime.now(),
+        reading_list_smaller_font : bool = bool,
+        reading_list_by_month_smaller_font : bool = bool,
+        definitions : dict = { 
+            "KBSize": "This metric is the word count of the notes I took about a given book.",
+            "SAS": "Studying Activity Summary."
+            }
         ) -> None:
 
         self.show_books_df = show_books_df
@@ -191,10 +194,6 @@ class SettingBag():
         self.reading_list_smaller_font = reading_list_smaller_font
         self.reading_list_by_month_smaller_font = reading_list_by_month_smaller_font
         self.definitions = definitions
-
-
-# STATIC CLASSES
-# CLASSES
 class ComponentBag():
 
     '''
@@ -233,6 +232,9 @@ class ComponentBag():
         self.file_manager = FileManager(file_path_manager = FilePathManager())
         self.lambda_provider = LambdaProvider()
         self.logging_lambda = LambdaProvider().get_default_logging_lambda()
+
+# STATIC CLASSES
+# CLASSES
 class ReadingListManager():
 
     '''Collects all the logic related to the management of "Reading List.xlsx".'''
