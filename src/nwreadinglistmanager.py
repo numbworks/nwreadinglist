@@ -265,12 +265,14 @@ class ReadingListManager():
     '''Collects all the logic related to the management of "Reading List.xlsx".'''
 
     __component_bag : ComponentBag
+    __setting_bag : SettingBag
 
-    def __init__(self, component_bag : ComponentBag) -> None:
+    def __init__(self, component_bag : ComponentBag, setting_bag : SettingBag) -> None:
 
         self.__component_bag = component_bag
+        self.__setting_bag = setting_bag
 
-    def __enforce_dataframe_definition_for_books_df(self, books_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+    def __enforce_dataframe_definition_for_books_df(self, books_df : DataFrame, excel_null_value : str) -> DataFrame:
 
         '''Enforces definition for the provided dataframe.'''
 
@@ -297,11 +299,7 @@ class ReadingListManager():
         column_names.append("KBSize")               # [19], int
 
         books_df = books_df[column_names]
-
-        books_df = books_df.replace(
-            to_replace = setting_bag.excel_null_value, 
-            value = np.nan
-        )
+        books_df = books_df.replace(to_replace = excel_null_value, value = np.nan)
     
         books_df = books_df.astype({column_names[0]: str})  
         books_df = books_df.astype({column_names[1]: int})
@@ -937,19 +935,21 @@ class ReadingListManager():
 
         return sparklined_df
 
-    def get_books_dataset(self, setting_bag : SettingBag) -> DataFrame:
+    def get_books_dataset(self) -> DataFrame:
         
         '''Retrieves the content of the "Books" tab and returns it as a Dataframe.'''
 
         books_df = pd.read_excel(
-            io = setting_bag.excel_path, 	
-            skiprows = setting_bag.excel_books_skiprows,
-            nrows = setting_bag.excel_books_nrows,
-            sheet_name = setting_bag.excel_books_tabname, 
+            io = self.__setting_bag.excel_path, 	
+            skiprows = self.__setting_bag.excel_books_skiprows,
+            nrows = self.__setting_bag.excel_books_nrows,
+            sheet_name = self.__setting_bag.excel_books_tabname, 
             engine = 'openpyxl'
             )
         
-        books_df = self.__enforce_dataframe_definition_for_books_df(books_df = books_df, setting_bag = setting_bag)
+        books_df = self.__enforce_dataframe_definition_for_books_df(
+            books_df = books_df, 
+            excel_null_value = self.__setting_bag.excel_null_value)
 
         return books_df
     def get_sas_by_month(self, books_df : DataFrame, read_years : list) -> DataFrame:
