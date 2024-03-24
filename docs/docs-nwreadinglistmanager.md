@@ -9,6 +9,7 @@ Contact: numbworks@gmail.com
 | 2023-09-24 | numbworks | Updated to v1.6.0. |
 | 2024-01-21 | numbworks | Updated to v2.0.0. |
 | 2024-03-24 | numbworks | Updated to v3.0.0. |
+| 2024-03-25 | numbworks | Updated to v3.1.0. |
 
 ## Introduction
 
@@ -42,6 +43,12 @@ To run the unit tests, open a terminal and run the following commands:
 - `coverage run -m unittest nwsharedtests.py`
 - `coverage run -a nwreadinglistmanagertests.py`
 - `coverage report`
+
+To run type checking:
+
+- `cd <base_folder>\nwreadinglistmanager\`
+- `mypy src --disable-error-code import-untyped --disable-error-code func-returns-value --disable-error-code import-untyped --disable-error-code annotation-unchecked`
+- `mypy tests --disable-error-code import-untyped --disable-error-code func-returns-value --disable-error-code import-untyped --disable-error-code annotation-unchecked`
 
 ## For Developers
 
