@@ -21,7 +21,7 @@ from numpy import float64
 from pandas import DataFrame
 from pandas import Series
 from sparklines import sparklines
-from typing import Callable, Tuple
+from typing import Callable, Optional, Tuple
 
 # LOCAL MODULES
 from nwshared import Formatter, Converter, FilePathManager, FileManager
@@ -140,8 +140,8 @@ class SettingBag():
         reading_list_topic_trend_file_name : str = "READINGLISTTOPICTREND.md",
         reading_list_file_name : str = "READINGLIST.md",
         reading_list_last_update : datetime = datetime.now(),
-        reading_list_smaller_font : bool = bool,
-        reading_list_by_month_smaller_font : bool = bool,
+        reading_list_smaller_font : bool = False,
+        reading_list_by_month_smaller_font : bool = False,
         definitions : dict = { 
             "KBSize": "This metric is the word count of the notes I took about a given book.",
             "SAS": "Studying Activity Summary."
@@ -516,7 +516,7 @@ class ReadingListManager():
             16, 13 => "↓"
             0, 0 => "="
         '''
-        trend : str = None
+        trend : str = ""
 
         if value_1 < value_2:
             trend = "↑"
@@ -730,7 +730,7 @@ class ReadingListManager():
             0, 0 => "="
         '''
 
-        trend : str = None
+        trend : str = ""
 
         if value_1 < value_2:
             trend = "↑"
@@ -921,7 +921,7 @@ class ReadingListManager():
         pivoted_df.reset_index(inplace = True)
 
         return pivoted_df
-    def __add_sparklines(self, df : DataFrame, cn_values : str, cn_sparklines : str, maximum : int = None) -> DataFrame:
+    def __add_sparklines(self, df : DataFrame, cn_values : str, cn_sparklines : str, maximum : Optional[int] = None) -> DataFrame:
 
         '''
             Adds a column with sparklines to the provided DataFrame.
@@ -1030,8 +1030,8 @@ class ReadingListManager():
 
         for year in yeatrend:
 
-            cn_year_books : str = self.__format_year_books_column_name(year_cn = year)
-            cn_year_pages : str = self.__format_year_pages_column_name(year_cn = year)
+            cn_year_books = self.__format_year_books_column_name(year_cn = year)
+            cn_year_pages = self.__format_year_pages_column_name(year_cn = year)
 
             sas_by_year_df[year] = sas_by_year_df.apply(lambda x : self.__format_reading_status(books = x[cn_year_books], pages = x[cn_year_pages]), axis = 1) 
 
@@ -1154,7 +1154,6 @@ class ReadingListManager():
 
         cn_years : str = "Years"
         cn_books : str = "Books"
-        cn_pages : str = "Pages"
         cn_total_spend : str = "TotalSpend"
         cn_last_update : str = "LastUpdate"
 
@@ -1196,7 +1195,7 @@ class ReadingListManager():
                 ...
         '''
 
-        sas_by_month_df : DataFrame = None
+        sas_by_month_df : DataFrame = pd.DataFrame()
         read_years : list[int] = self.__setting_bag.read_years
         add_trend : bool = True
 
@@ -1266,10 +1265,10 @@ class ReadingListManager():
 
         cn_topic : str = "Topic"  
         cn_books : str = "Books"
-        by_books_df : DataFrame = books_df.groupby([cn_topic]).size().sort_values(ascending = [False]).reset_index(name = cn_books)
+        by_books_df : DataFrame = books_df.groupby([cn_topic]).size().sort_values(ascending = False).reset_index(name = cn_books)
 
         cn_pages = "Pages"
-        by_pages_df : DataFrame = books_df.groupby([cn_topic])[cn_pages].sum().sort_values(ascending = [False]).reset_index(name = cn_pages)
+        by_pages_df : DataFrame = books_df.groupby([cn_topic])[cn_pages].sum().sort_values(ascending = False).reset_index(name = cn_pages)
 
         sas_by_topic_df : DataFrame = pd.merge(
             left = by_books_df, 

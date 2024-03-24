@@ -21,9 +21,8 @@ from io import BytesIO
 from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from numpy import float64
-from pandas import DataFrame, Series
-from typing import Callable, Tuple
-from typing import Any
+from pandas import DataFrame, Index, Series
+from typing import Any, Callable, Tuple, Optional
 
 # CONSTANTS
 # STATIC CLASSES
@@ -159,7 +158,7 @@ class FileManager():
         
         '''Reads the content of the provided text file and returns it as string.'''
 
-        content : str = None
+        content : str = ""
         with open(file_path, 'r', encoding = 'utf-8') as file:
             content = file.read()
 
@@ -259,10 +258,10 @@ class PlotManager():
         func : Callable[[], None] = lambda : self.show_bar_plot(df = df, x_name = x_name, y_name = y_name, figsize = figsize)
 
         return func    
-    def create_bar_plot_as_base64(self, df : DataFrame, x_name : str, y_name : str = "items", figsize : Tuple[int, int] = (5, 5)) -> str:
+    def create_bar_plot_as_base64(self, df : DataFrame, x_name : str, y_name : str = "items", figsize : Tuple[int, int] = (5, 5)) -> Optional[str]:
 
         '''
-            Returns a bar plot as a base64 string.
+            Returns a bar plot as a base64 string or None.
 
             Example:            
             >>> plot_manager : PlotManager = PlotManager()
@@ -274,15 +273,17 @@ class PlotManager():
         buffer : BytesIO = BytesIO()
 
         title = f"{y_name} by {x_name}"
-        fig : Figure = df.plot(x = x_name, y = y_name, legend = True, kind = "bar", title = title, figsize = figsize).get_figure()
-        fig.savefig(buffer, format = "png", bbox_inches = 'tight')
-        plt.close(fig)
+        fig : Optional[Figure] = df.plot(x = x_name, y = y_name, legend = True, kind = "bar", title = title, figsize = figsize).get_figure()
+        
+        if fig:
+            fig.savefig(buffer, format = "png", bbox_inches = 'tight')
+            plt.close(fig)
+            image_string : str = base64.b64encode(buffer.getbuffer()).decode("ascii")
+            image_string
 
-        image_string : str = base64.b64encode(buffer.getbuffer()).decode("ascii")
+        return None
 
-        return image_string   
-
-    def create_box_plot_function(self, df : DataFrame, x_name : str, figsize : Tuple[int, int] = (5, 5)) -> Callable[[], None]:
+    def create_box_plot_function(self, df : DataFrame, x_name : str, figsize : Tuple[int, int] = (5, 5)) -> Callable[..., Any]:
 
         '''
             Returns a function that visualizes a box plot.
@@ -292,7 +293,7 @@ class PlotManager():
             >>> _ = func()
         '''
 
-        func : Callable[[], None] = lambda : (
+        func : Callable[..., Any] = lambda : (
             (plt.figure(figsize = figsize)),
             (plt.boxplot(x = df[x_name], vert = False, labels = [x_name])),
             (plt.show())
@@ -343,7 +344,7 @@ class DataFrameReverser():
         https://stackoverflow.com/questions/41769882/pandas-dataframe-to-code
     '''
 
-    def __convert_values_to_source_code(self, values : list) -> str:
+    def __convert_values_to_source_code(self, values : Any) -> str:
 
         '''Converts values to source code.'''
 
@@ -376,16 +377,16 @@ class DataFrameReverser():
         df_str : str = "pd.DataFrame({"
 
         for column in df.columns:
-            values : list = self.__convert_values_to_source_code(df[column].values.tolist())
-            dtype : Any = self.__convert_dtype_to_source_code(df.dtypes[column])
-            df_str += f'\n\t\'{column}\': np.array({values}, dtype={dtype}),'
+            values_str : str = self.__convert_values_to_source_code(df[column].values.tolist())
+            dtype_str : Any = self.__convert_dtype_to_source_code(df.dtypes[column])
+            df_str += f'\n\t\'{column}\': np.array({values_str}, dtype={dtype_str}),'
 
         df_str += "\n}"
 
-        values : list  = self.__convert_values_to_source_code(df.index)
-        dtype : Any = self.__convert_dtype_to_source_code(df.index.dtype)
+        values_str = self.__convert_values_to_source_code(df.index)
+        dtype_str = self.__convert_dtype_to_source_code(df.index.dtype)
 
-        df_str += f', index=pd.{values}'
+        df_str += f', index=pd.{values_str}'
         df_str += ')'
 
         df_str = self.__clean_dataframe_string(df_str = df_str)
