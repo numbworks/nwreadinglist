@@ -9,6 +9,7 @@ Contact: numbworks@gmail.com
 | 2023-09-24 | numbworks | Updated to v1.6.0. |
 | 2024-01-21 | numbworks | Updated to v2.0.0. |
 | 2024-03-24 | numbworks | Updated to v3.0.0. |
+| 2024-03-28 | numbworks | Updated to v3.1.0. |
 
 ## Introduction
 
@@ -36,6 +37,8 @@ In order to run this Jupyter Notebook:
 
 If, for some reason the `Setup` block doesn't work, you can open a terminal and run the listed ```pip install``` commands manually to install the required packages.
 
+## For Developers
+
 To run the unit tests, open a terminal and run the following commands:
 
 - `cd <base_folder>\nwreadinglistmanager\tests`
@@ -43,7 +46,34 @@ To run the unit tests, open a terminal and run the following commands:
 - `coverage run -a nwreadinglistmanagertests.py`
 - `coverage report`
 
-## For Developers
+To enable the unit test runner in `Visual Studio Code`:
+
+1. create a `.vscode` folder in `cd <base_folder>\nwreadinglistmanager\`;
+2. add a `settings.json` file and paste the following content in it:
+
+  ```json
+  {
+      "python.testing.unittestArgs": [
+          "-v",
+          "-s",
+          "./tests",
+          "-p",
+          "*tests.py"
+      ],
+      "python.testing.pytestEnabled": false,
+      "python.testing.unittestEnabled": true
+  }  
+  ```
+3. save the file and close `Visual Studio Code`;
+4. open `Visual Studio Code` -> `File` -> `Open Folder` and select `cd <base_folder>\nwreadinglistmanager\`;
+5. if the testing icon doesn't appear on the sidebar, just open whatever `*.py` file;
+6. Done!
+
+To run type checking:
+
+- `cd <base_folder>\nwreadinglistmanager\`
+- `mypy src --disable-error-code import-untyped --disable-error-code func-returns-value --disable-error-code import-untyped --disable-error-code annotation-unchecked`
+- `mypy tests --disable-error-code import-untyped --disable-error-code func-returns-value --disable-error-code import-untyped --disable-error-code annotation-unchecked`
 
 In order to perform development work on this project in a comfortable way, you might want to enable the auto-reload / auto-refresh of the content of `Python` modules used in `Jupyter Notebook`:
 
