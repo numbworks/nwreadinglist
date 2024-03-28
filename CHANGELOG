@@ -1,3 +1,9 @@
+v3.1.0
+- Libraries:
+	- Refactoring: fixed most of type-related issues using mypy.
+- Documentation:
+	- Feature: updated to v3.1.0.
+
 v3.0.0
 - Libraries:
 	- Refactoring: "nwcorecomponents" replaced by "nwshared".
