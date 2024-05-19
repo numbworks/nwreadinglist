@@ -15,8 +15,8 @@ from unittest.mock import patch
 
 # LOCAL MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglistmanager import DefaultPathProvider, YearProvider, SettingBag, ComponentBag
-from nwreadinglistmanager import ReadingListManager, MarkdownProcessor
+from nwreadinglist import DefaultPathProvider, YearProvider, SettingBag, ComponentBag
+from nwreadinglist import ReadingListManager, MarkdownProcessor
 
 # SUPPORT METHODS
 class SupportMethodProvider():

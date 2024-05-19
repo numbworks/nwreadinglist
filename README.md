@@ -1,4 +1,4 @@
-# nwreadinglistmanager
+# nwreadinglist
 
 ![codecoverage_library.svg](codecoverage.svg)
 
@@ -14,7 +14,7 @@ Contact: numbworks@gmail.com
 
 From the documentation:
 
-> nwreadinglistmanager is a Jupyter Notebook designed to analyze the Excel file I use to annotate all the books I study in my continuous education journey. As a second set of features, it converts some of the analyses to Markdown files, so that I can easily show them on my `Github` account.
+> nwreadinglist is a Jupyter Notebook designed to analyze the Excel file I use to annotate all the books I study in my continuous education journey. As a second set of features, it converts some of the analyses to Markdown files, so that I can easily show them on my `Github` account.
 
 ## Download the source code
 
@@ -24,17 +24,17 @@ I assume you are on `Windows`, but the software should run without issues on `Li
 2. Open `Windows Powershell` (or `Windows Terminal` or similar) and type:
 
 ```powershell
-PS C:\> mkdir nwreadinglistmanager
-PS C:\> cd .\nwreadinglistmanager\
-PS C:\nwreadinglistmanager> git clone https://github.com/numbworks/nwreadinglistmanager.git
+PS C:\> mkdir nwreadinglist
+PS C:\> cd .\nwreadinglist\
+PS C:\nwreadinglist> git clone https://github.com/numbworks/nwreadinglist.git
 ```
 
-3. Open `src/nwreadinglistmanager.ipynb` with `Visual Studio Code` or other `Jupyter Notebook`-enabled environment;
+3. Open `src/nwreadinglist.ipynb` with `Visual Studio Code` or other `Jupyter Notebook`-enabled environment;
 4. Done!
 
 ## Getting started
 
-- [Documentation](docs/docs-nwreadinglistmanager.md)
+- [Documentation](docs/docs-nwreadinglist.md)
 
 ## Other links
 
