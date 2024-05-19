@@ -1,3 +1,9 @@
+v3.2.0
+- Libraries:
+	- Refactoring: changed name from nwreadinglist to nwreadinglistmanager.
+- Documentation:
+	- Feature: updated to v3.2.0.
+
 v3.1.0
 - Libraries:
 	- Refactoring: fixed most of type-related issues using mypy.
