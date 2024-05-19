@@ -1,6 +1,6 @@
 v3.2.0
 - Libraries:
-	- Refactoring: changed name from nwreadinglist to nwreadinglistmanager.
+	- Refactoring: changed name from nwreadinglistmanager to nwreadinglist.
 - Documentation:
 	- Feature: updated to v3.2.0.
 
