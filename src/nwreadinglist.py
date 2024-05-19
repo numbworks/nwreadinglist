@@ -1,7 +1,7 @@
 '''
 A collection of components to handle "Reading List.xlsx".
 
-Alias: nwrlm
+Alias: nwrl
 '''
 
 # INFORMATION
