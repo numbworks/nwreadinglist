@@ -1,13 +1,13 @@
 '''
 A collection of components to handle "Reading List.xlsx".
 
-Alias: nwrlm
+Alias: nwrl
 '''
 
 # INFORMATION
-MODULE_ALIAS : str = "nwrlm"
-MODULE_NAME : str = "nwreadinglistmanager"
-MODULE_VERSION : str = "3.0.0"
+MODULE_ALIAS : str = "nwrl"
+MODULE_NAME : str = "nwreadinglist"
+MODULE_VERSION : str = "3.2.0"
 
 # GLOBAL MODULES
 import copy
