@@ -11,6 +11,7 @@ Contact: numbworks@gmail.com
 | 2024-03-24 | numbworks | Updated to v3.0.0. |
 | 2024-03-28 | numbworks | Updated to v3.1.0. |
 | 2024-05-19 | numbworks | Updated to v3.2.0. |
+| 2024-05-20 | numbworks | Updated to v3.3.0. |
 
 ## Introduction
 
@@ -38,13 +39,14 @@ In order to run this Jupyter Notebook:
 
 If, for some reason the `Setup` block doesn't work, you can open a terminal and run the listed ```pip install``` commands manually to install the required packages.
 
+If `nwshared` creates some issues for you, please refer to [its documentation on Github](https://github.com/numbworks/nwshared/blob/master/docs/docs-nwshared.md).
+
 ## For Developers
 
 To run the unit tests, open a terminal and run the following commands:
 
 - `cd <base_folder>\nwreadinglist\tests`
-- `coverage run -m unittest nwsharedtests.py`
-- `coverage run -a nwreadinglisttests.py`
+- `coverage run -m unittest nwreadinglisttests.py`
 - `coverage report`
 
 To enable the unit test runner in `Visual Studio Code`:
