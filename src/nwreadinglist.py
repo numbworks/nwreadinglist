@@ -7,7 +7,7 @@ Alias: nwrl
 # INFORMATION
 MODULE_ALIAS : str = "nwrl"
 MODULE_NAME : str = "nwreadinglist"
-MODULE_VERSION : str = "3.2.0"
+MODULE_VERSION : str = "3.3.0"
 
 # GLOBAL MODULES
 import copy
