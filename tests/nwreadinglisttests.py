@@ -152,25 +152,25 @@ class ObjectMother():
 
         expected_dtype_names : list[str] = [
             "string",
-            "Int32",
+            "Int64",
             "string",
             "string",
             "string",
-            "Int32",
+            "Int64",
             "object",
-            "Int32",
-            "Int32",
+            "Int64",
+            "Int64",
             "string",
             "string",
             "string",
-            "Int32",
+            "Int64",
             "Float64",
             "string",
             "string",
             "string",
             "string",
-            "Int32",
-            "Int32"
+            "Int64",
+            "Int64"
         ]
 
         return expected_dtype_names
