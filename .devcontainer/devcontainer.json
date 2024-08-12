@@ -11,5 +11,8 @@
 				"ms-toolsai.jupyter"
 			]
 		}
-	}
+	},
+    "mounts": [
+        "source=${localEnv:USERPROFILE}/Desktop/nwreadinglist/,target=/home/nwreadinglist/,type=bind,consistency=cached"
+    ]	
 }
