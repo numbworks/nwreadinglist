@@ -224,14 +224,14 @@ class ComponentBag():
             file_path_manager : FilePathManager = FilePathManager(),
             file_manager : FileManager = FileManager(file_path_manager = FilePathManager()),
             lambda_provider : LambdaProvider = LambdaProvider(),
-            logging_lambda : Callable[[str], None] = LambdaProvider().get_default_logging_lambda()) -> None:
+            logging_function : Callable[[str], None] = LambdaProvider().get_default_logging_function()) -> None:
 
         self.formatter = formatter
         self.converter = converter
         self.file_path_manager = file_path_manager
         self.file_manager = file_manager
         self.lambda_provider = lambda_provider
-        self.logging_lambda = logging_lambda
+        self.logging_lambda = logging_function
 
 # STATIC CLASSES
 # CLASSES
