@@ -4,11 +4,6 @@ A collection of components to handle "Reading List.xlsx".
 Alias: nwrl
 '''
 
-# INFORMATION
-MODULE_ALIAS : str = "nwrl"
-MODULE_NAME : str = "nwreadinglist"
-MODULE_VERSION : str = "3.4.0"
-
 # GLOBAL MODULES
 import copy
 import numpy as np
