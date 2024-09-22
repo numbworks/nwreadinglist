@@ -34,7 +34,6 @@ class SettingBag():
     save_reading_list_by_topic_md : bool
     save_reading_list_topic_trend_md : bool
     save_reading_list_md : bool
-    working_folder_path : str
     read_years : list[int]
     excel_path : str
     excel_books_nrows : int
@@ -57,6 +56,7 @@ class SettingBag():
     show_reading_list_by_topic_md : bool
     show_reading_list_topic_trend_md : bool
     show_reading_list_md : bool
+    working_folder_path : str    
     excel_books_skiprows : int
     excel_books_tabname : str
     excel_null_value : str
@@ -91,7 +91,6 @@ class SettingBag():
         save_reading_list_by_topic_md : bool,
         save_reading_list_topic_trend_md : bool,
         save_reading_list_md : bool,
-        working_folder_path : str,
         read_years : list[int],
         excel_path : str,
         excel_books_nrows : int,
@@ -114,6 +113,7 @@ class SettingBag():
         show_reading_list_by_topic_md : bool = False,
         show_reading_list_topic_trend_md : bool = False,
         show_reading_list_md : bool = False,
+        working_folder_path : str = "/home/nwreadinglist/",        
         excel_books_skiprows : int = 0,
         excel_books_tabname : str = "Books",
         excel_null_value : str = "-",
