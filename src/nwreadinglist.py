@@ -28,6 +28,17 @@ class SettingBag():
 
     '''Represents a collection of settings.'''
 
+    save_reading_list_by_month_md : bool
+    save_reading_list_by_publisher_md : bool
+    save_reading_list_by_rating_md : bool
+    save_reading_list_by_topic_md : bool
+    save_reading_list_topic_trend_md : bool
+    save_reading_list_md : bool
+    working_folder_path : str
+    read_years : list[int]
+    excel_path : str
+    excel_books_nrows : int
+
     show_books_df : bool
     show_sas_by_month_df : bool
     show_sas_by_year_street_price_df : bool
@@ -46,17 +57,6 @@ class SettingBag():
     show_reading_list_by_topic_md : bool
     show_reading_list_topic_trend_md : bool
     show_reading_list_md : bool
-    save_reading_list_by_month_md : bool
-    save_reading_list_by_publisher_md : bool
-    save_reading_list_by_rating_md : bool
-    save_reading_list_by_topic_md : bool
-    save_reading_list_topic_trend_md : bool
-    save_reading_list_md : bool
-    working_folder_path : str
-    read_years : list[int]
-    excel_path : str
-    excel_books_nrows : int
-
     excel_books_skiprows : int
     excel_books_tabname : str
     excel_null_value : str
@@ -85,24 +85,6 @@ class SettingBag():
 
     def __init__(
         self,
-        show_books_df : bool,
-        show_sas_by_month_df : bool,
-        show_sas_by_year_street_price_df : bool,
-        show_rolling_total_df : bool,
-        show_sas_by_topic_df : bool,
-        show_sas_by_publisher_df : bool,
-        show_sas_by_rating_df : bool,
-        show_reading_list_by_kbsize_df : bool,
-        show_yearly_trend_by_topic_df : bool,
-        show_books_by_year_box_plot : bool,
-        show_reading_list_by_kbsize_box_plot : bool,
-        show_readme_md : bool,
-        show_reading_list_by_month_md : bool,
-        show_reading_list_by_publisher_md : bool,
-        show_reading_list_by_rating_md : bool,
-        show_reading_list_by_topic_md : bool,
-        show_reading_list_topic_trend_md : bool,
-        show_reading_list_md : bool,
         save_reading_list_by_month_md : bool,
         save_reading_list_by_publisher_md : bool,
         save_reading_list_by_rating_md : bool,
@@ -113,6 +95,25 @@ class SettingBag():
         read_years : list[int],
         excel_path : str,
         excel_books_nrows : int,
+
+        show_books_df : bool = False,
+        show_sas_by_month_df : bool = True,
+        show_sas_by_year_street_price_df : bool = True,
+        show_rolling_total_df : bool = True,
+        show_sas_by_topic_df : bool = True,
+        show_sas_by_publisher_df : bool = True,
+        show_sas_by_rating_df : bool = True,
+        show_reading_list_by_kbsize_df : bool = True,
+        show_yearly_trend_by_topic_df : bool = True,
+        show_books_by_year_box_plot : bool = True,
+        show_reading_list_by_kbsize_box_plot : bool = True,
+        show_readme_md : bool = True,
+        show_reading_list_by_month_md : bool = False,
+        show_reading_list_by_publisher_md : bool = False,
+        show_reading_list_by_rating_md : bool = False,
+        show_reading_list_by_topic_md : bool = False,
+        show_reading_list_topic_trend_md : bool = False,
+        show_reading_list_md : bool = False,
         excel_books_skiprows : int = 0,
         excel_books_tabname : str = "Books",
         excel_null_value : str = "-",
