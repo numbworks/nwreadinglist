@@ -4,11 +4,6 @@ A collection of components to handle "Reading List.xlsx".
 Alias: nwrl
 '''
 
-# INFORMATION
-MODULE_ALIAS : str = "nwrl"
-MODULE_NAME : str = "nwreadinglist"
-MODULE_VERSION : str = "3.4.0"
-
 # GLOBAL MODULES
 import copy
 import numpy as np
@@ -33,6 +28,16 @@ class SettingBag():
 
     '''Represents a collection of settings.'''
 
+    save_reading_list_by_month_md : bool
+    save_reading_list_by_publisher_md : bool
+    save_reading_list_by_rating_md : bool
+    save_reading_list_by_topic_md : bool
+    save_reading_list_topic_trend_md : bool
+    save_reading_list_md : bool
+    read_years : list[int]
+    excel_path : str
+    excel_books_nrows : int
+
     show_books_df : bool
     show_sas_by_month_df : bool
     show_sas_by_year_street_price_df : bool
@@ -51,17 +56,7 @@ class SettingBag():
     show_reading_list_by_topic_md : bool
     show_reading_list_topic_trend_md : bool
     show_reading_list_md : bool
-    save_reading_list_by_month_md : bool
-    save_reading_list_by_publisher_md : bool
-    save_reading_list_by_rating_md : bool
-    save_reading_list_by_topic_md : bool
-    save_reading_list_topic_trend_md : bool
-    save_reading_list_md : bool
-    working_folder_path : str
-    read_years : list[int]
-    excel_path : str
-    excel_books_nrows : int
-
+    working_folder_path : str    
     excel_books_skiprows : int
     excel_books_tabname : str
     excel_null_value : str
@@ -90,34 +85,35 @@ class SettingBag():
 
     def __init__(
         self,
-        show_books_df : bool,
-        show_sas_by_month_df : bool,
-        show_sas_by_year_street_price_df : bool,
-        show_rolling_total_df : bool,
-        show_sas_by_topic_df : bool,
-        show_sas_by_publisher_df : bool,
-        show_sas_by_rating_df : bool,
-        show_reading_list_by_kbsize_df : bool,
-        show_yearly_trend_by_topic_df : bool,
-        show_books_by_year_box_plot : bool,
-        show_reading_list_by_kbsize_box_plot : bool,
-        show_readme_md : bool,
-        show_reading_list_by_month_md : bool,
-        show_reading_list_by_publisher_md : bool,
-        show_reading_list_by_rating_md : bool,
-        show_reading_list_by_topic_md : bool,
-        show_reading_list_topic_trend_md : bool,
-        show_reading_list_md : bool,
         save_reading_list_by_month_md : bool,
         save_reading_list_by_publisher_md : bool,
         save_reading_list_by_rating_md : bool,
         save_reading_list_by_topic_md : bool,
         save_reading_list_topic_trend_md : bool,
         save_reading_list_md : bool,
-        working_folder_path : str,
         read_years : list[int],
         excel_path : str,
         excel_books_nrows : int,
+
+        show_books_df : bool = False,
+        show_sas_by_month_df : bool = True,
+        show_sas_by_year_street_price_df : bool = True,
+        show_rolling_total_df : bool = True,
+        show_sas_by_topic_df : bool = True,
+        show_sas_by_publisher_df : bool = True,
+        show_sas_by_rating_df : bool = True,
+        show_reading_list_by_kbsize_df : bool = True,
+        show_yearly_trend_by_topic_df : bool = True,
+        show_books_by_year_box_plot : bool = True,
+        show_reading_list_by_kbsize_box_plot : bool = True,
+        show_readme_md : bool = True,
+        show_reading_list_by_month_md : bool = False,
+        show_reading_list_by_publisher_md : bool = False,
+        show_reading_list_by_rating_md : bool = False,
+        show_reading_list_by_topic_md : bool = False,
+        show_reading_list_topic_trend_md : bool = False,
+        show_reading_list_md : bool = False,
+        working_folder_path : str = "/home/nwreadinglist/",        
         excel_books_skiprows : int = 0,
         excel_books_tabname : str = "Books",
         excel_null_value : str = "-",
@@ -214,7 +210,6 @@ class ComponentBag():
     converter : Converter
     file_path_manager : FilePathManager
     file_manager : FileManager
-    lambda_provider : LambdaProvider 
     logging_lambda : Callable[[str], None]
 
     def __init__(
@@ -223,15 +218,13 @@ class ComponentBag():
             converter : Converter = Converter(), 
             file_path_manager : FilePathManager = FilePathManager(),
             file_manager : FileManager = FileManager(file_path_manager = FilePathManager()),
-            lambda_provider : LambdaProvider = LambdaProvider(),
-            logging_lambda : Callable[[str], None] = LambdaProvider().get_default_logging_lambda()) -> None:
+            logging_function : Callable[[str], None] = LambdaProvider().get_default_logging_function()) -> None:
 
         self.formatter = formatter
         self.converter = converter
         self.file_path_manager = file_path_manager
         self.file_manager = file_manager
-        self.lambda_provider = lambda_provider
-        self.logging_lambda = logging_lambda
+        self.logging_lambda = logging_function
 
 # STATIC CLASSES
 # CLASSES
