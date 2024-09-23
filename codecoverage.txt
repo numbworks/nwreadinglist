@@ -1,1 +1,1 @@
-https://img.shields.io/badge/coverage-64.0%25-orange
+https://img.shields.io/badge/coverage-54.0%25-orange
