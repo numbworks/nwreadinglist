@@ -210,7 +210,7 @@ class ComponentBag():
     converter : Converter
     file_path_manager : FilePathManager
     file_manager : FileManager
-    logging_lambda : Callable[[str], None]
+    logging_function : Callable[[str], None]
 
     def __init__(
             self, 
@@ -224,7 +224,7 @@ class ComponentBag():
         self.converter = converter
         self.file_path_manager = file_path_manager
         self.file_manager = file_manager
-        self.logging_lambda = logging_function
+        self.logging_function = logging_function
 
 # STATIC CLASSES
 # CLASSES
@@ -1629,7 +1629,7 @@ class MarkdownProcessor():
         content : str = self.__get_readme_md(cumulative_df = rolling_total_df)
 
         if self.__setting_bag.show_readme_md:
-            self.__component_bag.logging_lambda(content)
+            self.__component_bag.logging_function(content)
     def try_show_and_save_reading_list_by_month_md(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], sas_by_year_street_price_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List By Month" file.''' 
@@ -1642,8 +1642,8 @@ class MarkdownProcessor():
 
         if self.__setting_bag.show_reading_list_by_month_md:
             file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_month_file_name)
-            self.__component_bag.logging_lambda(file_name_content)    
-            self.__component_bag.logging_lambda(content)
+            self.__component_bag.logging_function(file_name_content)    
+            self.__component_bag.logging_function(content)
 
         if self.__setting_bag.save_reading_list_by_month_md:
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
@@ -1661,8 +1661,8 @@ class MarkdownProcessor():
 
         if self.__setting_bag.show_reading_list_by_publisher_md:
             file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_publisher_file_name)
-            self.__component_bag.logging_lambda(file_name_content)        
-            self.__component_bag.logging_lambda(content)
+            self.__component_bag.logging_function(file_name_content)        
+            self.__component_bag.logging_function(content)
 
         if self.__setting_bag.save_reading_list_by_publisher_md:
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
@@ -1680,8 +1680,8 @@ class MarkdownProcessor():
 
         if self.__setting_bag.show_reading_list_by_rating_md:
             file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_rating_file_name)
-            self.__component_bag.logging_lambda(file_name_content)
-            self.__component_bag.logging_lambda(content)
+            self.__component_bag.logging_function(file_name_content)
+            self.__component_bag.logging_function(content)
 
         if self.__setting_bag.save_reading_list_by_rating_md:            
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
@@ -1699,8 +1699,8 @@ class MarkdownProcessor():
 
         if self.__setting_bag.show_reading_list_by_topic_md:
             file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_topic_file_name)
-            self.__component_bag.logging_lambda(file_name_content)
-            self.__component_bag.logging_lambda(content)
+            self.__component_bag.logging_function(file_name_content)
+            self.__component_bag.logging_function(content)
 
         if self.__setting_bag.save_reading_list_by_topic_md:
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
@@ -1718,8 +1718,8 @@ class MarkdownProcessor():
 
         if self.__setting_bag.show_reading_list_topic_trend_md:
             file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_topic_trend_file_name)           
-            self.__component_bag.logging_lambda(file_name_content)
-            self.__component_bag.logging_lambda(content)
+            self.__component_bag.logging_function(file_name_content)
+            self.__component_bag.logging_function(content)
 
         if self.__setting_bag.save_reading_list_topic_trend_md:           
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
@@ -1738,8 +1738,8 @@ class MarkdownProcessor():
 
         if self.__setting_bag.show_reading_list_md:
             file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_file_name)
-            self.__component_bag.logging_lambda(file_name_content)
-            self.__component_bag.logging_lambda(content)
+            self.__component_bag.logging_function(file_name_content)
+            self.__component_bag.logging_function(content)
 
         if self.__setting_bag.save_reading_list_md:
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
