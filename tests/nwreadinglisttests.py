@@ -478,45 +478,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
         assert_frame_equal(expected_df, actual_df)
 class MarkdownProcessorTestCase(unittest.TestCase):
 
-    def test_getmarkdownheader_shouldreturnexpectedstring_wheninvoked(self):
-        
-        # Arrange
-        last_update : datetime = datetime(2023, 4, 28)
-        paragraph_title : str = "Reading List By Month"
-        
-        lines : list[str] = [
-            "## Revision History",
-            "",
-            "|Date|Author|Description|",
-            "|---|---|---|",
-            "|2020-12-22|numbworks|Created.|",
-            "|2023-04-28|numbworks|Last update.|",
-            "",
-            "## Reading List By Month",
-            ""
-        ]
-        expected : str = "\n".join(lines)
-        markdown_processor : MarkdownProcessor = ObjectMother().create_markdown_processor()
-
-        # Act
-        actual : str = markdown_processor._MarkdownProcessor__get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
-
-        # Assert
-        self.assertEqual(expected, actual)
-
-    @parameterized.expand([
-        ["49.99", "<sub>49.99</sub>"]
-    ])
-    def test_addsubscripttagstovalue_shouldreturnexpectedstring_wheninvoked(self, value : str, expected : str):
-        
-        # Arrange
-        markdown_processor : MarkdownProcessor = ObjectMother().create_markdown_processor()
-
-        # Act
-        actual : str = markdown_processor._MarkdownProcessor__add_subscript_tags_to_value(value = value)
-
-        # Assert
-        self.assertEqual(expected, actual)
+    pass
 
 # MAIN
 if __name__ == "__main__":

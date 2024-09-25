@@ -20,7 +20,7 @@ from typing import Callable, Optional, Tuple
 
 # LOCAL MODULES
 from nwshared import Formatter, Converter, FilePathManager, FileManager
-from nwshared import LambdaProvider
+from nwshared import LambdaProvider, MarkdownHelper
 
 # CONSTANTS
 # DTOs
@@ -200,17 +200,14 @@ class SettingBag():
         self.definitions = definitions
 class ComponentBag():
 
-    '''
-        Represents a collection of components.
-    
-        Dependencies: nwshared  
-    '''
+    '''Represents a collection of components.'''
 
     formatter : Formatter
     converter : Converter
     file_path_manager : FilePathManager
     file_manager : FileManager
     logging_function : Callable[[str], None]
+    markdown_helper : MarkdownHelper
 
     def __init__(
             self, 
@@ -218,13 +215,15 @@ class ComponentBag():
             converter : Converter = Converter(), 
             file_path_manager : FilePathManager = FilePathManager(),
             file_manager : FileManager = FileManager(file_path_manager = FilePathManager()),
-            logging_function : Callable[[str], None] = LambdaProvider().get_default_logging_function()) -> None:
+            logging_function : Callable[[str], None] = LambdaProvider().get_default_logging_function(),
+            markdown_helper : MarkdownHelper = MarkdownHelper(formatter = Formatter())) -> None:
 
         self.formatter = formatter
         self.converter = converter
         self.file_path_manager = file_path_manager
         self.file_manager = file_manager
         self.logging_function = logging_function
+        self.markdown_helper = markdown_helper
 
 # STATIC CLASSES
 # CLASSES
@@ -1410,53 +1409,6 @@ class MarkdownProcessor():
         self.__component_bag = component_bag
         self.__setting_bag = setting_bag
 
-    def __get_markdown_header(self, last_update : datetime, paragraph_title : str) -> str:
-        
-        '''
-            ## Revision History
-
-            |Date|Author|Description|
-            |---|---|---|
-            |2020-12-22|numbworks|Created.|
-            |2023-04-28|numbworks|Last update.|
-
-            ## Reading List By Month
-        '''
-
-        lines : list[str] = [
-            "## Revision History", 
-            "", 
-            "|Date|Author|Description|", 
-            "|---|---|---|",
-            "|2020-12-22|numbworks|Created.|",
-            f"|{self.__component_bag.formatter.format_to_iso_8601(dt = last_update)}|numbworks|Last update.|",
-            "",
-            f"## {paragraph_title}",
-            ""
-            ]
-
-        markdown_header : str = "\n".join(lines)
-
-        return markdown_header
-    def __add_subscript_tags_to_value(self, value : str) -> str:
-
-        '''
-        "49.99" => "<sub>49.99</sub>"
-        '''
-
-        tagged : str = f"<sub>{value}</sub>"
-
-        return tagged
-    def __add_subscript_tags_to_dataframe(self, df : DataFrame) -> DataFrame:
-
-        '''Adds subscript tags to every cell and column name of the provided DataFrame.'''
-
-        tagged_df = df.copy(deep=True)
-        
-        tagged_df = tagged_df.map(func = self.__add_subscript_tags_to_value)
-        tagged_df = tagged_df.rename(columns = lambda column_name : self.__add_subscript_tags_to_value(value = column_name))
-
-        return tagged_df
     def __get_readme_md(self, cumulative_df : DataFrame) -> str:
 
         '''Creates the Markdown content for a README file out of the provided dataframe.'''
@@ -1473,13 +1425,14 @@ class MarkdownProcessor():
 
         copy_of_sas_by_month_df : DataFrame = sas_by_month_df.copy(deep=True)
         copy_of_sas_by_year_street_price_df : DataFrame = sas_by_year_street_price_df.copy(deep=True)
+
         if use_smaller_font:
-            copy_of_sas_by_month_df = self.__add_subscript_tags_to_dataframe(df = copy_of_sas_by_month_df)
-            copy_of_sas_by_year_street_price_df = self.__add_subscript_tags_to_dataframe(df = copy_of_sas_by_year_street_price_df)
+            copy_of_sas_by_month_df = self.__component_bag.markdown_helper.add_subscript_tags_to_dataframe(df = copy_of_sas_by_month_df)
+            copy_of_sas_by_year_street_price_df = self.__component_bag.markdown_helper.add_subscript_tags_to_dataframe(df = copy_of_sas_by_year_street_price_df)
 
         md_paragraph_title : str = "Reading List By Month"
 
-        markdown_header : str = self.__get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
         sas_by_month_md : str = copy_of_sas_by_month_df.to_markdown(index = False)
         sas_by_year_street_price_md  : str = copy_of_sas_by_year_street_price_df.to_markdown(index = False)
 
@@ -1500,7 +1453,7 @@ class MarkdownProcessor():
 
         md_paragraph_title : str = "Reading List By Publisher"
 
-        markdown_header : str = self.__get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
         sas_by_publisher_flt_md : str = sas_by_publisher_tpl[1].to_markdown(index = False)
         sas_by_publisher_md : str = sas_by_publisher_tpl[0].to_markdown(index = False)
 
@@ -1521,7 +1474,7 @@ class MarkdownProcessor():
 
         md_paragraph_title : str = "Reading List By Rating"
 
-        markdown_header : str = self.__get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
         sas_by_rating_md : str = sas_by_rating_df.to_markdown(index = False)
 
         md_content : str = markdown_header
@@ -1536,7 +1489,7 @@ class MarkdownProcessor():
 
         md_paragraph_title : str = "Reading List By Topic"
 
-        markdown_header : str = self.__get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
         sas_by_topic_md : str = sas_by_topic_df.to_markdown(index = False)
 
         md_content : str = markdown_header
@@ -1551,11 +1504,11 @@ class MarkdownProcessor():
 
         md_paragraph_title : str = "Reading List"
 
-        markdown_header : str = self.__get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
         formatted_rl_df : DataFrame = self.__get_formatted_reading_list(books_df = books_df)
 
         if use_smaller_font:
-            formatted_rl_df = self.__add_subscript_tags_to_dataframe(df = formatted_rl_df)    
+            formatted_rl_df = self.__component_bag.markdown_helper.add_subscript_tags_to_dataframe(df = formatted_rl_df)    
 
         formatted_rl_md : str = formatted_rl_df.to_markdown(index = False)
 
@@ -1571,22 +1524,13 @@ class MarkdownProcessor():
 
         md_paragraph_title : str = "Reading List Topic Trend"
 
-        markdown_header : str = self.__get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
         yt_by_topic_md : str = yt_by_topic_df.to_markdown(index = False)
 
         md_content : str = markdown_header
         md_content += "\n"
         md_content += yt_by_topic_md
         md_content += "\n"
-
-        return md_content
-    def __format_file_name_as_content(self, file_name : str) -> str:
-
-        '''Formats the provided file_name so that it can be displayed on the screen before the Markdown content.'''
-
-        md_content : str = file_name
-        md_content += "\n"
-        md_content += ""
 
         return md_content
     def __get_formatted_reading_list(self, books_df : DataFrame) -> DataFrame:
@@ -1641,7 +1585,7 @@ class MarkdownProcessor():
             use_smaller_font = self.__setting_bag.reading_list_by_month_smaller_font)
 
         if self.__setting_bag.show_reading_list_by_month_md:
-            file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_month_file_name)
+            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_month_file_name)
             self.__component_bag.logging_function(file_name_content)    
             self.__component_bag.logging_function(content)
 
@@ -1660,7 +1604,7 @@ class MarkdownProcessor():
             sas_by_publisher_tpl = sas_by_publisher_tpl)
 
         if self.__setting_bag.show_reading_list_by_publisher_md:
-            file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_publisher_file_name)
+            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_publisher_file_name)
             self.__component_bag.logging_function(file_name_content)        
             self.__component_bag.logging_function(content)
 
@@ -1679,7 +1623,7 @@ class MarkdownProcessor():
             sas_by_rating_df = sas_by_rating_df)
 
         if self.__setting_bag.show_reading_list_by_rating_md:
-            file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_rating_file_name)
+            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_rating_file_name)
             self.__component_bag.logging_function(file_name_content)
             self.__component_bag.logging_function(content)
 
@@ -1698,7 +1642,7 @@ class MarkdownProcessor():
             sas_by_topic_df = sas_by_topic_df)
 
         if self.__setting_bag.show_reading_list_by_topic_md:
-            file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_topic_file_name)
+            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_topic_file_name)
             self.__component_bag.logging_function(file_name_content)
             self.__component_bag.logging_function(content)
 
@@ -1717,7 +1661,7 @@ class MarkdownProcessor():
             yt_by_topic_df = yt_by_topic_df)
 
         if self.__setting_bag.show_reading_list_topic_trend_md:
-            file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_topic_trend_file_name)           
+            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.reading_list_topic_trend_file_name)           
             self.__component_bag.logging_function(file_name_content)
             self.__component_bag.logging_function(content)
 
@@ -1737,7 +1681,7 @@ class MarkdownProcessor():
             use_smaller_font = self.__setting_bag.reading_list_smaller_font)
 
         if self.__setting_bag.show_reading_list_md:
-            file_name_content : str = self.__format_file_name_as_content(file_name = self.__setting_bag.reading_list_file_name)
+            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.reading_list_file_name)
             self.__component_bag.logging_function(file_name_content)
             self.__component_bag.logging_function(content)
 

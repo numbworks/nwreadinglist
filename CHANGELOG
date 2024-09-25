@@ -1,3 +1,9 @@
+v3.6.0
+- Application:
+	- Feature: added support for hide_index()'s formatters in the notebook.
+	- Refactoring: replaced part of MarkdownProcessor's logic with MarkdownHelper.
+	- Maintenance: nwshared updated (1.3.0 => 1.4.0).
+
 v3.5.0
 - Application:
 	- Feature: added support for DisplayPreProcessor, increased amount of default parameters in SettingBag.
