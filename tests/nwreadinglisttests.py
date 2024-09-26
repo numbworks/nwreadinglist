@@ -11,7 +11,7 @@ from numpy import float64, int32
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 # LOCAL MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
@@ -478,7 +478,47 @@ class ReadingListManagerTestCase(unittest.TestCase):
         assert_frame_equal(expected_df, actual_df)
 class MarkdownProcessorTestCase(unittest.TestCase):
 
-    pass
+    def test_tryshowreadmemd_shouldlogreadmemd_whensettingistrue(self) -> None:
+        
+		# Arrange
+        component_bag : Mock = Mock()
+        
+        setting_bag : Mock = Mock()
+        setting_bag.show_readme_md = True
+
+        markdown_processor : MarkdownProcessor = MarkdownProcessor(
+			component_bag = component_bag, 
+			setting_bag = setting_bag
+			)		
+		
+        df : DataFrame = DataFrame({"col1": [1, 2], "col2": [3, 4]})
+        expected : str = df.to_markdown(index = False) + "\n"
+        
+        # Act
+        markdown_processor.try_show_readme_md(rolling_total_df = df)
+        
+        # Assert
+        component_bag.logging_function.assert_called_once_with(expected)	
+    def test_tryshowreadmemd_shouldnotcallloggingfunction_whensettingisfalse(self) -> None:
+        
+		# Arrange
+        component_bag : Mock = Mock()
+        
+        setting_bag : Mock = Mock()
+        setting_bag.show_readme_md = False
+		
+        markdown_processor : MarkdownProcessor = MarkdownProcessor(
+			component_bag = component_bag, 
+			setting_bag = setting_bag
+			)		
+		
+        df : DataFrame = DataFrame({"col1": [1, 2], "col2": [3, 4]})
+        
+        # Act
+        markdown_processor.try_show_readme_md(rolling_total_df = df)
+        
+        # Assert
+        component_bag.component_bag.logging_function.assert_not_called()
 
 # MAIN
 if __name__ == "__main__":
