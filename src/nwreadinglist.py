@@ -1566,7 +1566,7 @@ class MarkdownProcessor():
 
         return formatted_rl_df
 
-    def try_log_readme_md(self, rolling_total_df : DataFrame) -> None:
+    def process_readme_md(self, rolling_total_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the README file.'''
 
@@ -1574,7 +1574,7 @@ class MarkdownProcessor():
 
         if self.__setting_bag.show_readme_md:
             self.__component_bag.logging_function(content)
-    def try_log_and_save_rl_by_month_md(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], sas_by_year_street_price_df : DataFrame) -> None:
+    def process_rl_by_month_md(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], sas_by_year_street_price_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List By Month" file.''' 
 
@@ -1595,7 +1595,7 @@ class MarkdownProcessor():
                 file_name = self.__setting_bag.reading_list_by_month_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def try_log_and_save_rl_by_publisher_md(self, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> None:
+    def process_rl_by_publisher_md(self, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> None:
 
         '''Performs all the tasks related to the "Reading List By Publisher" file.'''
 
@@ -1614,7 +1614,7 @@ class MarkdownProcessor():
                 file_name = self.__setting_bag.reading_list_by_publisher_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def try_log_and_save_rl_by_rating_md(self, sas_by_rating_df : DataFrame) -> None:
+    def process_rl_by_rating_md(self, sas_by_rating_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List By Rating" file.'''
 
@@ -1633,7 +1633,7 @@ class MarkdownProcessor():
                 file_name = self.__setting_bag.reading_list_by_rating_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def try_log_and_save_rl_by_topic_md(self, sas_by_topic_df : DataFrame) -> None:
+    def process_rl_by_topic_md(self, sas_by_topic_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List By Topic" file.'''
 
@@ -1652,7 +1652,7 @@ class MarkdownProcessor():
                 file_name = self.__setting_bag.reading_list_by_topic_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def try_log_and_save_rl_by_topic_trend_md(self, yt_by_topic_df : DataFrame) -> None:
+    def process_rl_by_topic_trend_md(self, yt_by_topic_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List Topic Trend" file.'''
 
@@ -1671,7 +1671,7 @@ class MarkdownProcessor():
                 file_name = self.__setting_bag.reading_list_topic_trend_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def try_log_and_save_rl_md(self, books_df : DataFrame) -> None:
+    def process_rl_md(self, books_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List" file.'''
 

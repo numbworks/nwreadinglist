@@ -495,7 +495,7 @@ class MarkdownProcessorTestCase(unittest.TestCase):
         expected : str = df.to_markdown(index = False) + "\n"
         
         # Act
-        markdown_processor.try_log_readme_md(rolling_total_df = df)
+        markdown_processor.process_readme_md(rolling_total_df = df)
         
         # Assert
         component_bag.logging_function.assert_called_once_with(expected)	
@@ -515,7 +515,7 @@ class MarkdownProcessorTestCase(unittest.TestCase):
         df : DataFrame = DataFrame({"col1": [1, 2], "col2": [3, 4]})
         
         # Act
-        markdown_processor.try_log_readme_md(rolling_total_df = df)
+        markdown_processor.process_readme_md(rolling_total_df = df)
         
         # Assert
         component_bag.component_bag.logging_function.assert_not_called()
