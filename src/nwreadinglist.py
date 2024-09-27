@@ -1409,17 +1409,17 @@ class MarkdownProcessor():
         self.__component_bag = component_bag
         self.__setting_bag = setting_bag
 
-    def __get_readme_md(self, cumulative_df : DataFrame) -> str:
+    def __get_readme_md(self, rolling_total_df : DataFrame) -> str:
 
         '''Creates the Markdown content for a README file out of the provided dataframe.'''
 
-        cumulative_md : str = cumulative_df.to_markdown(index = False)
+        rolling_total_md : str = rolling_total_df.to_markdown(index = False)
 
-        md_content : str = cumulative_md
+        md_content : str = rolling_total_md
         md_content += "\n"
 
         return md_content
-    def __get_reading_list_by_month_md(self, last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, use_smaller_font : bool) -> str:
+    def __get_rl_by_month_md(self, last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, use_smaller_font : bool) -> str:
 
         '''Creates the Markdown content for a "Reading List By Month" file out of the provided dataframes.'''
 
@@ -1447,7 +1447,7 @@ class MarkdownProcessor():
         md_content += ""
 
         return md_content
-    def __get_reading_list_by_publisher_md(self, last_update : datetime, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> str:
+    def __get_rl_by_publisher_md(self, last_update : datetime, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> str:
 
         '''Creates the Markdown content for a "Reading List By Publisher" file out of the provided dataframes.'''
 
@@ -1468,7 +1468,7 @@ class MarkdownProcessor():
         md_content += ""
 
         return md_content
-    def __get_reading_list_by_rating_md(self, last_update : datetime, sas_by_rating_df : DataFrame) -> str:
+    def __get_rl_by_rating_md(self, last_update : datetime, sas_by_rating_df : DataFrame) -> str:
 
         '''Creates the Markdown content for a "Reading List By Rating" file out of the provided dataframe.'''
 
@@ -1483,7 +1483,7 @@ class MarkdownProcessor():
         md_content += "\n"
 
         return md_content
-    def __get_reading_list_by_topic_md(self, last_update : datetime, sas_by_topic_df : DataFrame) -> str:
+    def __get_rl_by_topic_md(self, last_update : datetime, sas_by_topic_df : DataFrame) -> str:
 
         '''Creates the Markdown content for a "Reading List By Topic" file out of the provided dataframe.'''
 
@@ -1498,14 +1498,14 @@ class MarkdownProcessor():
         md_content += "\n"
 
         return md_content
-    def __get_reading_list_md(self, last_update : datetime, books_df : DataFrame, use_smaller_font : bool) -> str:
+    def __get_rl_md(self, last_update : datetime, books_df : DataFrame, use_smaller_font : bool) -> str:
 
         '''Creates the Markdown content for a "Reading List" file out of the provided dataframe.'''
 
         md_paragraph_title : str = "Reading List"
 
         markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-        formatted_rl_df : DataFrame = self.__get_formatted_reading_list(books_df = books_df)
+        formatted_rl_df : DataFrame = self.__get_formatted_rl(books_df = books_df)
 
         if use_smaller_font:
             formatted_rl_df = self.__component_bag.markdown_helper.add_subscript_tags_to_dataframe(df = formatted_rl_df)    
@@ -1518,7 +1518,7 @@ class MarkdownProcessor():
         md_content += "\n"
 
         return md_content
-    def __get_reading_list_topic_trend_md(self, last_update : datetime, yt_by_topic_df : DataFrame) -> str:
+    def __get_rl_topic_trend_md(self, last_update : datetime, yt_by_topic_df : DataFrame) -> str:
 
         '''Creates the Markdown content for a "Reading List Topic Trend" file out of the provided dataframe.'''
 
@@ -1533,7 +1533,7 @@ class MarkdownProcessor():
         md_content += "\n"
 
         return md_content
-    def __get_formatted_reading_list(self, books_df : DataFrame) -> DataFrame:
+    def __get_formatted_rl(self, books_df : DataFrame) -> DataFrame:
 
         '''
                 Id	    Title	            Year	Pages	ReadDate	Publisher	    Rating    Topic
@@ -1566,19 +1566,19 @@ class MarkdownProcessor():
 
         return formatted_rl_df
 
-    def try_show_readme_md(self, rolling_total_df : DataFrame) -> None:
+    def try_log_readme_md(self, rolling_total_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the README file.'''
 
-        content : str = self.__get_readme_md(cumulative_df = rolling_total_df)
+        content : str = self.__get_readme_md(rolling_total_df = rolling_total_df)
 
         if self.__setting_bag.show_readme_md:
             self.__component_bag.logging_function(content)
-    def try_show_and_save_reading_list_by_month_md(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], sas_by_year_street_price_df : DataFrame) -> None:
+    def try_log_and_save_rl_by_month_md(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], sas_by_year_street_price_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List By Month" file.''' 
 
-        content : str = self.__get_reading_list_by_month_md(      
+        content : str = self.__get_rl_by_month_md(      
             last_update = self.__setting_bag.reading_list_last_update, 
             sas_by_month_df = sas_by_month_tpl[0], 
             sas_by_year_street_price_df = sas_by_year_street_price_df,
@@ -1595,11 +1595,11 @@ class MarkdownProcessor():
                 file_name = self.__setting_bag.reading_list_by_month_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def try_show_and_save_reading_list_by_publisher_md(self, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> None:
+    def try_log_and_save_rl_by_publisher_md(self, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> None:
 
         '''Performs all the tasks related to the "Reading List By Publisher" file.'''
 
-        content : str = self.__get_reading_list_by_publisher_md(      
+        content : str = self.__get_rl_by_publisher_md(      
             last_update = self.__setting_bag.reading_list_last_update, 
             sas_by_publisher_tpl = sas_by_publisher_tpl)
 
@@ -1614,11 +1614,11 @@ class MarkdownProcessor():
                 file_name = self.__setting_bag.reading_list_by_publisher_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def try_show_and_save_reading_list_by_rating_md(self, sas_by_rating_df : DataFrame) -> None:
+    def try_log_and_save_rl_by_rating_md(self, sas_by_rating_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List By Rating" file.'''
 
-        content : str = self.__get_reading_list_by_rating_md(       
+        content : str = self.__get_rl_by_rating_md(       
             last_update = self.__setting_bag.reading_list_last_update, 
             sas_by_rating_df = sas_by_rating_df)
 
@@ -1633,11 +1633,11 @@ class MarkdownProcessor():
                 file_name = self.__setting_bag.reading_list_by_rating_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def try_show_and_save_reading_list_by_topic_md(self, sas_by_topic_df : DataFrame) -> None:
+    def try_log_and_save_rl_by_topic_md(self, sas_by_topic_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List By Topic" file.'''
 
-        content : str = self.__get_reading_list_by_topic_md( 
+        content : str = self.__get_rl_by_topic_md( 
             last_update = self.__setting_bag.reading_list_last_update, 
             sas_by_topic_df = sas_by_topic_df)
 
@@ -1652,11 +1652,11 @@ class MarkdownProcessor():
                 file_name = self.__setting_bag.reading_list_by_topic_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def try_show_and_save_reading_list_topic_trend_md(self, yt_by_topic_df : DataFrame) -> None:
+    def try_log_and_save_rl_by_topic_trend_md(self, yt_by_topic_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List Topic Trend" file.'''
 
-        content : str = self.__get_reading_list_topic_trend_md(
+        content : str = self.__get_rl_topic_trend_md(
             last_update = self.__setting_bag.reading_list_last_update, 
             yt_by_topic_df = yt_by_topic_df)
 
@@ -1671,11 +1671,11 @@ class MarkdownProcessor():
                 file_name = self.__setting_bag.reading_list_topic_trend_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def try_show_and_save_reading_list_md(self, books_df : DataFrame) -> None:
+    def try_log_and_save_rl_md(self, books_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List" file.'''
 
-        content : str = self.__get_reading_list_md(
+        content : str = self.__get_rl_md(
             last_update = self.__setting_bag.reading_list_last_update, 
             books_df = books_df,
             use_smaller_font = self.__setting_bag.reading_list_smaller_font)

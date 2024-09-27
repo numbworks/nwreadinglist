@@ -478,7 +478,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
         assert_frame_equal(expected_df, actual_df)
 class MarkdownProcessorTestCase(unittest.TestCase):
 
-    def test_tryshowreadmemd_shouldlogreadmemd_whensettingistrue(self) -> None:
+    def test_trylogreadmemd_shouldlogreadmemd_whensettingistrue(self) -> None:
         
 		# Arrange
         component_bag : Mock = Mock()
@@ -495,11 +495,11 @@ class MarkdownProcessorTestCase(unittest.TestCase):
         expected : str = df.to_markdown(index = False) + "\n"
         
         # Act
-        markdown_processor.try_show_readme_md(rolling_total_df = df)
+        markdown_processor.try_log_readme_md(rolling_total_df = df)
         
         # Assert
         component_bag.logging_function.assert_called_once_with(expected)	
-    def test_tryshowreadmemd_shouldnotcallloggingfunction_whensettingisfalse(self) -> None:
+    def test_trylogreadmemd_shouldnotcallloggingfunction_whensettingisfalse(self) -> None:
         
 		# Arrange
         component_bag : Mock = Mock()
@@ -515,7 +515,7 @@ class MarkdownProcessorTestCase(unittest.TestCase):
         df : DataFrame = DataFrame({"col1": [1, 2], "col2": [3, 4]})
         
         # Act
-        markdown_processor.try_show_readme_md(rolling_total_df = df)
+        markdown_processor.try_log_readme_md(rolling_total_df = df)
         
         # Assert
         component_bag.component_bag.logging_function.assert_not_called()
