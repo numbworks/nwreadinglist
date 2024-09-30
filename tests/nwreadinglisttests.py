@@ -76,14 +76,12 @@ class ObjectMother():
             now = datetime(2024, 3, 4),
             rl_last_update = datetime(2024, 3, 4)
         )
-
     @staticmethod
     def create_reading_list_manager() -> ReadingListManager:
 
         return ReadingListManager(
             component_bag = ComponentBag(), 
             setting_bag = ObjectMother().create_setting_bag())
-    
     @staticmethod
     def create_markdown_processor() -> MarkdownProcessor:
 
@@ -91,7 +89,6 @@ class ObjectMother():
             component_bag = ComponentBag(), 
             setting_bag = ObjectMother().create_setting_bag())
       
-
     @staticmethod
     def create_books_df() -> DataFrame:
 
@@ -117,7 +114,6 @@ class ObjectMother():
             'CommentLenght': np.array([52, 128, 181, 134, 80, 121, 105, 142, 138, 90, 75, 125, 59, 140], dtype=int32),
             'KBSize': np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=int32),
         }, index=pd.RangeIndex(start=260, stop=274, step=1))
-
     @staticmethod
     def create_books_df_column_names() -> list[str]:
 
@@ -144,7 +140,6 @@ class ObjectMother():
         column_names.append("KBSize")               # [19], int
 
         return column_names
-
     @staticmethod
     def create_books_df_dtype_names() -> list[str]:
 
@@ -174,7 +169,6 @@ class ObjectMother():
         ]
 
         return expected_dtype_names
-
     @staticmethod
     def create_default_sa_by_2024_df() -> DataFrame:
 
@@ -190,7 +184,6 @@ class ObjectMother():
         default_df = default_df.astype({"2024": str})
 
         return default_df
-
     @staticmethod
     def create_sas_by_topic_df() -> DataFrame:
 
@@ -199,7 +192,6 @@ class ObjectMother():
             'Books': np.array([12, 1, 1], dtype= np.int64),
             'Pages': np.array([4609, 535, 429], dtype=int32),
         }, index=pd.RangeIndex(start=0, stop=3, step=1))
-
     @staticmethod
     def create_sas_by_rating_df() -> DataFrame:
 
@@ -207,7 +199,6 @@ class ObjectMother():
             'Rating': np.array(['★★★★☆', '★★★☆☆', '★★☆☆☆', '★☆☆☆☆'], dtype=object),
             'Books': np.array([1, 3, 4, 6], dtype= np.int64),
         }, index=pd.RangeIndex(start=0, stop=4, step=1))
-
     @staticmethod
     def create_cumulative_df() -> DataFrame:
 
@@ -218,7 +209,6 @@ class ObjectMother():
             'TotalSpend': np.array(['$587.57'], dtype=object),
             'LastUpdate': np.array(['2024-03-04'], dtype=object),
         }, index=pd.Index([0], dtype='int64'))
-
     @staticmethod
     def create_yt_by_topic_df() -> DataFrame:
 
@@ -227,6 +217,169 @@ class ObjectMother():
             'Books': pd.Series([[0, 0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 12], [0, 0, 0, 0, 0, 0, 0, 0, 1]]).to_numpy(),
             'Trend': np.array(['▁▁▁▁▁▁▁▁▂', '▁▁▁▁▁▁▁▁█', '▁▁▁▁▁▁▁▁▂'], dtype=object),
         }, index=pd.RangeIndex(start=0, stop=3, step=1))
+
+    @staticmethod
+    def create_dtos_for_readmemd() -> Tuple[DataFrame, str]:
+
+        data : dict = {
+            "Years": [9],
+            "Books": [304],
+            "Pages": [83104],
+            "TotalSpend": ["$8581.65"],
+            "LastUpdate": ["2024-09-25"]
+        }        
+        df : DataFrame = pd.DataFrame(data)
+
+        lines : list[str] = [
+            "|   Years |   Books |   Pages | TotalSpend   | LastUpdate   |",
+            "|--------:|--------:|--------:|:-------------|:-------------|",
+            "|       9 |     304 |   83104 | $8581.65     | 2024-09-25   |"
+        ]
+        expected : str = "\n".join(lines) + "\n"
+
+        return (df, expected)
+    @staticmethod
+    def create_dtos_for_rlbymonthmd() -> Tuple[Tuple[DataFrame, DataFrame], DataFrame, str]:
+
+        sas_by_month_0_data : dict = {
+            "Month": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+            "2023": ["0 (0)", "0 (0)", "1 (139)", "0 (0)", "0 (0)", "8 (642)", "0 (0)", "4 (1170)", "9 (1969)", "0 (0)", "0 (0)", "3 (588)"],
+            "↕": ["↑", "↑", "↓", "=", "↑", "↓", "↑", "↓", "↓", "=", "=", "↓"],
+            "2024": ["3 (855)", "14 (5573)", "0 (0)", "0 (0)", "2 (590)", "4 (2572)", "22 (6366)", "2 (491)", "0 (0)", "0 (0)", "0 (0)", "0 (0)"]
+        }
+        sas_by_month_0_df : DataFrame = pd.DataFrame(sas_by_month_0_data)
+        sas_by_month_tpl : Tuple[DataFrame, DataFrame] = (sas_by_month_0_df, Mock())
+
+        sas_by_year_street_price_data : dict = {
+            "2023": ["25 (4508)", "$594.80"],
+            "↕": ["↑", "↑"],
+            "2024": ["47 (16447)", "$1690.06"]
+        }
+        sas_by_year_street_price_df = pd.DataFrame(sas_by_year_street_price_data)
+
+        lines : list[str] = [
+            "## Revision History",
+            "",
+            "|Date|Author|Description|",
+            "|---|---|---|",
+            "|2020-12-22|numbworks|Created.|",
+            "|2024-09-29|numbworks|Last update.|",
+            "",
+            "## Reading List By Month",
+            "",
+            "|   Month | 2023     | ↕   | 2024      |",
+            "|--------:|:---------|:----|:----------|",
+            "|       1 | 0 (0)    | ↑   | 3 (855)   |",
+            "|       2 | 0 (0)    | ↑   | 14 (5573) |",
+            "|       3 | 1 (139)  | ↓   | 0 (0)     |",
+            "|       4 | 0 (0)    | =   | 0 (0)     |",
+            "|       5 | 0 (0)    | ↑   | 2 (590)   |",
+            "|       6 | 8 (642)  | ↓   | 4 (2572)  |",
+            "|       7 | 0 (0)    | ↑   | 22 (6366) |",
+            "|       8 | 4 (1170) | ↓   | 2 (491)   |",
+            "|       9 | 9 (1969) | ↓   | 0 (0)     |",
+            "|      10 | 0 (0)    | =   | 0 (0)     |",
+            "|      11 | 0 (0)    | =   | 0 (0)     |",
+            "|      12 | 3 (588)  | ↓   | 0 (0)     |",
+            "",
+            "| 2023      | ↕   | 2024       |",
+            "|:----------|:----|:-----------|",
+            "| 25 (4508) | ↑   | 47 (16447) |",
+            "| $594.80   | ↑   | $1690.06   |"
+        ]
+        expected : str = "\n".join(lines) + "\n"
+
+        return (sas_by_month_tpl, sas_by_year_street_price_df, expected)
+    @staticmethod
+    def create_dtos_for_rlbyratingmd() -> Tuple[DataFrame, str]:
+
+        data : dict = {
+            'Rating': ['★★★★★', '★★★★☆', '★★★☆☆', '★★☆☆☆', '★☆☆☆☆'],
+            'Books': [9, 22, 87, 102, 84]
+        }
+        sas_by_rating_df = pd.DataFrame(data)
+
+        lines : list[str] = [
+            "## Revision History",
+            "",
+            "|Date|Author|Description|",
+            "|---|---|---|",
+            "|2020-12-22|numbworks|Created.|",
+            "|2024-09-29|numbworks|Last update.|",
+            "",
+            "## Reading List By Rating",
+            "",
+            "| Rating   |   Books |",
+            "|:---------|--------:|",
+            "| ★★★★★    |       9 |",
+            "| ★★★★☆    |      22 |",
+            "| ★★★☆☆    |      87 |",
+            "| ★★☆☆☆    |     102 |",
+            "| ★☆☆☆☆    |      84 |"
+        ]
+        expected : str = "\n".join(lines) + "\n"
+
+        return (sas_by_rating_df, expected)
+
+    @staticmethod
+    def create_service_objects_for_readmemd(show_readme_md : bool) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
+
+        component_bag : Mock = Mock()
+        
+        setting_bag : Mock = Mock()
+        setting_bag.show_readme_md = show_readme_md
+
+        markdown_processor : MarkdownProcessor = MarkdownProcessor(
+			component_bag = component_bag, 
+			setting_bag = setting_bag
+			)        
+
+        return (component_bag, setting_bag, markdown_processor)    
+    @staticmethod
+    def create_service_objects_for_rlbymonthmd(rl_by_month_smaller_font : bool) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
+
+        component_bag : Mock = Mock()
+        component_bag.logging_function = Mock()
+        component_bag.file_manager.save_content = Mock()
+        component_bag.markdown_helper = MarkdownHelper(formatter = Formatter())
+        component_bag.file_path_manager = FilePathManager()
+
+        setting_bag : Mock = Mock()
+        setting_bag.rl_last_update = datetime(2024, 9, 29)
+        setting_bag.rl_by_month_file_name = "READINGLISTBYMONTH.md"
+        setting_bag.working_folder_path = "/home/nwreadinglist/"
+        setting_bag.show_rl_by_month_md = True
+        setting_bag.save_rl_by_month_md = True
+        setting_bag.rl_by_month_smaller_font = rl_by_month_smaller_font
+
+        markdown_processor : MarkdownProcessor = MarkdownProcessor(
+			component_bag = component_bag, 
+			setting_bag = setting_bag
+			)        
+
+        return (component_bag, setting_bag, markdown_processor)    
+    @staticmethod    
+    def create_service_objects_for_rlbyratingmd() -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
+
+        component_bag : Mock = Mock()
+        component_bag.logging_function = Mock()
+        component_bag.file_manager.save_content = Mock()
+        component_bag.markdown_helper = MarkdownHelper(formatter = Formatter())
+        component_bag.file_path_manager = FilePathManager()
+
+        setting_bag : Mock = Mock()
+        setting_bag.rl_last_update = datetime(2024, 9, 29)
+        setting_bag.rl_by_rating_file_name = "READINGLISTBYRATING.md"
+        setting_bag.working_folder_path = "/home/nwreadinglist/"
+        setting_bag.show_rl_by_rating_md = True
+        setting_bag.save_rl_by_rating_md = True
+
+        markdown_processor : MarkdownProcessor = MarkdownProcessor(
+			component_bag = component_bag, 
+			setting_bag = setting_bag
+			)        
+
+        return (component_bag, setting_bag, markdown_processor)    
 
 # TEST CLASSES
 class DefaultPathProviderTestCase(unittest.TestCase):
@@ -478,167 +631,11 @@ class ReadingListManagerTestCase(unittest.TestCase):
         assert_frame_equal(expected_df, actual_df)
 class MarkdownProcessorTestCase(unittest.TestCase):
 
-    def __create_service_objects_for_readmemd(self, show_readme_md : bool) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
-
-        component_bag : Mock = Mock()
-        
-        setting_bag : Mock = Mock()
-        setting_bag.show_readme_md = show_readme_md
-
-        markdown_processor : MarkdownProcessor = MarkdownProcessor(
-			component_bag = component_bag, 
-			setting_bag = setting_bag
-			)        
-
-        return (component_bag, setting_bag, markdown_processor)
-    def __create_service_objects_for_rlbymonthmd(self, rl_by_month_smaller_font : bool) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
-
-        component_bag : Mock = Mock()
-        component_bag.logging_function = Mock()
-        component_bag.file_manager.save_content = Mock()
-        component_bag.markdown_helper = MarkdownHelper(formatter = Formatter())
-        component_bag.file_path_manager = FilePathManager()
-
-        setting_bag : Mock = Mock()
-        setting_bag.rl_last_update = datetime(2024, 9, 29)
-        setting_bag.rl_by_month_file_name = "READINGLISTBYMONTH.md"
-        setting_bag.working_folder_path = "/home/nwreadinglist/"
-        setting_bag.show_rl_by_month_md = True
-        setting_bag.save_rl_by_month_md = True
-        setting_bag.rl_by_month_smaller_font = rl_by_month_smaller_font
-
-        markdown_processor : MarkdownProcessor = MarkdownProcessor(
-			component_bag = component_bag, 
-			setting_bag = setting_bag
-			)        
-
-        return (component_bag, setting_bag, markdown_processor)    
-    def __create_service_objects_for_rlbyratingmd(self) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
-
-        component_bag : Mock = Mock()
-        component_bag.logging_function = Mock()
-        component_bag.file_manager.save_content = Mock()
-        component_bag.markdown_helper = MarkdownHelper(formatter = Formatter())
-        component_bag.file_path_manager = FilePathManager()
-
-        setting_bag : Mock = Mock()
-        setting_bag.rl_last_update = datetime(2024, 9, 29)
-        setting_bag.rl_by_rating_file_name = "READINGLISTBYRATING.md"
-        setting_bag.working_folder_path = "/home/nwreadinglist/"
-        setting_bag.show_rl_by_rating_md = True
-        setting_bag.save_rl_by_rating_md = True
-
-        markdown_processor : MarkdownProcessor = MarkdownProcessor(
-			component_bag = component_bag, 
-			setting_bag = setting_bag
-			)        
-
-        return (component_bag, setting_bag, markdown_processor)    
-    def __create_dtos_for_readme(self) -> Tuple[DataFrame, str]:
-
-        data : dict = {
-            "Years": [9],
-            "Books": [304],
-            "Pages": [83104],
-            "TotalSpend": ["$8581.65"],
-            "LastUpdate": ["2024-09-25"]
-        }        
-        df : DataFrame = pd.DataFrame(data)
-
-        lines : list[str] = [
-            "|   Years |   Books |   Pages | TotalSpend   | LastUpdate   |",
-            "|--------:|--------:|--------:|:-------------|:-------------|",
-            "|       9 |     304 |   83104 | $8581.65     | 2024-09-25   |"
-        ]
-        expected : str = "\n".join(lines) + "\n"
-
-        return (df, expected)
-    def __create_dtos_for_rlbymonthmd(self) -> Tuple[Tuple[DataFrame, DataFrame], DataFrame, str]:
-
-        sas_by_month_0_data : dict = {
-            "Month": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-            "2023": ["0 (0)", "0 (0)", "1 (139)", "0 (0)", "0 (0)", "8 (642)", "0 (0)", "4 (1170)", "9 (1969)", "0 (0)", "0 (0)", "3 (588)"],
-            "↕": ["↑", "↑", "↓", "=", "↑", "↓", "↑", "↓", "↓", "=", "=", "↓"],
-            "2024": ["3 (855)", "14 (5573)", "0 (0)", "0 (0)", "2 (590)", "4 (2572)", "22 (6366)", "2 (491)", "0 (0)", "0 (0)", "0 (0)", "0 (0)"]
-        }
-        sas_by_month_0_df : DataFrame = pd.DataFrame(sas_by_month_0_data)
-        sas_by_month_tpl : Tuple[DataFrame, DataFrame] = (sas_by_month_0_df, Mock())
-
-        sas_by_year_street_price_data : dict = {
-            "2023": ["25 (4508)", "$594.80"],
-            "↕": ["↑", "↑"],
-            "2024": ["47 (16447)", "$1690.06"]
-        }
-        sas_by_year_street_price_df = pd.DataFrame(sas_by_year_street_price_data)
-
-        lines : list[str] = [
-            "## Revision History",
-            "",
-            "|Date|Author|Description|",
-            "|---|---|---|",
-            "|2020-12-22|numbworks|Created.|",
-            "|2024-09-29|numbworks|Last update.|",
-            "",
-            "## Reading List By Month",
-            "",
-            "|   Month | 2023     | ↕   | 2024      |",
-            "|--------:|:---------|:----|:----------|",
-            "|       1 | 0 (0)    | ↑   | 3 (855)   |",
-            "|       2 | 0 (0)    | ↑   | 14 (5573) |",
-            "|       3 | 1 (139)  | ↓   | 0 (0)     |",
-            "|       4 | 0 (0)    | =   | 0 (0)     |",
-            "|       5 | 0 (0)    | ↑   | 2 (590)   |",
-            "|       6 | 8 (642)  | ↓   | 4 (2572)  |",
-            "|       7 | 0 (0)    | ↑   | 22 (6366) |",
-            "|       8 | 4 (1170) | ↓   | 2 (491)   |",
-            "|       9 | 9 (1969) | ↓   | 0 (0)     |",
-            "|      10 | 0 (0)    | =   | 0 (0)     |",
-            "|      11 | 0 (0)    | =   | 0 (0)     |",
-            "|      12 | 3 (588)  | ↓   | 0 (0)     |",
-            "",
-            "| 2023      | ↕   | 2024       |",
-            "|:----------|:----|:-----------|",
-            "| 25 (4508) | ↑   | 47 (16447) |",
-            "| $594.80   | ↑   | $1690.06   |"
-        ]
-        expected : str = "\n".join(lines) + "\n"
-
-        return (sas_by_month_tpl, sas_by_year_street_price_df, expected)
-    def __create_dtos_for_rlbyratingmd(self) -> Tuple[DataFrame, str]:
-
-        data : dict = {
-            'Rating': ['★★★★★', '★★★★☆', '★★★☆☆', '★★☆☆☆', '★☆☆☆☆'],
-            'Books': [9, 22, 87, 102, 84]
-        }
-        sas_by_rating_df = pd.DataFrame(data)
-
-        lines : list[str] = [
-            "## Revision History",
-            "",
-            "|Date|Author|Description|",
-            "|---|---|---|",
-            "|2020-12-22|numbworks|Created.|",
-            "|2024-09-29|numbworks|Last update.|",
-            "",
-            "## Reading List By Rating",
-            "",
-            "| Rating   |   Books |",
-            "|:---------|--------:|",
-            "| ★★★★★    |       9 |",
-            "| ★★★★☆    |      22 |",
-            "| ★★★☆☆    |      87 |",
-            "| ★★☆☆☆    |     102 |",
-            "| ★☆☆☆☆    |      84 |"
-        ]
-        expected : str = "\n".join(lines) + "\n"
-
-        return (sas_by_rating_df, expected)
-    
     def test_processreadmemd_shouldlogreadmemd_whensettingistrue(self) -> None:
         
 		# Arrange
-        df, expected = self.__create_dtos_for_readme()        
-        component_bag, _, markdown_processor = self.__create_service_objects_for_readmemd(show_readme_md = True)
+        df, expected = ObjectMother().create_dtos_for_readmemd()        
+        component_bag, _, markdown_processor = ObjectMother().create_service_objects_for_readmemd(show_readme_md = True)
 				       
         # Act
         markdown_processor.process_readme_md(rolling_total_df = df)
@@ -648,8 +645,8 @@ class MarkdownProcessorTestCase(unittest.TestCase):
     def test_processreadmemd_shouldnotcallloggingfunction_whensettingisfalse(self) -> None:
         
 		# Arrange
-        df, _ = self.__create_dtos_for_readme()
-        component_bag, _, markdown_processor = self.__create_service_objects_for_readmemd(show_readme_md = False)
+        df, _ = ObjectMother().create_dtos_for_readmemd()
+        component_bag, _, markdown_processor = ObjectMother().create_service_objects_for_readmemd(show_readme_md = False)
 
         # Act
         markdown_processor.process_readme_md(rolling_total_df = df)
@@ -661,8 +658,8 @@ class MarkdownProcessorTestCase(unittest.TestCase):
 		# Arrange
         file_name : str = "READINGLISTBYMONTH.md"
         file_path : str = f"/home/nwreadinglist/{file_name}"
-        sas_by_month_tpl, sas_by_year_street_price_df, expected = self.__create_dtos_for_rlbymonthmd()
-        component_bag, _, markdown_processor = self.__create_service_objects_for_rlbymonthmd(rl_by_month_smaller_font = False)        
+        sas_by_month_tpl, sas_by_year_street_price_df, expected = ObjectMother().create_dtos_for_rlbymonthmd()
+        component_bag, _, markdown_processor = ObjectMother().create_service_objects_for_rlbymonthmd(rl_by_month_smaller_font = False)        
 
         # Act
         markdown_processor.process_rl_by_month_md(
@@ -677,13 +674,13 @@ class MarkdownProcessorTestCase(unittest.TestCase):
             call(expected)
         ])
         component_bag.file_manager.save_content.assert_called_with(content = expected, file_path = file_path)
-    def test_processrlbyratingmd_shouldlogandsave_whensmallerfontisfalse(self) -> None:
+    def test_processrlbyratingmd_shouldlogandsave_wheninvoked(self) -> None:
 
 		# Arrange
         file_name : str = "READINGLISTBYRATING.md"
         file_path : str = f"/home/nwreadinglist/{file_name}"
-        sas_by_rating_df, expected = self.__create_dtos_for_rlbyratingmd()
-        component_bag, _, markdown_processor = self.__create_service_objects_for_rlbyratingmd()        
+        sas_by_rating_df, expected = ObjectMother().create_dtos_for_rlbyratingmd()
+        component_bag, _, markdown_processor = ObjectMother().create_service_objects_for_rlbyratingmd()        
 
         # Act
         markdown_processor.process_rl_by_rating_md(sas_by_rating_df = sas_by_rating_df)
