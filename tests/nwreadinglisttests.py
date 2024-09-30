@@ -1,17 +1,15 @@
 # GLOBAL MODULES
-import os
-import sys
-from typing import Tuple
 import numpy as np
+import os
 import pandas as pd
+import sys
 import unittest
-from datetime import datetime
-from datetime import date
-from datetime import timedelta
+from datetime import datetime, date
 from numpy import float64, int32
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
+from typing import Tuple
 from unittest.mock import Mock, call, patch
 
 # LOCAL MODULES
@@ -480,7 +478,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
         assert_frame_equal(expected_df, actual_df)
 class MarkdownProcessorTestCase(unittest.TestCase):
 
-    def __create_service_objects_for_readme(self, show_readme_md : bool) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
+    def __create_service_objects_for_readmemd(self, show_readme_md : bool) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
 
         component_bag : Mock = Mock()
         
@@ -508,6 +506,27 @@ class MarkdownProcessorTestCase(unittest.TestCase):
         setting_bag.show_rl_by_month_md = True
         setting_bag.save_rl_by_month_md = True
         setting_bag.rl_by_month_smaller_font = rl_by_month_smaller_font
+
+        markdown_processor : MarkdownProcessor = MarkdownProcessor(
+			component_bag = component_bag, 
+			setting_bag = setting_bag
+			)        
+
+        return (component_bag, setting_bag, markdown_processor)    
+    def __create_service_objects_for_rlbyratingmd(self) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
+
+        component_bag : Mock = Mock()
+        component_bag.logging_function = Mock()
+        component_bag.file_manager.save_content = Mock()
+        component_bag.markdown_helper = MarkdownHelper(formatter = Formatter())
+        component_bag.file_path_manager = FilePathManager()
+
+        setting_bag : Mock = Mock()
+        setting_bag.rl_last_update = datetime(2024, 9, 29)
+        setting_bag.rl_by_rating_file_name = "READINGLISTBYRATING.md"
+        setting_bag.working_folder_path = "/home/nwreadinglist/"
+        setting_bag.show_rl_by_rating_md = True
+        setting_bag.save_rl_by_rating_md = True
 
         markdown_processor : MarkdownProcessor = MarkdownProcessor(
 			component_bag = component_bag, 
@@ -585,72 +604,6 @@ class MarkdownProcessorTestCase(unittest.TestCase):
         expected : str = "\n".join(lines) + "\n"
 
         return (sas_by_month_tpl, sas_by_year_street_price_df, expected)
-
-    def test_processreadmemd_shouldlogreadmemd_whensettingistrue(self) -> None:
-        
-		# Arrange
-        df, expected = self.__create_dtos_for_readme()        
-        component_bag, _, markdown_processor = self.__create_service_objects_for_readme(show_readme_md = True)
-				       
-        # Act
-        markdown_processor.process_readme_md(rolling_total_df = df)
-        
-        # Assert
-        component_bag.logging_function.assert_called_once_with(expected)	
-    def test_processreadmemd_shouldnotcallloggingfunction_whensettingisfalse(self) -> None:
-        
-		# Arrange
-        df, _ = self.__create_dtos_for_readme()
-        component_bag, _, markdown_processor = self.__create_service_objects_for_readme(show_readme_md = False)
-
-        # Act
-        markdown_processor.process_readme_md(rolling_total_df = df)
-        
-        # Assert
-        component_bag.logging_function.assert_not_called()
-    def test_processrlbymonthmd_shouldlogandsave_whensmallerfontisfalse(self) -> None:
-
-		# Arrange
-        file_name : str = "READINGLISTBYMONTH.md"
-        file_path : str = f"/home/nwreadinglist/{file_name}"
-        sas_by_month_tpl, sas_by_year_street_price_df, expected = self.__create_dtos_for_rlbymonthmd()
-        component_bag, _, markdown_processor = self.__create_service_objects_for_rlbymonthmd(rl_by_month_smaller_font = False)        
-
-        # Act
-        markdown_processor.process_rl_by_month_md(
-            sas_by_month_tpl = sas_by_month_tpl, 
-            sas_by_year_street_price_df = sas_by_year_street_price_df
-        )
-
-        # Assert
-        self.assertEqual(component_bag.logging_function.call_count, 2)
-        component_bag.logging_function.assert_has_calls([
-            call(file_name + "\n"),
-            call(expected)
-        ])
-        component_bag.file_manager.save_content.assert_called_with(content = expected, file_path = file_path)
-    
-    def __create_service_objects_for_rlbyratingmd(self) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
-
-        component_bag : Mock = Mock()
-        component_bag.logging_function = Mock()
-        component_bag.file_manager.save_content = Mock()
-        component_bag.markdown_helper = MarkdownHelper(formatter = Formatter())
-        component_bag.file_path_manager = FilePathManager()
-
-        setting_bag : Mock = Mock()
-        setting_bag.rl_last_update = datetime(2024, 9, 29)
-        setting_bag.rl_by_rating_file_name = "READINGLISTBYRATING.md"
-        setting_bag.working_folder_path = "/home/nwreadinglist/"
-        setting_bag.show_rl_by_rating_md = True
-        setting_bag.save_rl_by_rating_md = True
-
-        markdown_processor : MarkdownProcessor = MarkdownProcessor(
-			component_bag = component_bag, 
-			setting_bag = setting_bag
-			)        
-
-        return (component_bag, setting_bag, markdown_processor)      
     def __create_dtos_for_rlbyratingmd(self) -> Tuple[DataFrame, str]:
 
         data : dict = {
@@ -679,8 +632,51 @@ class MarkdownProcessorTestCase(unittest.TestCase):
         ]
         expected : str = "\n".join(lines) + "\n"
 
-        return (sas_by_rating_df, expected)    
+        return (sas_by_rating_df, expected)
+    
+    def test_processreadmemd_shouldlogreadmemd_whensettingistrue(self) -> None:
+        
+		# Arrange
+        df, expected = self.__create_dtos_for_readme()        
+        component_bag, _, markdown_processor = self.__create_service_objects_for_readmemd(show_readme_md = True)
+				       
+        # Act
+        markdown_processor.process_readme_md(rolling_total_df = df)
+        
+        # Assert
+        component_bag.logging_function.assert_called_once_with(expected)	
+    def test_processreadmemd_shouldnotcallloggingfunction_whensettingisfalse(self) -> None:
+        
+		# Arrange
+        df, _ = self.__create_dtos_for_readme()
+        component_bag, _, markdown_processor = self.__create_service_objects_for_readmemd(show_readme_md = False)
 
+        # Act
+        markdown_processor.process_readme_md(rolling_total_df = df)
+        
+        # Assert
+        component_bag.logging_function.assert_not_called()
+    def test_processrlbymonthmd_shouldlogandsave_whensmallerfontisfalse(self) -> None:
+
+		# Arrange
+        file_name : str = "READINGLISTBYMONTH.md"
+        file_path : str = f"/home/nwreadinglist/{file_name}"
+        sas_by_month_tpl, sas_by_year_street_price_df, expected = self.__create_dtos_for_rlbymonthmd()
+        component_bag, _, markdown_processor = self.__create_service_objects_for_rlbymonthmd(rl_by_month_smaller_font = False)        
+
+        # Act
+        markdown_processor.process_rl_by_month_md(
+            sas_by_month_tpl = sas_by_month_tpl, 
+            sas_by_year_street_price_df = sas_by_year_street_price_df
+        )
+
+        # Assert
+        self.assertEqual(component_bag.logging_function.call_count, 2)
+        component_bag.logging_function.assert_has_calls([
+            call(file_name + "\n"),
+            call(expected)
+        ])
+        component_bag.file_manager.save_content.assert_called_with(content = expected, file_path = file_path)
     def test_processrlbyratingmd_shouldlogandsave_whensmallerfontisfalse(self) -> None:
 
 		# Arrange
@@ -699,7 +695,6 @@ class MarkdownProcessorTestCase(unittest.TestCase):
             call(expected)
         ])
         component_bag.file_manager.save_content.assert_called_with(content = expected, file_path = file_path)
-
 
 # MAIN
 if __name__ == "__main__":
