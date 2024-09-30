@@ -1,6 +1,7 @@
 # GLOBAL MODULES
 import os
 import sys
+from typing import Tuple
 import numpy as np
 import pandas as pd
 import unittest
@@ -478,7 +479,27 @@ class ReadingListManagerTestCase(unittest.TestCase):
         assert_frame_equal(expected_df, actual_df)
 class MarkdownProcessorTestCase(unittest.TestCase):
 
-    def test_trylogreadmemd_shouldlogreadmemd_whensettingistrue(self) -> None:
+    def __create_df_and_expected_for_readme(self) -> Tuple[DataFrame, str]:
+
+        data : dict = {
+            "Years": [9],
+            "Books": [304],
+            "Pages": [83104],
+            "TotalSpend": ["$8581.65"],
+            "LastUpdate": ["2024-09-25"]
+        }        
+        df : DataFrame = pd.DataFrame(data)
+
+        lines : list[str] = [
+            "|   Years |   Books |   Pages | TotalSpend   | LastUpdate   |",
+            "|--------:|--------:|--------:|:-------------|:-------------|",
+            "|       9 |     304 |   83104 | $8581.65     | 2024-09-25   |"
+        ]
+        expected : str = "\n".join(lines) + "\n"
+
+        return (df, expected)
+
+    def test_processreadmemd_shouldlogreadmemd_whensettingistrue(self) -> None:
         
 		# Arrange
         component_bag : Mock = Mock()
@@ -490,16 +511,15 @@ class MarkdownProcessorTestCase(unittest.TestCase):
 			component_bag = component_bag, 
 			setting_bag = setting_bag
 			)		
-		
-        df : DataFrame = DataFrame({"col1": [1, 2], "col2": [3, 4]})
-        expected : str = df.to_markdown(index = False) + "\n"
         
+        df, expected = self.__create_df_and_expected_for_readme()
+		       
         # Act
         markdown_processor.process_readme_md(rolling_total_df = df)
         
         # Assert
         component_bag.logging_function.assert_called_once_with(expected)	
-    def test_trylogreadmemd_shouldnotcallloggingfunction_whensettingisfalse(self) -> None:
+    def test_processreadmemd_shouldnotcallloggingfunction_whensettingisfalse(self) -> None:
         
 		# Arrange
         component_bag : Mock = Mock()
@@ -512,7 +532,7 @@ class MarkdownProcessorTestCase(unittest.TestCase):
 			setting_bag = setting_bag
 			)		
 		
-        df : DataFrame = DataFrame({"col1": [1, 2], "col2": [3, 4]})
+        df, _ = self.__create_df_and_expected_for_readme()
         
         # Act
         markdown_processor.process_readme_md(rolling_total_df = df)
