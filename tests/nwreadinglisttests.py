@@ -629,6 +629,77 @@ class MarkdownProcessorTestCase(unittest.TestCase):
             call(expected)
         ])
         component_bag.file_manager.save_content.assert_called_with(content = expected, file_path = file_path)
+    
+    def __create_service_objects_for_rlbyratingmd(self) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
+
+        component_bag : Mock = Mock()
+        component_bag.logging_function = Mock()
+        component_bag.file_manager.save_content = Mock()
+        component_bag.markdown_helper = MarkdownHelper(formatter = Formatter())
+        component_bag.file_path_manager = FilePathManager()
+
+        setting_bag : Mock = Mock()
+        setting_bag.rl_last_update = datetime(2024, 9, 29)
+        setting_bag.rl_by_rating_file_name = "READINGLISTBYRATING.md"
+        setting_bag.working_folder_path = "/home/nwreadinglist/"
+        setting_bag.show_rl_by_rating_md = True
+        setting_bag.save_rl_by_rating_md = True
+
+        markdown_processor : MarkdownProcessor = MarkdownProcessor(
+			component_bag = component_bag, 
+			setting_bag = setting_bag
+			)        
+
+        return (component_bag, setting_bag, markdown_processor)      
+    def __create_dtos_for_rlbyratingmd(self) -> Tuple[DataFrame, str]:
+
+        data : dict = {
+            'Rating': ['★★★★★', '★★★★☆', '★★★☆☆', '★★☆☆☆', '★☆☆☆☆'],
+            'Books': [9, 22, 87, 102, 84]
+        }
+        sas_by_rating_df = pd.DataFrame(data)
+
+        lines : list[str] = [
+            "## Revision History",
+            "",
+            "|Date|Author|Description|",
+            "|---|---|---|",
+            "|2020-12-22|numbworks|Created.|",
+            "|2024-09-29|numbworks|Last update.|",
+            "",
+            "## Reading List By Rating",
+            "",
+            "| Rating   |   Books |",
+            "|:---------|--------:|",
+            "| ★★★★★    |       9 |",
+            "| ★★★★☆    |      22 |",
+            "| ★★★☆☆    |      87 |",
+            "| ★★☆☆☆    |     102 |",
+            "| ★☆☆☆☆    |      84 |"
+        ]
+        expected : str = "\n".join(lines) + "\n"
+
+        return (sas_by_rating_df, expected)    
+
+    def test_processrlbyratingmd_shouldlogandsave_whensmallerfontisfalse(self) -> None:
+
+		# Arrange
+        file_name : str = "READINGLISTBYRATING.md"
+        file_path : str = f"/home/nwreadinglist/{file_name}"
+        sas_by_rating_df, expected = self.__create_dtos_for_rlbyratingmd()
+        component_bag, _, markdown_processor = self.__create_service_objects_for_rlbyratingmd()        
+
+        # Act
+        markdown_processor.process_rl_by_rating_md(sas_by_rating_df = sas_by_rating_df)
+
+        # Assert
+        self.assertEqual(component_bag.logging_function.call_count, 2)
+        component_bag.logging_function.assert_has_calls([
+            call(file_name + "\n"),
+            call(expected)
+        ])
+        component_bag.file_manager.save_content.assert_called_with(content = expected, file_path = file_path)
+
 
 # MAIN
 if __name__ == "__main__":
