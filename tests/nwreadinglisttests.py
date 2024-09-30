@@ -479,7 +479,20 @@ class ReadingListManagerTestCase(unittest.TestCase):
         assert_frame_equal(expected_df, actual_df)
 class MarkdownProcessorTestCase(unittest.TestCase):
 
-    def __create_df_and_expected_for_readme(self) -> Tuple[DataFrame, str]:
+    def __create_service_objects_for_readme(self, show_readme_md : bool) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
+
+        component_bag : Mock = Mock()
+        
+        setting_bag : Mock = Mock()
+        setting_bag.show_readme_md = show_readme_md
+
+        markdown_processor : MarkdownProcessor = MarkdownProcessor(
+			component_bag = component_bag, 
+			setting_bag = setting_bag
+			)        
+
+        return (component_bag, setting_bag, markdown_processor)
+    def __create_dtos_for_readme(self) -> Tuple[DataFrame, str]:
 
         data : dict = {
             "Years": [9],
@@ -502,18 +515,9 @@ class MarkdownProcessorTestCase(unittest.TestCase):
     def test_processreadmemd_shouldlogreadmemd_whensettingistrue(self) -> None:
         
 		# Arrange
-        component_bag : Mock = Mock()
-        
-        setting_bag : Mock = Mock()
-        setting_bag.show_readme_md = True
-
-        markdown_processor : MarkdownProcessor = MarkdownProcessor(
-			component_bag = component_bag, 
-			setting_bag = setting_bag
-			)		
-        
-        df, expected = self.__create_df_and_expected_for_readme()
-		       
+        df, expected = self.__create_dtos_for_readme()        
+        component_bag, _, markdown_processor = self.__create_service_objects_for_readme(show_readme_md = True)
+				       
         # Act
         markdown_processor.process_readme_md(rolling_total_df = df)
         
@@ -522,23 +526,32 @@ class MarkdownProcessorTestCase(unittest.TestCase):
     def test_processreadmemd_shouldnotcallloggingfunction_whensettingisfalse(self) -> None:
         
 		# Arrange
-        component_bag : Mock = Mock()
-        
-        setting_bag : Mock = Mock()
-        setting_bag.show_readme_md = False
-		
-        markdown_processor : MarkdownProcessor = MarkdownProcessor(
-			component_bag = component_bag, 
-			setting_bag = setting_bag
-			)		
-		
-        df, _ = self.__create_df_and_expected_for_readme()
-        
+        df, _ = self.__create_dtos_for_readme()
+        component_bag, _, markdown_processor = self.__create_service_objects_for_readme(show_readme_md = False)
+
         # Act
         markdown_processor.process_readme_md(rolling_total_df = df)
         
         # Assert
-        component_bag.component_bag.logging_function.assert_not_called()
+        component_bag.logging_function.assert_not_called()
+
+    def test_processrlbymonthmd_should_when(self) -> None:
+
+		# Arrange
+        component_bag : Mock = Mock()
+        component_bag.logging_function = Mock()
+        component_bag.file_manager.save_content = Mock()
+        component_bag.file_path_manager.create_file_path = Mock(return_value="/home/nwreadinglist/READINGLISTBYMONTH.md")
+
+        setting_bag : Mock = Mock()
+        setting_bag.show_readme_md = True
+        setting_bag.show_reading_list_by_month_md = True
+        setting_bag.save_reading_list_by_month_md = True
+        setting_bag.reading_list_by_month_smaller_font = True
+
+
+        # Act
+        # Assert
 
 # MAIN
 if __name__ == "__main__":
