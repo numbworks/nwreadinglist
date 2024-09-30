@@ -493,6 +493,28 @@ class MarkdownProcessorTestCase(unittest.TestCase):
 			)        
 
         return (component_bag, setting_bag, markdown_processor)
+    def __create_service_objects_for_rlbymonthmd(self, reading_list_by_month_smaller_font : bool) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
+
+        component_bag : Mock = Mock()
+        component_bag.logging_function = Mock()
+        component_bag.file_manager.save_content = Mock()
+        component_bag.markdown_helper = MarkdownHelper(formatter = Formatter())
+        component_bag.file_path_manager = FilePathManager()
+
+        setting_bag : Mock = Mock()
+        setting_bag.reading_list_last_update = datetime(2024, 9, 29)
+        setting_bag.reading_list_by_month_file_name = "READINGLISTBYMONTH.md"
+        setting_bag.working_folder_path = "/home/nwreadinglist/"
+        setting_bag.show_reading_list_by_month_md = True
+        setting_bag.save_reading_list_by_month_md = True
+        setting_bag.reading_list_by_month_smaller_font = reading_list_by_month_smaller_font
+
+        markdown_processor : MarkdownProcessor = MarkdownProcessor(
+			component_bag = component_bag, 
+			setting_bag = setting_bag
+			)        
+
+        return (component_bag, setting_bag, markdown_processor)    
     def __create_dtos_for_readme(self) -> Tuple[DataFrame, str]:
 
         data : dict = {
@@ -512,6 +534,57 @@ class MarkdownProcessorTestCase(unittest.TestCase):
         expected : str = "\n".join(lines) + "\n"
 
         return (df, expected)
+    def __create_dtos_for_rlbymonthmd(self) -> Tuple[Tuple[DataFrame, DataFrame], DataFrame, str]:
+
+        sas_by_month_0_data : dict = {
+            "Month": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+            "2023": ["0 (0)", "0 (0)", "1 (139)", "0 (0)", "0 (0)", "8 (642)", "0 (0)", "4 (1170)", "9 (1969)", "0 (0)", "0 (0)", "3 (588)"],
+            "↕": ["↑", "↑", "↓", "=", "↑", "↓", "↑", "↓", "↓", "=", "=", "↓"],
+            "2024": ["3 (855)", "14 (5573)", "0 (0)", "0 (0)", "2 (590)", "4 (2572)", "22 (6366)", "2 (491)", "0 (0)", "0 (0)", "0 (0)", "0 (0)"]
+        }
+        sas_by_month_0_df : DataFrame = pd.DataFrame(sas_by_month_0_data)
+        sas_by_month_tpl : Tuple[DataFrame, DataFrame] = (sas_by_month_0_df, Mock())
+
+        sas_by_year_street_price_data : dict = {
+            "2023": ["25 (4508)", "$594.80"],
+            "↕": ["↑", "↑"],
+            "2024": ["47 (16447)", "$1690.06"]
+        }
+        sas_by_year_street_price_df = pd.DataFrame(sas_by_year_street_price_data)
+
+        lines : list[str] = [
+            "## Revision History",
+            "",
+            "|Date|Author|Description|",
+            "|---|---|---|",
+            "|2020-12-22|numbworks|Created.|",
+            "|2024-09-29|numbworks|Last update.|",
+            "",
+            "## Reading List By Month",
+            "",
+            "|   Month | 2023     | ↕   | 2024      |",
+            "|--------:|:---------|:----|:----------|",
+            "|       1 | 0 (0)    | ↑   | 3 (855)   |",
+            "|       2 | 0 (0)    | ↑   | 14 (5573) |",
+            "|       3 | 1 (139)  | ↓   | 0 (0)     |",
+            "|       4 | 0 (0)    | =   | 0 (0)     |",
+            "|       5 | 0 (0)    | ↑   | 2 (590)   |",
+            "|       6 | 8 (642)  | ↓   | 4 (2572)  |",
+            "|       7 | 0 (0)    | ↑   | 22 (6366) |",
+            "|       8 | 4 (1170) | ↓   | 2 (491)   |",
+            "|       9 | 9 (1969) | ↓   | 0 (0)     |",
+            "|      10 | 0 (0)    | =   | 0 (0)     |",
+            "|      11 | 0 (0)    | =   | 0 (0)     |",
+            "|      12 | 3 (588)  | ↓   | 0 (0)     |",
+            "",
+            "| 2023      | ↕   | 2024       |",
+            "|:----------|:----|:-----------|",
+            "| 25 (4508) | ↑   | 47 (16447) |",
+            "| $594.80   | ↑   | $1690.06   |"
+        ]
+        expected : str = "\n".join(lines) + "\n"
+
+        return (sas_by_month_tpl, sas_by_year_street_price_df, expected)
 
     def test_processreadmemd_shouldlogreadmemd_whensettingistrue(self) -> None:
         
@@ -535,94 +608,7 @@ class MarkdownProcessorTestCase(unittest.TestCase):
         
         # Assert
         component_bag.logging_function.assert_not_called()
-
-    def __create_service_objects_for_rlbymonthmd(self, reading_list_by_month_smaller_font : bool) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
-
-        component_bag : Mock = Mock()
-        component_bag.logging_function = Mock()
-        component_bag.file_manager.save_content = Mock()
-        component_bag.markdown_helper = MarkdownHelper(formatter = Formatter())
-        component_bag.file_path_manager = FilePathManager()
-
-        setting_bag : Mock = Mock()
-        setting_bag.reading_list_last_update = datetime(2024, 9, 29)
-        setting_bag.reading_list_by_month_file_name = "READINGLISTBYMONTH.md"
-        setting_bag.working_folder_path = "/home/nwreadinglist/"
-        setting_bag.show_reading_list_by_month_md = True
-        setting_bag.save_reading_list_by_month_md = True
-        setting_bag.reading_list_by_month_smaller_font = reading_list_by_month_smaller_font
-
-        markdown_processor : MarkdownProcessor = MarkdownProcessor(
-			component_bag = component_bag, 
-			setting_bag = setting_bag
-			)        
-
-        return (component_bag, setting_bag, markdown_processor)
-    def __create_dtos_for_rlbymonthmd(self) -> Tuple[Tuple[DataFrame, DataFrame], DataFrame, str]:
-
-        sas_by_month_0_data : dict = {
-            "Month": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-            "2016": ["0 (0)", "0 (0)", "0 (0)", "0 (0)", "1 (288)", "8 (1734)", "4 (1758)", "2 (334)", "4 (881)", "2 (275)", "11 (4033)", "11 (3019)"],
-            "2017": ["↑ 13 (5157)", "↑ 1 (106)", "↑ 16 (3816)", "↑ 8 (2539)", "↑ 13 (3527)", "↓ 4 (788)", "↓ 3 (1140)", "↓ 1 (453)", "↓ 3 (840)", "= 0 (0)", "0 (0)", "0 (0)"],
-            "2018": ["↓ 0 (0)", "↓ 0 (0)", "↑ 6 (600)", "↓ 7 (1986)", "= 0 (0)", "↓ 1 (24)", "= 3 (427)", "↓ 0 (0)", "↑ 1 (1259)", "↑ 6 (1201)", "↑ 10 (3172)", "↓ 0 (0)"],
-            "2019": ["↑ 4 (1061)", "↑ 13 (2991)", "↑ 20 (3349)", "= 0 (0)", "= 0 (0)", "↓ 0 (0)", "↓ 2 (444)", "↓ 2 (848)", "↑ 1 (1259)", "↑ 1 (360)", "↑ 0 (0)", "↑ 15 (5236)"],
-            "2020": ["= 0 (0)", "= 0 (0)", "= 0 (0)", "↑ 9 (2226)", "= 0 (0)", "= 0 (0)", "= 0 (0)", "= 0 (0)", "= 0 (0)", "↑ 6 (1941)", "↑ 7 (2000)", "= 1 (435)"],
-            "2021": ["= 0 (0)", "↑ 11 (1289)", "↑ 2 (612)", "= 0 (0)", "= 0 (0)", "= 0 (0)", "= 0 (0)", "= 0 (0)", "= 0 (0)", "= 0 (0)", "↓ 0 (0)", "= 0 (0)"],
-            "2022": ["= 0 (0)", "= 0 (0)", "= 0 (0)", "= 0 (0)", "= 0 (0)", "= 0 (0)", "= 0 (0)", "↑ 1 (360)", "= 0 (0)", "= 0 (0)", "= 0 (0)", "= 0 (0)"],
-            "2023": ["= 0 (0)", "= 0 (0)", "↑ 1 (139)", "= 0 (0)", "= 0 (0)", "↑ 8 (642)", "= 0 (0)", "↑ 4 (1170)", "↑ 9 (1969)", "= 0 (0)", "= 0 (0)", "↑ 3 (588)"],
-            "2024": ["↑ 3 (855)", "↑ 14 (5573)", "↓ 0 (0)", "= 0 (0)", "↑ 2 (590)", "↑ 4 (2572)", "↑ 22 (6366)", "↑ 2 (491)", "= 0 (0)", "= 0 (0)", "= 0 (0)", "= 0 (0)"]
-        }
-        sas_by_month_0_df : DataFrame = pd.DataFrame(sas_by_month_0_data)
-        sas_by_month_tpl : Tuple[DataFrame, DataFrame] = (sas_by_month_0_df, Mock())
-
-        sas_by_year_street_price_data : dict = {
-            '2016': ['43 (12322)', '$1447.14 ↑'],
-            '2017': ['↑ 62 (18366)', '$2093.14 ↓'],
-            '2018': ['↓ 48 (12646)', '$1249.15 ↓'],
-            '2019': ['↓ 42 (9952)', '$748.70 ↓'],
-            '2020': ['↓ 23 (6602)', '$538.75 ↓'],
-            '2021': ['↓ 13 (1901)', '$169.92 ↓'],
-            '2022': ['↓ 1 (360)', '$49.99 ↑'],
-            '2023': ['↑ 25 (4508)', '$594.80 ↑'],
-            '2024': ['↑ 47 (16447)', '$1690.06']
-        }
-        sas_by_year_street_price_df = pd.DataFrame(sas_by_year_street_price_data)
-
-        lines : list[str] = [
-            "## Revision History",
-            "",
-            "|Date|Author|Description|",
-            "|---|---|---|",
-            "|2020-12-22|numbworks|Created.|",
-            "|2024-09-29|numbworks|Last update.|",
-            "",
-            "## Reading List By Month",
-            "",
-            "|   Month | 2016      | ↕   | 2017      | ↕   | 2018      | ↕   | 2019      | ↕   | 2020     | ↕   | 2021      | ↕   | 2022    | ↕   | 2023     | ↕   | 2024      |",
-            "|--------:|:----------|:----|:----------|:----|:----------|:----|:----------|:----|:---------|:----|:----------|:----|:--------|:----|:---------|:----|:----------|",
-            "|       1 | 0 (0)     | ↑   | 13 (5157) | ↓   | 0 (0)     | ↑   | 4 (1061)  | ↓   | 0 (0)    | =   | 0 (0)     | =   | 0 (0)   | =   | 0 (0)    | ↑   | 3 (855)   |",
-            "|       2 | 0 (0)     | ↑   | 1 (106)   | ↓   | 0 (0)     | ↑   | 13 (2991) | ↓   | 0 (0)    | ↑   | 11 (1289) | ↓   | 0 (0)   | =   | 0 (0)    | ↑   | 14 (5573) |",
-            "|       3 | 0 (0)     | ↑   | 16 (3816) | ↓   | 6 (600)   | ↑   | 20 (3349) | ↓   | 0 (0)    | ↑   | 2 (612)   | ↓   | 0 (0)   | ↑   | 1 (139)  | ↓   | 0 (0)     |",
-            "|       4 | 0 (0)     | ↑   | 8 (2539)  | ↓   | 7 (1986)  | ↓   | 0 (0)     | ↑   | 9 (2226) | ↓   | 0 (0)     | =   | 0 (0)   | =   | 0 (0)    | =   | 0 (0)     |",
-            "|       5 | 1 (288)   | ↑   | 13 (3527) | ↓   | 0 (0)     | =   | 0 (0)     | =   | 0 (0)    | =   | 0 (0)     | =   | 0 (0)   | =   | 0 (0)    | ↑   | 2 (590)   |",
-            "|       6 | 8 (1734)  | ↓   | 4 (788)   | ↓   | 1 (24)    | ↓   | 0 (0)     | =   | 0 (0)    | =   | 0 (0)     | =   | 0 (0)   | ↑   | 8 (642)  | ↓   | 4 (2572)  |",
-            "|       7 | 4 (1758)  | ↓   | 3 (1140)  | =   | 3 (427)   | ↓   | 2 (444)   | ↓   | 0 (0)    | =   | 0 (0)     | =   | 0 (0)   | =   | 0 (0)    | ↑   | 22 (6366) |",
-            "|       8 | 2 (334)   | ↓   | 1 (453)   | ↓   | 0 (0)     | ↑   | 2 (848)   | ↓   | 0 (0)    | =   | 0 (0)     | =   | 0 (0)   | ↑   | 4 (1170) | ↓   | 2 (491)   |",
-            "|       9 | 4 (881)   | ↓   | 3 (840)   | ↓   | 0 (0)     | ↑   | 1 (1259)  | ↓   | 0 (0)    | =   | 0 (0)     | ↑   | 1 (360) | ↑   | 9 (1969) | ↓   | 0 (0)     |",
-            "|      10 | 2 (275)   | ↓   | 0 (0)     | ↑   | 6 (1201)  | ↓   | 0 (0)     | ↑   | 6 (1941) | ↓   | 0 (0)     | =   | 0 (0)   | =   | 0 (0)    | =   | 0 (0)     |",
-            "|      11 | 11 (4033) | ↓   | 0 (0)     | ↑   | 10 (3172) | ↓   | 0 (0)     | ↑   | 7 (2000) | ↓   | 0 (0)     | =   | 0 (0)   | =   | 0 (0)    | =   | 0 (0)     |",
-            "|      12 | 11 (3019) | ↓   | 0 (0)     | ↑   | 15 (5236) | ↓   | 0 (0)     | ↑   | 1 (435)  | ↓   | 0 (0)     | =   | 0 (0)   | ↑   | 3 (588)  | ↓   | 0 (0)     |",
-            "",
-            "| 2016       | ↕   | 2017       | ↕   | 2018       | ↕   | 2019      | ↕   | 2020      | ↕   | 2021      | ↕   | 2022    | ↕   | 2023      | ↕   | 2024       |",
-            "|:-----------|:----|:-----------|:----|:-----------|:----|:----------|:----|:----------|:----|:----------|:----|:--------|:----|:----------|:----|:-----------|",
-            "| 43 (12322) | ↑   | 62 (18366) | ↓   | 48 (12646) | ↓   | 42 (9952) | ↓   | 23 (6602) | ↓   | 13 (1901) | ↓   | 1 (360) | ↑   | 25 (4508) | ↑   | 47 (16447) |",
-            "| $1447.14   | ↑   | $2093.14   | ↓   | $1249.15   | ↓   | $748.70   | ↓   | $538.75   | ↓   | $169.92   | ↓   | $49.99  | ↑   | $594.80   | ↑   | $1690.06   |"
-        ]
-        expected : str = "\n".join(lines) + "\n"
-
-        return (sas_by_month_tpl, sas_by_year_street_price_df, expected)
-
-    def test_processrlbymonthmd_should_when(self) -> None:
+    def test_processrlbymonthmd_shouldlogandsave_whensmallerfontisfalse(self) -> None:
 
 		# Arrange
         file_name : str = "READINGLISTBYMONTH.md"
@@ -640,10 +626,9 @@ class MarkdownProcessorTestCase(unittest.TestCase):
         self.assertEqual(component_bag.logging_function.call_count, 2)
         component_bag.logging_function.assert_has_calls([
             call(file_name + "\n"),
-            # call(expected)
+            call(expected)
         ])
-        # component_bag.logging_function.assert_called_once_with(expected)
-        # component_bag.file_manager.save_content.assert_called_with(content = expected, file_path = file_path)
+        component_bag.file_manager.save_content.assert_called_with(content = expected, file_path = file_path)
 
 # MAIN
 if __name__ == "__main__":
