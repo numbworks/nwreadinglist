@@ -1,3 +1,8 @@
+v3.7.0 - BREAKING CHANGES
+- Application:
+	- Refactoring: code coverage increased from 54% to 61%.
+	- Refactoring: some SettingBag properties and some MarkdownProcessor methods have been renamed.
+
 v3.6.0
 - Application:
 	- Feature: added support for hide_index()'s formatters in the notebook.
