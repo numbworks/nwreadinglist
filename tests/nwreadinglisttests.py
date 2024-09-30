@@ -54,29 +54,29 @@ class ObjectMother():
             show_sas_by_topic_df = True,
             show_sas_by_publisher_df = True,
             show_sas_by_rating_df = True,
-            show_reading_list_by_kbsize_df = True,
+            show_rl_by_kbsize_df = True,
             show_yearly_trend_by_topic_df = True,
             show_books_by_year_box_plot = True,
-            show_reading_list_by_kbsize_box_plot = True,
+            show_rl_by_kbsize_box_plot = True,
             show_readme_md = True,
-            show_reading_list_by_month_md = False,
-            show_reading_list_by_publisher_md = False,
-            show_reading_list_by_rating_md = False,
-            show_reading_list_by_topic_md = False,
-            show_reading_list_topic_trend_md = False,
-            show_reading_list_md = False,
-            save_reading_list_by_month_md = False,
-            save_reading_list_by_publisher_md = False,
-            save_reading_list_by_rating_md = False,
-            save_reading_list_by_topic_md = False,
-            save_reading_list_topic_trend_md = False,
-            save_reading_list_md = False,
+            show_rl_by_month_md = False,
+            show_rl_by_publisher_md = False,
+            show_rl_by_rating_md = False,
+            show_rl_by_topic_md = False,
+            show_rl_topic_trend_md = False,
+            show_rl_md = False,
+            save_rl_by_month_md = False,
+            save_rl_by_publisher_md = False,
+            save_rl_by_rating_md = False,
+            save_rl_by_topic_md = False,
+            save_rl_topic_trend_md = False,
+            save_rl_md = False,
             working_folder_path = "c:/Users/Rubèn/Desktop/",
             read_years = YearProvider().get_all_years(),
             excel_path = "C:/project_dir/data/Reading List.xlsx",
             excel_books_nrows = 275,
             now = datetime(2024, 3, 4),
-            reading_list_last_update = datetime(2024, 3, 4)
+            rl_last_update = datetime(2024, 3, 4)
         )
 
     @staticmethod
@@ -493,7 +493,7 @@ class MarkdownProcessorTestCase(unittest.TestCase):
 			)        
 
         return (component_bag, setting_bag, markdown_processor)
-    def __create_service_objects_for_rlbymonthmd(self, reading_list_by_month_smaller_font : bool) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
+    def __create_service_objects_for_rlbymonthmd(self, rl_by_month_smaller_font : bool) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
 
         component_bag : Mock = Mock()
         component_bag.logging_function = Mock()
@@ -502,12 +502,12 @@ class MarkdownProcessorTestCase(unittest.TestCase):
         component_bag.file_path_manager = FilePathManager()
 
         setting_bag : Mock = Mock()
-        setting_bag.reading_list_last_update = datetime(2024, 9, 29)
-        setting_bag.reading_list_by_month_file_name = "READINGLISTBYMONTH.md"
+        setting_bag.rl_last_update = datetime(2024, 9, 29)
+        setting_bag.rl_by_month_file_name = "READINGLISTBYMONTH.md"
         setting_bag.working_folder_path = "/home/nwreadinglist/"
-        setting_bag.show_reading_list_by_month_md = True
-        setting_bag.save_reading_list_by_month_md = True
-        setting_bag.reading_list_by_month_smaller_font = reading_list_by_month_smaller_font
+        setting_bag.show_rl_by_month_md = True
+        setting_bag.save_rl_by_month_md = True
+        setting_bag.rl_by_month_smaller_font = rl_by_month_smaller_font
 
         markdown_processor : MarkdownProcessor = MarkdownProcessor(
 			component_bag = component_bag, 
@@ -614,7 +614,7 @@ class MarkdownProcessorTestCase(unittest.TestCase):
         file_name : str = "READINGLISTBYMONTH.md"
         file_path : str = f"/home/nwreadinglist/{file_name}"
         sas_by_month_tpl, sas_by_year_street_price_df, expected = self.__create_dtos_for_rlbymonthmd()
-        component_bag, _, markdown_processor = self.__create_service_objects_for_rlbymonthmd(reading_list_by_month_smaller_font = False)        
+        component_bag, _, markdown_processor = self.__create_service_objects_for_rlbymonthmd(rl_by_month_smaller_font = False)        
 
         # Act
         markdown_processor.process_rl_by_month_md(

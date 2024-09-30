@@ -11,7 +11,6 @@ import openpyxl
 import os
 import pandas as pd
 from datetime import datetime
-from datetime import date
 from numpy import float64
 from pandas import DataFrame
 from pandas import Series
@@ -28,12 +27,12 @@ class SettingBag():
 
     '''Represents a collection of settings.'''
 
-    save_reading_list_by_month_md : bool
-    save_reading_list_by_publisher_md : bool
-    save_reading_list_by_rating_md : bool
-    save_reading_list_by_topic_md : bool
-    save_reading_list_topic_trend_md : bool
-    save_reading_list_md : bool
+    save_rl_by_month_md : bool
+    save_rl_by_publisher_md : bool
+    save_rl_by_rating_md : bool
+    save_rl_by_topic_md : bool
+    save_rl_topic_trend_md : bool
+    save_rl_md : bool
     read_years : list[int]
     excel_path : str
     excel_books_nrows : int
@@ -45,17 +44,17 @@ class SettingBag():
     show_sas_by_topic_df : bool
     show_sas_by_publisher_df : bool
     show_sas_by_rating_df : bool
-    show_reading_list_by_kbsize_df : bool
+    show_rl_by_kbsize_df : bool
     show_yearly_trend_by_topic_df : bool
     show_books_by_year_box_plot : bool
-    show_reading_list_by_kbsize_box_plot : bool
+    show_rl_by_kbsize_box_plot : bool
     show_readme_md : bool
-    show_reading_list_by_month_md : bool
-    show_reading_list_by_publisher_md : bool
-    show_reading_list_by_rating_md : bool
-    show_reading_list_by_topic_md : bool
-    show_reading_list_topic_trend_md : bool
-    show_reading_list_md : bool
+    show_rl_by_month_md : bool
+    show_rl_by_publisher_md : bool
+    show_rl_by_rating_md : bool
+    show_rl_by_topic_md : bool
+    show_rl_topic_trend_md : bool
+    show_rl_md : bool
     working_folder_path : str    
     excel_books_skiprows : int
     excel_books_tabname : str
@@ -72,25 +71,25 @@ class SettingBag():
     kbsize_remove_if_zero : bool
     formatted_rating : bool
     enable_sparklines_maximum : bool
-    reading_list_by_month_file_name : str
-    reading_list_by_publisher_file_name : str
-    reading_list_by_rating_file_name : str
-    reading_list_by_topic_file_name : str
-    reading_list_topic_trend_file_name : str
-    reading_list_file_name : str
-    reading_list_last_update : datetime
-    reading_list_smaller_font : bool
-    reading_list_by_month_smaller_font : bool
+    rl_by_month_file_name : str
+    rl_by_publisher_file_name : str
+    rl_by_rating_file_name : str
+    rl_by_topic_file_name : str
+    rl_topic_trend_file_name : str
+    rl_file_name : str
+    rl_last_update : datetime
+    rl_smaller_font : bool
+    rl_by_month_smaller_font : bool
     definitions : dict
 
     def __init__(
         self,
-        save_reading_list_by_month_md : bool,
-        save_reading_list_by_publisher_md : bool,
-        save_reading_list_by_rating_md : bool,
-        save_reading_list_by_topic_md : bool,
-        save_reading_list_topic_trend_md : bool,
-        save_reading_list_md : bool,
+        save_rl_by_month_md : bool,
+        save_rl_by_publisher_md : bool,
+        save_rl_by_rating_md : bool,
+        save_rl_by_topic_md : bool,
+        save_rl_topic_trend_md : bool,
+        save_rl_md : bool,
         read_years : list[int],
         excel_path : str,
         excel_books_nrows : int,
@@ -102,17 +101,17 @@ class SettingBag():
         show_sas_by_topic_df : bool = True,
         show_sas_by_publisher_df : bool = True,
         show_sas_by_rating_df : bool = True,
-        show_reading_list_by_kbsize_df : bool = True,
+        show_rl_by_kbsize_df : bool = True,
         show_yearly_trend_by_topic_df : bool = True,
         show_books_by_year_box_plot : bool = True,
-        show_reading_list_by_kbsize_box_plot : bool = True,
+        show_rl_by_kbsize_box_plot : bool = True,
         show_readme_md : bool = True,
-        show_reading_list_by_month_md : bool = False,
-        show_reading_list_by_publisher_md : bool = False,
-        show_reading_list_by_rating_md : bool = False,
-        show_reading_list_by_topic_md : bool = False,
-        show_reading_list_topic_trend_md : bool = False,
-        show_reading_list_md : bool = False,
+        show_rl_by_month_md : bool = False,
+        show_rl_by_publisher_md : bool = False,
+        show_rl_by_rating_md : bool = False,
+        show_rl_by_topic_md : bool = False,
+        show_rl_topic_trend_md : bool = False,
+        show_rl_md : bool = False,
         working_folder_path : str = "/home/nwreadinglist/",        
         excel_books_skiprows : int = 0,
         excel_books_tabname : str = "Books",
@@ -129,16 +128,17 @@ class SettingBag():
         kbsize_remove_if_zero : bool = True,      
         formatted_rating : bool = True,
         enable_sparklines_maximum : bool = True,
-        reading_list_by_month_file_name : str = "READINGLISTBYMONTH.md",
-        reading_list_by_publisher_file_name : str = "READINGLISTBYPUBLISHER.md",
-        reading_list_by_rating_file_name : str = "READINGLISTBYRATING.md",
-        reading_list_by_topic_file_name : str = "READINGLISTBYTOPIC.md",
-        reading_list_topic_trend_file_name : str = "READINGLISTTOPICTREND.md",
-        reading_list_file_name : str = "READINGLIST.md",
-        reading_list_last_update : datetime = datetime.now(),
-        reading_list_smaller_font : bool = False,
-        reading_list_by_month_smaller_font : bool = False,
-        definitions : dict = { 
+        rl_by_month_file_name : str = "READINGLISTBYMONTH.md",
+        rl_by_publisher_file_name : str = "READINGLISTBYPUBLISHER.md",
+        rl_by_rating_file_name : str = "READINGLISTBYRATING.md",
+        rl_by_topic_file_name : str = "READINGLISTBYTOPIC.md",
+        rl_topic_trend_file_name : str = "READINGLISTTOPICTREND.md",
+        rl_file_name : str = "READINGLIST.md",
+        rl_last_update : datetime = datetime.now(),
+        rl_smaller_font : bool = False,
+        rl_by_month_smaller_font : bool = False,
+        definitions : dict = {
+            "RL": "Reading List",
             "KBSize": "This metric is the word count of the notes I took about a given book.",
             "SAS": "Studying Activity Summary."
             }
@@ -151,23 +151,23 @@ class SettingBag():
         self.show_sas_by_topic_df = show_sas_by_topic_df
         self.show_sas_by_publisher_df = show_sas_by_publisher_df
         self.show_sas_by_rating_df = show_sas_by_rating_df
-        self.show_reading_list_by_kbsize_df = show_reading_list_by_kbsize_df
+        self.show_rl_by_kbsize_df = show_rl_by_kbsize_df
         self.show_yearly_trend_by_topic_df = show_yearly_trend_by_topic_df
         self.show_books_by_year_box_plot = show_books_by_year_box_plot
-        self.show_reading_list_by_kbsize_box_plot = show_reading_list_by_kbsize_box_plot
+        self.show_rl_by_kbsize_box_plot = show_rl_by_kbsize_box_plot
         self.show_readme_md = show_readme_md
-        self.show_reading_list_by_month_md = show_reading_list_by_month_md
-        self.show_reading_list_by_publisher_md = show_reading_list_by_publisher_md
-        self.show_reading_list_by_rating_md = show_reading_list_by_rating_md
-        self.show_reading_list_by_topic_md = show_reading_list_by_topic_md
-        self.show_reading_list_topic_trend_md = show_reading_list_topic_trend_md
-        self.show_reading_list_md = show_reading_list_md
-        self.save_reading_list_by_month_md = save_reading_list_by_month_md
-        self.save_reading_list_by_publisher_md = save_reading_list_by_publisher_md
-        self.save_reading_list_by_rating_md = save_reading_list_by_rating_md
-        self.save_reading_list_by_topic_md = save_reading_list_by_topic_md
-        self.save_reading_list_topic_trend_md = save_reading_list_topic_trend_md
-        self.save_reading_list_md = save_reading_list_md
+        self.show_rl_by_month_md = show_rl_by_month_md
+        self.show_rl_by_publisher_md = show_rl_by_publisher_md
+        self.show_rl_by_rating_md = show_rl_by_rating_md
+        self.show_rl_by_topic_md = show_rl_by_topic_md
+        self.show_rl_topic_trend_md = show_rl_topic_trend_md
+        self.show_rl_md = show_rl_md
+        self.save_rl_by_month_md = save_rl_by_month_md
+        self.save_rl_by_publisher_md = save_rl_by_publisher_md
+        self.save_rl_by_rating_md = save_rl_by_rating_md
+        self.save_rl_by_topic_md = save_rl_by_topic_md
+        self.save_rl_topic_trend_md = save_rl_topic_trend_md
+        self.save_rl_md = save_rl_md
         self.working_folder_path = working_folder_path
         self.read_years = read_years
         self.excel_path = excel_path
@@ -188,15 +188,15 @@ class SettingBag():
         self.kbsize_remove_if_zero = kbsize_remove_if_zero
         self.formatted_rating = formatted_rating
         self.enable_sparklines_maximum = enable_sparklines_maximum
-        self.reading_list_by_month_file_name = reading_list_by_month_file_name
-        self.reading_list_by_publisher_file_name = reading_list_by_publisher_file_name 
-        self.reading_list_by_rating_file_name = reading_list_by_rating_file_name
-        self.reading_list_by_topic_file_name = reading_list_by_topic_file_name
-        self.reading_list_topic_trend_file_name = reading_list_topic_trend_file_name 
-        self.reading_list_file_name = reading_list_file_name
-        self.reading_list_last_update = reading_list_last_update
-        self.reading_list_smaller_font = reading_list_smaller_font
-        self.reading_list_by_month_smaller_font = reading_list_by_month_smaller_font
+        self.rl_by_month_file_name = rl_by_month_file_name
+        self.rl_by_publisher_file_name = rl_by_publisher_file_name 
+        self.rl_by_rating_file_name = rl_by_rating_file_name
+        self.rl_by_topic_file_name = rl_by_topic_file_name
+        self.rl_topic_trend_file_name = rl_topic_trend_file_name 
+        self.rl_file_name = rl_file_name
+        self.rl_last_update = rl_last_update
+        self.rl_smaller_font = rl_smaller_font
+        self.rl_by_month_smaller_font = rl_by_month_smaller_font
         self.definitions = definitions
 class ComponentBag():
 
@@ -1579,20 +1579,20 @@ class MarkdownProcessor():
         '''Performs all the tasks related to the "Reading List By Month" file.''' 
 
         content : str = self.__get_rl_by_month_md(      
-            last_update = self.__setting_bag.reading_list_last_update, 
+            last_update = self.__setting_bag.rl_last_update, 
             sas_by_month_df = sas_by_month_tpl[0], 
             sas_by_year_street_price_df = sas_by_year_street_price_df,
-            use_smaller_font = self.__setting_bag.reading_list_by_month_smaller_font)
+            use_smaller_font = self.__setting_bag.rl_by_month_smaller_font)
 
-        if self.__setting_bag.show_reading_list_by_month_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_month_file_name)
+        if self.__setting_bag.show_rl_by_month_md:
+            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_by_month_file_name)
             self.__component_bag.logging_function(file_name_content)    
             self.__component_bag.logging_function(content)
 
-        if self.__setting_bag.save_reading_list_by_month_md:
+        if self.__setting_bag.save_rl_by_month_md:
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
                 folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.reading_list_by_month_file_name)
+                file_name = self.__setting_bag.rl_by_month_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
     def process_rl_by_publisher_md(self, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> None:
@@ -1600,18 +1600,18 @@ class MarkdownProcessor():
         '''Performs all the tasks related to the "Reading List By Publisher" file.'''
 
         content : str = self.__get_rl_by_publisher_md(      
-            last_update = self.__setting_bag.reading_list_last_update, 
+            last_update = self.__setting_bag.rl_last_update, 
             sas_by_publisher_tpl = sas_by_publisher_tpl)
 
-        if self.__setting_bag.show_reading_list_by_publisher_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_publisher_file_name)
+        if self.__setting_bag.show_rl_by_publisher_md:
+            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_by_publisher_file_name)
             self.__component_bag.logging_function(file_name_content)        
             self.__component_bag.logging_function(content)
 
-        if self.__setting_bag.save_reading_list_by_publisher_md:
+        if self.__setting_bag.save_rl_by_publisher_md:
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
                 folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.reading_list_by_publisher_file_name)
+                file_name = self.__setting_bag.rl_by_publisher_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
     def process_rl_by_rating_md(self, sas_by_rating_df : DataFrame) -> None:
@@ -1619,18 +1619,18 @@ class MarkdownProcessor():
         '''Performs all the tasks related to the "Reading List By Rating" file.'''
 
         content : str = self.__get_rl_by_rating_md(       
-            last_update = self.__setting_bag.reading_list_last_update, 
+            last_update = self.__setting_bag.rl_last_update, 
             sas_by_rating_df = sas_by_rating_df)
 
-        if self.__setting_bag.show_reading_list_by_rating_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_rating_file_name)
+        if self.__setting_bag.show_rl_by_rating_md:
+            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_by_rating_file_name)
             self.__component_bag.logging_function(file_name_content)
             self.__component_bag.logging_function(content)
 
-        if self.__setting_bag.save_reading_list_by_rating_md:            
+        if self.__setting_bag.save_rl_by_rating_md:            
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
                 folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.reading_list_by_rating_file_name)
+                file_name = self.__setting_bag.rl_by_rating_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
     def process_rl_by_topic_md(self, sas_by_topic_df : DataFrame) -> None:
@@ -1638,18 +1638,18 @@ class MarkdownProcessor():
         '''Performs all the tasks related to the "Reading List By Topic" file.'''
 
         content : str = self.__get_rl_by_topic_md( 
-            last_update = self.__setting_bag.reading_list_last_update, 
+            last_update = self.__setting_bag.rl_last_update, 
             sas_by_topic_df = sas_by_topic_df)
 
-        if self.__setting_bag.show_reading_list_by_topic_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.reading_list_by_topic_file_name)
+        if self.__setting_bag.show_rl_by_topic_md:
+            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_by_topic_file_name)
             self.__component_bag.logging_function(file_name_content)
             self.__component_bag.logging_function(content)
 
-        if self.__setting_bag.save_reading_list_by_topic_md:
+        if self.__setting_bag.save_rl_by_topic_md:
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
                 folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.reading_list_by_topic_file_name)
+                file_name = self.__setting_bag.rl_by_topic_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
     def process_rl_by_topic_trend_md(self, yt_by_topic_df : DataFrame) -> None:
@@ -1657,18 +1657,18 @@ class MarkdownProcessor():
         '''Performs all the tasks related to the "Reading List Topic Trend" file.'''
 
         content : str = self.__get_rl_topic_trend_md(
-            last_update = self.__setting_bag.reading_list_last_update, 
+            last_update = self.__setting_bag.rl_last_update, 
             yt_by_topic_df = yt_by_topic_df)
 
-        if self.__setting_bag.show_reading_list_topic_trend_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.reading_list_topic_trend_file_name)           
+        if self.__setting_bag.show_rl_topic_trend_md:
+            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_topic_trend_file_name)           
             self.__component_bag.logging_function(file_name_content)
             self.__component_bag.logging_function(content)
 
-        if self.__setting_bag.save_reading_list_topic_trend_md:           
+        if self.__setting_bag.save_rl_topic_trend_md:           
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
                 folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.reading_list_topic_trend_file_name)
+                file_name = self.__setting_bag.rl_topic_trend_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
     def process_rl_md(self, books_df : DataFrame) -> None:
@@ -1676,19 +1676,19 @@ class MarkdownProcessor():
         '''Performs all the tasks related to the "Reading List" file.'''
 
         content : str = self.__get_rl_md(
-            last_update = self.__setting_bag.reading_list_last_update, 
+            last_update = self.__setting_bag.rl_last_update, 
             books_df = books_df,
-            use_smaller_font = self.__setting_bag.reading_list_smaller_font)
+            use_smaller_font = self.__setting_bag.rl_smaller_font)
 
-        if self.__setting_bag.show_reading_list_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.reading_list_file_name)
+        if self.__setting_bag.show_rl_md:
+            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_file_name)
             self.__component_bag.logging_function(file_name_content)
             self.__component_bag.logging_function(content)
 
-        if self.__setting_bag.save_reading_list_md:
+        if self.__setting_bag.save_rl_md:
             file_path : str = self.__component_bag.file_path_manager.create_file_path(
                 folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.reading_list_file_name)
+                file_name = self.__setting_bag.rl_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
 
