@@ -13,6 +13,7 @@ RUN pip install sparklines==0.4.2
 RUN pip install 'git+https://github.com/numbworks/nwshared.git@v1.4.0#egg=nwshared&subdirectory=src'
 RUN pip install ipykernel==6.29.5
 RUN pip install jupyter==1.0.0
+RUN pip install 'git+https://github.com/numbworks/nwpackageversions.git@v1.0.0#egg=nwpackageversions&subdirectory=src'
 
 RUN wget https://github.com/jgm/pandoc/releases/download/3.4/pandoc-3.4-1-amd64.deb \
     && dpkg -i pandoc-3.4-1-amd64.deb \
