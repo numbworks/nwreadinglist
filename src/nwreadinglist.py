@@ -1195,6 +1195,24 @@ class ReadingListManager():
         rl_asrt_df : DataFrame = pd.DataFrame(rl_asrt_dict, index=[0])
         
         return rl_asrt_df        
+    def get_rl_by_kbsize(self, rl_df : DataFrame) -> DataFrame:
+        
+        '''
+            Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
+            1	    Machine Learning For Dummies	                2017	Data Analysis, Data Science, ML	Wiley	4	    3732	8
+            2	    Machine Learning Projects for .NET Developers	2017	Data Analysis, Data Science, ML	Apress	4	    3272	7        
+            ...
+        '''
+
+        rl_by_kbsize_df : DataFrame = self.__slice_by_kbsize(
+            rl_df = rl_df, 
+            ascending = self.__setting_bag.kbsize_ascending, 
+            remove_if_zero = self.__setting_bag.kbsize_remove_if_zero)
+        
+        rl_by_kbsize_df = self.__component_bag.converter.convert_index_to_one_based(df = rl_by_kbsize_df)
+        rl_by_kbsize_df = rl_by_kbsize_df.head(n = self.__setting_bag.n_by_kbsize)
+
+        return rl_by_kbsize_df   
     def get_sas_by_month_tpl(self, rl_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
 
         '''
@@ -1379,24 +1397,6 @@ class ReadingListManager():
                 lambda x : self.__component_bag.formatter.format_rating(rating = x))
 
         return sas_by_rating_df    
-    def get_reading_list_by_kbsize(self, rl_df : DataFrame) -> DataFrame:
-        
-        '''
-            Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
-            1	    Machine Learning For Dummies	                2017	Data Analysis, Data Science, ML	Wiley	4	    3732	8
-            2	    Machine Learning Projects for .NET Developers	2017	Data Analysis, Data Science, ML	Apress	4	    3272	7        
-            ...
-        '''
-
-        rl_by_kbsize_df : DataFrame = self.__slice_by_kbsize(
-            rl_df = rl_df, 
-            ascending = self.__setting_bag.kbsize_ascending, 
-            remove_if_zero = self.__setting_bag.kbsize_remove_if_zero)
-        
-        rl_by_kbsize_df = self.__component_bag.converter.convert_index_to_one_based(df = rl_by_kbsize_df)
-        rl_by_kbsize_df = rl_by_kbsize_df.head(n = self.__setting_bag.n_by_kbsize)
-
-        return rl_by_kbsize_df
     def get_yearly_trend_by_topic(self, rl_df : DataFrame) -> DataFrame:
 
         '''
