@@ -254,6 +254,19 @@ class MDSummary():
     rl_by_topic_md : str
     rl_by_topic_trend_md : str # rename
 
+class SettingBag2():
+
+    '''Represents a collection of settings.'''
+
+    options_rl : list[Literal["show"]]
+    options_rl_asrt : list[Literal["show"]]
+    options_rl_by_kbsize : list[Literal["show"]]
+    options_sas_by_month : list[Literal["show"]]
+    options_sas_by_year_street_price : list[Literal["show"]]
+    options_sas_by_topic : list[Literal["show"]]
+    options_sas_by_publisher : list[Literal["show"]]
+    options_sas_by_rating : list[Literal["show"]]
+
 # STATIC CLASSES
 # CLASSES
 class DefaultPathProvider():
