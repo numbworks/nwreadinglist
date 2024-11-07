@@ -48,7 +48,7 @@ class ObjectMother():
             show_rl_df = False,
             show_sas_by_month_df = True,
             show_sas_by_year_street_price_df = True,
-            show_rolling_total_df = True,
+            show_rl_asrt_df = True,
             show_sas_by_topic_df = True,
             show_sas_by_publisher_df = True,
             show_sas_by_rating_df = True,
@@ -613,7 +613,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
         reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
 
         # Act
-        actual_df : DataFrame = reading_list_manager.get_rolling_total(rl_df = books_df)
+        actual_df : DataFrame = reading_list_manager.get_rl_asrt(rl_df = books_df)
 
         # Assert
         assert_frame_equal(expected_df, actual_df)
@@ -638,7 +638,7 @@ class MarkdownProcessorTestCase(unittest.TestCase):
         component_bag, _, markdown_processor = ObjectMother().create_service_objects_for_readmemd(show_readme_md = True)
 				       
         # Act
-        markdown_processor.process_readme_md(rolling_total_df = df)
+        markdown_processor.process_rl_asrt_md(rl_asrt_df = df)
         
         # Assert
         component_bag.logging_function.assert_called_once_with(expected)	
@@ -649,7 +649,7 @@ class MarkdownProcessorTestCase(unittest.TestCase):
         component_bag, _, markdown_processor = ObjectMother().create_service_objects_for_readmemd(show_readme_md = False)
 
         # Act
-        markdown_processor.process_readme_md(rolling_total_df = df)
+        markdown_processor.process_rl_asrt_md(rl_asrt_df = df)
         
         # Assert
         component_bag.logging_function.assert_not_called()

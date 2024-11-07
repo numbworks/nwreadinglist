@@ -41,7 +41,7 @@ class SettingBag():
     show_rl_df : bool
     show_sas_by_month_df : bool
     show_sas_by_year_street_price_df : bool
-    show_rolling_total_df : bool
+    show_rl_asrt_df : bool
     show_sas_by_topic_df : bool
     show_sas_by_publisher_df : bool
     show_sas_by_rating_df : bool
@@ -98,7 +98,7 @@ class SettingBag():
         show_rl_df : bool = False,
         show_sas_by_month_df : bool = True,
         show_sas_by_year_street_price_df : bool = True,
-        show_rolling_total_df : bool = True,
+        show_rl_asrt_df : bool = True,
         show_sas_by_topic_df : bool = True,
         show_sas_by_publisher_df : bool = True,
         show_sas_by_rating_df : bool = True,
@@ -148,7 +148,7 @@ class SettingBag():
         self.show_rl_df = show_rl_df
         self.show_sas_by_month_df = show_sas_by_month_df
         self.show_sas_by_year_street_price_df = show_sas_by_year_street_price_df
-        self.show_rolling_total_df = show_rolling_total_df
+        self.show_rl_asrt_df = show_rl_asrt_df
         self.show_sas_by_topic_df = show_sas_by_topic_df
         self.show_sas_by_publisher_df = show_sas_by_publisher_df
         self.show_sas_by_rating_df = show_sas_by_rating_df
@@ -231,7 +231,7 @@ class RLSummary():
     '''Collects all the dataframes created by RLManager'''
 
     rl_df : DataFrame
-    rl_rolling_total_df : DataFrame
+    rl_asrt_df : DataFrame
     rl_by_kbsize_df : DataFrame
     rl_by_kbsize_box_plot: Callable[[Any], None]
     rl_by_books_year_box_plot : Callable[[Any], None]
@@ -1154,7 +1154,7 @@ class ReadingListManager():
             excel_null_value = self.__setting_bag.excel_null_value)
 
         return rl_df
-    def get_rolling_total(self, rl_df : DataFrame) -> DataFrame:
+    def get_rl_asrt(self, rl_df : DataFrame) -> DataFrame:
 
         '''
                 Years	Books	Pages	TotalSpend  LastUpdate
@@ -1184,7 +1184,7 @@ class ReadingListManager():
         
         last_update_str : str = self.__component_bag.formatter.format_to_iso_8601(dt = self.__setting_bag.now)
 
-        rolling_total_dict : dict = {
+        rl_asrt_dict : dict = {
             f"{cn_years}": f"{str(count_years)}",
             f"{cn_books}": f"{str(count_books)}",
             f"{cn_pages}": f"{str(sum_pages)}",
@@ -1192,9 +1192,9 @@ class ReadingListManager():
             f"{cn_last_update}": f"{last_update_str}"
             }
 
-        rolling_total_df : DataFrame = pd.DataFrame(rolling_total_dict, index=[0])
+        rl_asrt_df : DataFrame = pd.DataFrame(rl_asrt_dict, index=[0])
         
-        return rolling_total_df        
+        return rl_asrt_df        
     def get_sas_by_month_tpl(self, rl_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
 
         '''
@@ -1438,13 +1438,13 @@ class MarkdownProcessor():
         self.__component_bag = component_bag
         self.__setting_bag = setting_bag
 
-    def __get_readme_md(self, rolling_total_df : DataFrame) -> str:
+    def __get_rl_asrt_md(self, rl_asrt_df : DataFrame) -> str:
 
         '''Creates the Markdown content for a README file out of the provided dataframe.'''
 
-        rolling_total_md : str = rolling_total_df.to_markdown(index = False)
+        rl_asrt_md : str = rl_asrt_df.to_markdown(index = False)
 
-        md_content : str = rolling_total_md
+        md_content : str = rl_asrt_md
         md_content += "\n"
 
         return md_content
@@ -1595,11 +1595,11 @@ class MarkdownProcessor():
 
         return formatted_rl_df
 
-    def process_readme_md(self, rolling_total_df : DataFrame) -> None:
+    def process_rl_asrt_md(self, rl_asrt_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the README file.'''
 
-        content : str = self.__get_readme_md(rolling_total_df = rolling_total_df)
+        content : str = self.__get_rl_asrt_md(rl_asrt_df = rl_asrt_df)
 
         if self.__setting_bag.show_readme_md:
             self.__component_bag.logging_function(content)
