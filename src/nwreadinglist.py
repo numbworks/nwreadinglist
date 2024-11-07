@@ -246,6 +246,13 @@ class MDSummary():
 
     '''Collects all the dataframes created by MDManager'''
 
+    rl_md : str
+    rl_by_month_md : str
+    rl_by_publisher_md : str
+    rl_by_rating_md : str
+    rl_by_topic_md : str
+    rl_by_topic_trend_md : str # rename
+    readme_md : str
 
 # STATIC CLASSES
 # CLASSES
