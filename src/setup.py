@@ -4,6 +4,6 @@
 # INFORMATION
 MODULE_ALIAS : str = "nwrl"
 MODULE_NAME : str = "nwreadinglist"
-MODULE_VERSION : str = "3.8.0"
+MODULE_VERSION : str = "4.0.0"
 
 # SETUP
