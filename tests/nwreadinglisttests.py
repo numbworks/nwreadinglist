@@ -45,7 +45,7 @@ class ObjectMother():
         
         return SettingBag(
 
-            show_books_df = False,
+            show_rl_df = False,
             show_sas_by_month_df = True,
             show_sas_by_year_street_price_df = True,
             show_rolling_total_df = True,
@@ -576,7 +576,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
         # Act
         actual_df : DataFrame = pd.DataFrame()
         with patch.object(pd, 'read_excel', return_value = books_df) as mocked_context:
-            actual_df = reading_list_manager.get_books_dataset()
+            actual_df = reading_list_manager.get_rl()
 
         # Assert
         self.assertEqual(expected_column_names, actual_df.columns.tolist())
@@ -589,7 +589,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
         reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
 
         # Act
-        actual_df : DataFrame = reading_list_manager.get_sas_by_topic(books_df = books_df)
+        actual_df : DataFrame = reading_list_manager.get_sas_by_topic(rl_df = books_df)
 
         # Assert
         assert_frame_equal(expected_df, actual_df)
@@ -601,7 +601,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
         reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
 
         # Act
-        actual_df : DataFrame = reading_list_manager.get_sas_by_rating(books_df = books_df)
+        actual_df : DataFrame = reading_list_manager.get_sas_by_rating(rl_df = books_df)
 
         # Assert
         assert_frame_equal(expected_df, actual_df)
@@ -613,7 +613,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
         reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
 
         # Act
-        actual_df : DataFrame = reading_list_manager.get_rolling_total(books_df = books_df)
+        actual_df : DataFrame = reading_list_manager.get_rolling_total(rl_df = books_df)
 
         # Assert
         assert_frame_equal(expected_df, actual_df)
@@ -625,7 +625,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
         reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
 
         # Act
-        actual_df : DataFrame = reading_list_manager.get_yearly_trend_by_topic(books_df = books_df)
+        actual_df : DataFrame = reading_list_manager.get_yearly_trend_by_topic(rl_df = books_df)
 
         # Assert
         assert_frame_equal(expected_df, actual_df)

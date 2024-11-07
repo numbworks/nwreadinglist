@@ -38,7 +38,7 @@ class SettingBag():
     excel_path : str
     excel_books_nrows : int
 
-    show_books_df : bool
+    show_rl_df : bool
     show_sas_by_month_df : bool
     show_sas_by_year_street_price_df : bool
     show_rolling_total_df : bool
@@ -95,7 +95,7 @@ class SettingBag():
         excel_path : str,
         excel_books_nrows : int,
 
-        show_books_df : bool = False,
+        show_rl_df : bool = False,
         show_sas_by_month_df : bool = True,
         show_sas_by_year_street_price_df : bool = True,
         show_rolling_total_df : bool = True,
@@ -145,7 +145,7 @@ class SettingBag():
             }
         ) -> None:
 
-        self.show_books_df = show_books_df
+        self.show_rl_df = show_rl_df
         self.show_sas_by_month_df = show_sas_by_month_df
         self.show_sas_by_year_street_price_df = show_sas_by_year_street_price_df
         self.show_rolling_total_df = show_rolling_total_df
@@ -293,7 +293,7 @@ class ReadingListManager():
         self.__component_bag = component_bag
         self.__setting_bag = setting_bag
 
-    def __enforce_dataframe_definition_for_books_df(self, books_df : DataFrame, excel_null_value : str) -> DataFrame:
+    def __enforce_dataframe_definition_for_rl_df(self, rl_df : DataFrame, excel_null_value : str) -> DataFrame:
 
         '''Enforces definition for the provided dataframe.'''
 
@@ -319,34 +319,34 @@ class ReadingListManager():
         column_names.append("CommentLenght")        # [18], int
         column_names.append("KBSize")               # [19], int
 
-        books_df = books_df[column_names]
-        books_df = books_df.replace(to_replace = excel_null_value, value = np.nan)
+        rl_df = rl_df[column_names]
+        rl_df = rl_df.replace(to_replace = excel_null_value, value = np.nan)
     
-        books_df = books_df.astype({column_names[0]: str})  
-        books_df = books_df.astype({column_names[1]: int})
-        books_df = books_df.astype({column_names[2]: str})
-        books_df = books_df.astype({column_names[3]: str})
-        books_df = books_df.astype({column_names[4]: str})
-        books_df = books_df.astype({column_names[5]: int})
+        rl_df = rl_df.astype({column_names[0]: str})  
+        rl_df = rl_df.astype({column_names[1]: int})
+        rl_df = rl_df.astype({column_names[2]: str})
+        rl_df = rl_df.astype({column_names[3]: str})
+        rl_df = rl_df.astype({column_names[4]: str})
+        rl_df = rl_df.astype({column_names[5]: int})
 
-        books_df[column_names[6]] = pd.to_datetime(books_df[column_names[6]], format="%Y-%m-%d") 
-        books_df[column_names[6]] = books_df[column_names[6]].apply(lambda x: x.date())
+        rl_df[column_names[6]] = pd.to_datetime(rl_df[column_names[6]], format="%Y-%m-%d") 
+        rl_df[column_names[6]] = rl_df[column_names[6]].apply(lambda x: x.date())
 
-        books_df = books_df.astype({column_names[7]: int})
-        books_df = books_df.astype({column_names[8]: int})
-        books_df = books_df.astype({column_names[9]: str})
-        books_df = books_df.astype({column_names[10]: str})
-        books_df = books_df.astype({column_names[11]: str})
-        books_df = books_df.astype({column_names[12]: int})
-        books_df = books_df.astype({column_names[13]: float})    
-        books_df = books_df.astype({column_names[14]: str})
-        books_df = books_df.astype({column_names[15]: str})
-        books_df = books_df.astype({column_names[16]: str})
-        books_df = books_df.astype({column_names[17]: str})
-        books_df = books_df.astype({column_names[18]: int})
-        books_df = books_df.astype({column_names[19]: int})
+        rl_df = rl_df.astype({column_names[7]: int})
+        rl_df = rl_df.astype({column_names[8]: int})
+        rl_df = rl_df.astype({column_names[9]: str})
+        rl_df = rl_df.astype({column_names[10]: str})
+        rl_df = rl_df.astype({column_names[11]: str})
+        rl_df = rl_df.astype({column_names[12]: int})
+        rl_df = rl_df.astype({column_names[13]: float})    
+        rl_df = rl_df.astype({column_names[14]: str})
+        rl_df = rl_df.astype({column_names[15]: str})
+        rl_df = rl_df.astype({column_names[16]: str})
+        rl_df = rl_df.astype({column_names[17]: str})
+        rl_df = rl_df.astype({column_names[18]: int})
+        rl_df = rl_df.astype({column_names[19]: int})
 
-        return books_df
+        return rl_df
     def __format_reading_status(self, books : int, pages : int) -> str:
 
         '''
@@ -448,7 +448,7 @@ class ReadingListManager():
             return completed_df
 
         return sa_by_year_df
-    def __get_sa_by_year(self, books_df : DataFrame, read_year : int) -> DataFrame:
+    def __get_sa_by_year(self, rl_df : DataFrame, read_year : int) -> DataFrame:
         
         '''
 
@@ -490,8 +490,8 @@ class ReadingListManager():
         '''
 
         cn_readyear : str = "ReadYear"
-        condition : Series = (books_df[cn_readyear] == read_year)
-        filtered_df : DataFrame = books_df.loc[condition]
+        condition : Series = (rl_df[cn_readyear] == read_year)
+        filtered_df : DataFrame = rl_df.loc[condition]
 
         cn_readmonth : str = "ReadMonth" 
         cn_title : str = "Title"
@@ -561,7 +561,7 @@ class ReadingListManager():
         trend : str = self.__get_trend(value_1 = books_1, value_2 = books_2)
 
         return trend
-    def __expand_sa_by_year(self, books_df : DataFrame, read_years : list, sas_by_month_df : DataFrame, i : int, add_trend : bool) -> DataFrame:
+    def __expand_sa_by_year(self, rl_df : DataFrame, read_years : list, sas_by_month_df : DataFrame, i : int, add_trend : bool) -> DataFrame:
 
         '''    
             sa_summary_df:
@@ -610,7 +610,7 @@ class ReadingListManager():
         '''
         
         actual_df : DataFrame = sas_by_month_df.copy(deep = True)
-        sa_by_year_df : DataFrame = self.__get_sa_by_year(books_df = books_df, read_year = read_years[i])
+        sa_by_year_df : DataFrame = self.__get_sa_by_year(rl_df = rl_df, read_year = read_years[i])
 
         cn_month : str = "Month"      
         expansion_df = pd.merge(
@@ -792,28 +792,28 @@ class ReadingListManager():
                 expanded_df = expanded_df.reindex(columns = new_column_names)
                 
         return expanded_df
-    def __group_books_by_single_column(self, books_df : DataFrame, column_name : str) -> DataFrame:
+    def __group_books_by_single_column(self, rl_df : DataFrame, column_name : str) -> DataFrame:
 
         '''Groups books according to the provided column name. The book titles act as unique identifiers.'''
 
         cn_uniqueitemidentifier : str = "Title"
         cn_items : str = "Books"
 
-        grouped_df : DataFrame = books_df.groupby([column_name])[cn_uniqueitemidentifier].size().sort_values(ascending = [False]).reset_index(name = cn_items)
+        grouped_df : DataFrame = rl_df.groupby([column_name])[cn_uniqueitemidentifier].size().sort_values(ascending = [False]).reset_index(name = cn_items)
         
         return grouped_df
-    def __group_books_by_multiple_columns(self, books_df : DataFrame, column_names : list[str]) -> DataFrame:
+    def __group_books_by_multiple_columns(self, rl_df : DataFrame, column_names : list[str]) -> DataFrame:
 
         '''Groups books according to the provided column names (note: order matters). The book titles act as unique identifiers.'''
 
         cn_uniqueitemidentifier : str = "Title"
         cn_items : str = "Books"
 
-        grouped_df : DataFrame = books_df.groupby(by = column_names)[cn_uniqueitemidentifier].count().reset_index(name = cn_items)
+        grouped_df : DataFrame = rl_df.groupby(by = column_names)[cn_uniqueitemidentifier].count().reset_index(name = cn_items)
         grouped_df = grouped_df.sort_values(by = column_names, ascending = [True, True])
 
         return grouped_df
-    def __slice_by_kbsize(self, books_df : DataFrame, ascending : bool, remove_if_zero : bool) -> DataFrame:
+    def __slice_by_kbsize(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool) -> DataFrame:
 
         '''
                 Title	                                        ReadYear	Topic	                        Publisher	Rating	KBSize  A4Sheets
@@ -823,7 +823,7 @@ class ReadingListManager():
             ...
         '''
 
-        sliced_df : DataFrame = books_df.copy(deep=True)
+        sliced_df : DataFrame = rl_df.copy(deep=True)
 
         cn_title : str = "Title"
         cn_readyear : str = "ReadYear"
@@ -872,10 +872,10 @@ class ReadingListManager():
         default_df : DataFrame = pd.merge(left = topics_df, right = read_years_df, how='cross')
 
         return default_df
-    def __get_books_by_topic_read_year(self, books_df : DataFrame, read_years : list[int]) -> DataFrame:
+    def __get_books_by_topic_read_year(self, rl_df : DataFrame, read_years : list[int]) -> DataFrame:
 
         '''
-            [0] - Groups by books_df by Topic_ReadYear:
+            [0] - Groups rl_df by Topic_ReadYear:
 
                 Topic	                        ReadYear	Books
             0	BI, Data Warehousing, PowerBI	2017	    1
@@ -901,9 +901,9 @@ class ReadingListManager():
         cn_read_year : str = "ReadYear"
         cn_books : str = "Books"    
 
-        books_by_topic_read_year_df : DataFrame = self.__group_books_by_multiple_columns(books_df = books_df, column_names = [cn_topic, cn_read_year])
+        books_by_topic_read_year_df : DataFrame = self.__group_books_by_multiple_columns(rl_df = rl_df, column_names = [cn_topic, cn_read_year])
 
-        topics_df : DataFrame = self.__get_topics_dataframe(df = books_df)
+        topics_df : DataFrame = self.__get_topics_dataframe(df = rl_df)
         read_years_df : DataFrame = self.__create_read_years_dataframe(read_years = read_years)
         default_df : DataFrame = self.__get_default_topic_read_year_dataframe(topics_df = topics_df, read_years_df = read_years_df)
 
@@ -1062,7 +1062,7 @@ class ReadingListManager():
         sas_by_year_df.rename(columns = (lambda x : self.__try_consolidate_trend_column_name(column_name = x)), inplace = True)
 
         return sas_by_year_df
-    def __get_sas_by_street_price(self, books_df : DataFrame, read_years : list, rounding_digits : int) -> DataFrame:
+    def __get_sas_by_street_price(self, rl_df : DataFrame, read_years : list, rounding_digits : int) -> DataFrame:
 
         '''
             [...]
@@ -1090,7 +1090,7 @@ class ReadingListManager():
             0	$1447.14	↑	$2123.36	↓	$1249.15	↓	$748.70	↓	$538.75	↓	$169.92	↓	$49.99	↓	$5.00
         '''
 
-        sas_by_street_price_df : DataFrame = books_df.copy(deep=True)
+        sas_by_street_price_df : DataFrame = rl_df.copy(deep=True)
 
         cn_readyear : str = "ReadYear"
         cn_streetprice : str = "StreetPrice"
@@ -1137,11 +1137,11 @@ class ReadingListManager():
 
         return filtered_df
 
-    def get_books_dataset(self) -> DataFrame:
+    def get_rl(self) -> DataFrame:
         
         '''Retrieves the content of the "Books" tab and returns it as a Dataframe.'''
 
-        books_df = pd.read_excel(
+        rl_df = pd.read_excel(
             io = self.__setting_bag.excel_path, 	
             skiprows = self.__setting_bag.excel_books_skiprows,
             nrows = self.__setting_bag.excel_books_nrows,
@@ -1149,12 +1149,12 @@ class ReadingListManager():
             engine = 'openpyxl'
             )
         
-        books_df = self.__enforce_dataframe_definition_for_books_df(
-            books_df = books_df, 
+        rl_df = self.__enforce_dataframe_definition_for_rl_df(
+            rl_df = rl_df, 
             excel_null_value = self.__setting_bag.excel_null_value)
 
-        return books_df
-    def get_rolling_total(self, books_df : DataFrame) -> DataFrame:
+        return rl_df
+    def get_rolling_total(self, rl_df : DataFrame) -> DataFrame:
 
         '''
                 Years	Books	Pages	TotalSpend  LastUpdate
@@ -1162,16 +1162,16 @@ class ReadingListManager():
         '''
 
         cn_read_year : str = "ReadYear"
-        count_years : int = books_df[cn_read_year].unique().size
+        count_years : int = rl_df[cn_read_year].unique().size
 
         cn_title : str = "Title"
-        count_books : int = books_df[cn_title].size
+        count_books : int = rl_df[cn_title].size
 
         cn_pages : str = "Pages"
-        sum_pages : int = books_df[cn_pages].sum()
+        sum_pages : int = rl_df[cn_pages].sum()
 
         cn_street_price : str = "StreetPrice"
-        sum_street_price : float64 = books_df[cn_street_price].sum()
+        sum_street_price : float64 = rl_df[cn_street_price].sum()
 
         cn_years : str = "Years"
         cn_books : str = "Books"
@@ -1195,7 +1195,7 @@ class ReadingListManager():
         rolling_total_df : DataFrame = pd.DataFrame(rolling_total_dict, index=[0])
         
         return rolling_total_df        
-    def get_sas_by_month_tpl(self, books_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
+    def get_sas_by_month_tpl(self, rl_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
 
         '''
             The method returns a tuple of dataframes (sas_by_month_df, sas_by_month_upd_df), 
@@ -1223,10 +1223,10 @@ class ReadingListManager():
         for i in range(len(read_years)):
 
             if i == 0:
-                sas_by_month_df = self.__get_sa_by_year(books_df = books_df, read_year = read_years[i])
+                sas_by_month_df = self.__get_sa_by_year(rl_df = rl_df, read_year = read_years[i])
             else:
                 sas_by_month_df = self.__expand_sa_by_year(
-                    books_df = books_df, 
+                    rl_df = rl_df, 
                     read_years = read_years, 
                     sas_by_month_df = sas_by_month_df, 
                     i = i, 
@@ -1241,7 +1241,7 @@ class ReadingListManager():
             now = self.__setting_bag.now)
 
         return (sas_by_month_df, sas_by_month_upd_df)
-    def get_sas_by_year_street_price(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], books_df : DataFrame) -> DataFrame:
+    def get_sas_by_year_street_price(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame) -> DataFrame:
 
         '''
                 2016	    ↕	2017	    ↕	2018	    ↕	2019	    ↕	2020	    ↕	2021	    ↕	2022	↕	2023
@@ -1251,7 +1251,7 @@ class ReadingListManager():
 
         sas_by_year_df : DataFrame = self.__get_sas_by_year(sas_by_month_df = sas_by_month_tpl[0])
         sas_by_street_price_df : DataFrame = self.__get_sas_by_street_price(
-            books_df = books_df, 
+            rl_df = rl_df, 
             read_years = self.__setting_bag.read_years,
             rounding_digits = self.__setting_bag.rounding_digits)
 
@@ -1259,7 +1259,7 @@ class ReadingListManager():
         sas_by_year_street_price_df.reset_index(drop = True, inplace = True)
 
         return sas_by_year_street_price_df      
-    def get_sas_by_topic(self, books_df : DataFrame) -> DataFrame:
+    def get_sas_by_topic(self, rl_df : DataFrame) -> DataFrame:
 
         """
             by_books_df:
@@ -1286,10 +1286,10 @@ class ReadingListManager():
 
         cn_topic : str = "Topic"  
         cn_books : str = "Books"
-        by_books_df : DataFrame = books_df.groupby([cn_topic]).size().sort_values(ascending = False).reset_index(name = cn_books)
+        by_books_df : DataFrame = rl_df.groupby([cn_topic]).size().sort_values(ascending = False).reset_index(name = cn_books)
 
         cn_pages = "Pages"
-        by_pages_df : DataFrame = books_df.groupby([cn_topic])[cn_pages].sum().sort_values(ascending = False).reset_index(name = cn_pages)
+        by_pages_df : DataFrame = rl_df.groupby([cn_topic])[cn_pages].sum().sort_values(ascending = False).reset_index(name = cn_pages)
 
         sas_by_topic_df : DataFrame = pd.merge(
             left = by_books_df, 
@@ -1299,7 +1299,7 @@ class ReadingListManager():
             right_on = cn_topic)
 
         return sas_by_topic_df
-    def get_sas_by_publisher_tpl(self, books_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
+    def get_sas_by_publisher_tpl(self, rl_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
         
         """
             The method returns a tuple of dataframes (sas_by_publisher_df, sas_by_publisher_flt_df), 
@@ -1335,11 +1335,11 @@ class ReadingListManager():
         cn_publisher : str = "Publisher"
         cn_title : str = "Title"    
         cn_books : str = "Books"
-        by_books_df : DataFrame = books_df.groupby([cn_publisher])[cn_title].size().sort_values(ascending = [False]).reset_index(name = cn_books)
+        by_books_df : DataFrame = rl_df.groupby([cn_publisher])[cn_title].size().sort_values(ascending = [False]).reset_index(name = cn_books)
         
         cn_rating : str = "Rating"   
         cn_avgrating : str = "AvgRating"
-        by_avgrating_df : DataFrame = books_df.groupby([cn_publisher])[cn_rating].mean().sort_values(ascending = [False]).reset_index(name = cn_avgrating)
+        by_avgrating_df : DataFrame = rl_df.groupby([cn_publisher])[cn_rating].mean().sort_values(ascending = [False]).reset_index(name = cn_avgrating)
         by_avgrating_df[cn_avgrating] = by_avgrating_df[cn_avgrating].apply(
             lambda x : round(number = x, ndigits = self.__setting_bag.rounding_digits)) # 2.5671 => 2.57
 
@@ -1359,7 +1359,7 @@ class ReadingListManager():
         sas_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(sas_by_publisher_df = sas_by_publisher_df)
 
         return (sas_by_publisher_df, sas_by_publisher_flt_df)       
-    def get_sas_by_rating(self, books_df : DataFrame) -> DataFrame:
+    def get_sas_by_rating(self, rl_df : DataFrame) -> DataFrame:
 
         '''
                 Rating  Books
@@ -1370,7 +1370,7 @@ class ReadingListManager():
 
         cn_rating : str = "Rating"
 
-        sas_by_rating_df : DataFrame = self.__group_books_by_single_column(books_df = books_df, column_name = cn_rating)
+        sas_by_rating_df : DataFrame = self.__group_books_by_single_column(rl_df = rl_df, column_name = cn_rating)
         sas_by_rating_df.sort_values(by = cn_rating, ascending = False, inplace = True)
         sas_by_rating_df.reset_index(drop = True, inplace = True)
 
@@ -1379,7 +1379,7 @@ class ReadingListManager():
                 lambda x : self.__component_bag.formatter.format_rating(rating = x))
 
         return sas_by_rating_df    
-    def get_reading_list_by_kbsize(self, books_df : DataFrame) -> DataFrame:
+    def get_reading_list_by_kbsize(self, rl_df : DataFrame) -> DataFrame:
         
         '''
             Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
@@ -1389,7 +1389,7 @@ class ReadingListManager():
         '''
 
         rl_by_kbsize_df : DataFrame = self.__slice_by_kbsize(
-            books_df = books_df, 
+            rl_df = rl_df, 
             ascending = self.__setting_bag.kbsize_ascending, 
             remove_if_zero = self.__setting_bag.kbsize_remove_if_zero)
         
@@ -1397,7 +1397,7 @@ class ReadingListManager():
         rl_by_kbsize_df = rl_by_kbsize_df.head(n = self.__setting_bag.n_by_kbsize)
 
         return rl_by_kbsize_df
-    def get_yearly_trend_by_topic(self, books_df : DataFrame) -> DataFrame:
+    def get_yearly_trend_by_topic(self, rl_df : DataFrame) -> DataFrame:
 
         '''
             Get yearly trend by topic as numbers and sparklines.
@@ -1413,7 +1413,7 @@ class ReadingListManager():
         cn_trend : str = "Trend"
 
         by_topic_read_year_df : DataFrame = self.__get_books_by_topic_read_year(
-            books_df = books_df, 
+            rl_df = rl_df, 
             read_years = self.__setting_bag.read_years)
         
         pivoted_df : DataFrame = self.__pivot_column_values_to_cell(
@@ -1527,14 +1527,14 @@ class MarkdownProcessor():
         md_content += "\n"
 
         return md_content
-    def __get_rl_md(self, last_update : datetime, books_df : DataFrame, use_smaller_font : bool) -> str:
+    def __get_rl_md(self, last_update : datetime, rl_df : DataFrame, use_smaller_font : bool) -> str:
 
         '''Creates the Markdown content for a "Reading List" file out of the provided dataframe.'''
 
         md_paragraph_title : str = "Reading List"
 
         markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-        formatted_rl_df : DataFrame = self.__get_formatted_rl(books_df = books_df)
+        formatted_rl_df : DataFrame = self.__get_formatted_rl(rl_df = rl_df)
 
         if use_smaller_font:
             formatted_rl_df = self.__component_bag.markdown_helper.add_subscript_tags_to_dataframe(df = formatted_rl_df)    
@@ -1562,7 +1562,7 @@ class MarkdownProcessor():
         md_content += "\n"
 
         return md_content
-    def __get_formatted_rl(self, books_df : DataFrame) -> DataFrame:
+    def __get_formatted_rl(self, rl_df : DataFrame) -> DataFrame:
 
         '''
                 Id	    Title	            Year	Pages	ReadDate	Publisher	    Rating    Topic
@@ -1583,15 +1583,15 @@ class MarkdownProcessor():
         cn_rating : str = "Rating"
         cn_topic : str = "Topic"
 
-        formatted_rl_df[cn_id] = books_df.index + 1
-        formatted_rl_df[cn_title] = books_df[cn_title]
-        formatted_rl_df[cn_year] = books_df[cn_year]
-        formatted_rl_df[cn_language] = books_df[cn_language]
-        formatted_rl_df[cn_pages] = books_df[cn_pages]
-        formatted_rl_df[cn_read_date] = books_df[cn_read_date]   
-        formatted_rl_df[cn_publisher] = books_df[cn_publisher]   
-        formatted_rl_df[cn_rating] = books_df[cn_rating].apply(lambda x : self.__component_bag.formatter.format_rating(rating = x))
-        formatted_rl_df[cn_topic] = books_df[cn_topic]   
+        formatted_rl_df[cn_id] = rl_df.index + 1
+        formatted_rl_df[cn_title] = rl_df[cn_title]
+        formatted_rl_df[cn_year] = rl_df[cn_year]
+        formatted_rl_df[cn_language] = rl_df[cn_language]
+        formatted_rl_df[cn_pages] = rl_df[cn_pages]
+        formatted_rl_df[cn_read_date] = rl_df[cn_read_date]   
+        formatted_rl_df[cn_publisher] = rl_df[cn_publisher]   
+        formatted_rl_df[cn_rating] = rl_df[cn_rating].apply(lambda x : self.__component_bag.formatter.format_rating(rating = x))
+        formatted_rl_df[cn_topic] = rl_df[cn_topic]   
 
         return formatted_rl_df
 
@@ -1700,13 +1700,13 @@ class MarkdownProcessor():
                 file_name = self.__setting_bag.rl_topic_trend_file_name)
             
             self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_rl_md(self, books_df : DataFrame) -> None:
+    def process_rl_md(self, rl_df : DataFrame) -> None:
 
         '''Performs all the tasks related to the "Reading List" file.'''
 
         content : str = self.__get_rl_md(
             last_update = self.__setting_bag.rl_last_update, 
-            books_df = books_df,
+            rl_df = rl_df,
             use_smaller_font = self.__setting_bag.rl_smaller_font)
 
         if self.__setting_bag.show_rl_md:
