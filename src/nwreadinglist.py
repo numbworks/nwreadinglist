@@ -49,7 +49,7 @@ class SettingBag():
     show_yearly_trend_by_topic_df : bool
     show_books_by_year_box_plot : bool
     show_rl_by_kbsize_box_plot : bool
-    show_readme_md : bool
+    show_rl_asrt_md : bool
     show_rl_by_month_md : bool
     show_rl_by_publisher_md : bool
     show_rl_by_rating_md : bool
@@ -106,7 +106,7 @@ class SettingBag():
         show_yearly_trend_by_topic_df : bool = True,
         show_books_by_year_box_plot : bool = True,
         show_rl_by_kbsize_box_plot : bool = True,
-        show_readme_md : bool = True,
+        show_rl_asrt_md : bool = True,
         show_rl_by_month_md : bool = False,
         show_rl_by_publisher_md : bool = False,
         show_rl_by_rating_md : bool = False,
@@ -156,7 +156,7 @@ class SettingBag():
         self.show_yearly_trend_by_topic_df = show_yearly_trend_by_topic_df
         self.show_books_by_year_box_plot = show_books_by_year_box_plot
         self.show_rl_by_kbsize_box_plot = show_rl_by_kbsize_box_plot
-        self.show_readme_md = show_readme_md
+        self.show_rl_asrt_md = show_rl_asrt_md
         self.show_rl_by_month_md = show_rl_by_month_md
         self.show_rl_by_publisher_md = show_rl_by_publisher_md
         self.show_rl_by_rating_md = show_rl_by_rating_md
@@ -247,12 +247,12 @@ class MDSummary():
     '''Collects all the dataframes created by MDManager'''
 
     rl_md : str
+    rl_asrt_md : str    
     rl_by_month_md : str
     rl_by_publisher_md : str
     rl_by_rating_md : str
     rl_by_topic_md : str
     rl_by_topic_trend_md : str # rename
-    readme_md : str
 
 # STATIC CLASSES
 # CLASSES
@@ -1601,7 +1601,7 @@ class MarkdownProcessor():
 
         content : str = self.__get_rl_asrt_md(rl_asrt_df = rl_asrt_df)
 
-        if self.__setting_bag.show_readme_md:
+        if self.__setting_bag.show_rl_asrt_md:
             self.__component_bag.logging_function(content)
     def process_rl_by_month_md(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], sas_by_year_street_price_df : DataFrame) -> None:
 

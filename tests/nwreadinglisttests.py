@@ -56,7 +56,7 @@ class ObjectMother():
             show_yearly_trend_by_topic_df = True,
             show_books_by_year_box_plot = True,
             show_rl_by_kbsize_box_plot = True,
-            show_readme_md = True,
+            show_rl_asrt_md = True,
             show_rl_by_month_md = False,
             show_rl_by_publisher_md = False,
             show_rl_by_rating_md = False,
