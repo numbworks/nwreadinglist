@@ -6,6 +6,7 @@ Alias: nwrl
 
 # GLOBAL MODULES
 import copy
+from dataclasses import dataclass
 import numpy as np
 import openpyxl
 import os
@@ -15,7 +16,7 @@ from numpy import float64
 from pandas import DataFrame
 from pandas import Series
 from sparklines import sparklines
-from typing import Callable, Optional, Tuple
+from typing import Any, Callable, Literal, Optional, Tuple
 
 # LOCAL MODULES
 from nwshared import Formatter, Converter, FilePathManager, FileManager
@@ -224,6 +225,27 @@ class ComponentBag():
         self.file_manager = file_manager
         self.logging_function = logging_function
         self.markdown_helper = markdown_helper
+@dataclass(frozen = True)
+class RLSummary():
+
+    '''Collects all the dataframes created by RLManager'''
+
+    rl_df : DataFrame
+    rl_rolling_total_df : DataFrame
+    rl_by_kbsize_df : DataFrame
+    rl_by_kbsize_box_plot: Callable[[Any], None]
+    rl_by_books_year_box_plot : Callable[[Any], None]
+    sas_by_month_tpl : Tuple[DataFrame, DataFrame]
+    sas_by_year_street_price_df : DataFrame
+    sas_by_topic_df : DataFrame
+    sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]
+    sas_by_rating_df : DataFrame
+    trend_by_year_topic_df : DataFrame
+@dataclass(frozen = True)
+class MDSummary():
+
+    '''Collects all the dataframes created by MDManager'''
+
 
 # STATIC CLASSES
 # CLASSES
