@@ -6,11 +6,11 @@ Alias: nwrl
 
 # GLOBAL MODULES
 import copy
-from dataclasses import dataclass
 import numpy as np
 import openpyxl
 import os
 import pandas as pd
+from dataclasses import dataclass
 from datetime import datetime
 from numpy import float64
 from pandas import DataFrame
@@ -1524,10 +1524,10 @@ class ReadingListManager():
                 lambda x : self.__component_bag.formatter.format_rating(rating = x))
 
         return sas_by_rating_df    
-    def get_yearly_trend_by_topic(self, rl_df : DataFrame) -> DataFrame:
+    def get_trend_by_year_topic(self, rl_df : DataFrame) -> DataFrame:
 
         '''
-            Get yearly trend by topic as numbers and sparklines.
+            Get trend by year and topic as numbers and sparklines.
 
                 Topic	                        Books	                    Trend
             0	BI, Data Warehousing, PowerBI	[0, 1, 9, 11, 0, 0, 0, 0]	▁▂▇█▁▁▁▁

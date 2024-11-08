@@ -625,7 +625,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
         reading_list_manager : ReadingListManager = ObjectMother().create_reading_list_manager()
 
         # Act
-        actual_df : DataFrame = reading_list_manager.get_yearly_trend_by_topic(rl_df = books_df)
+        actual_df : DataFrame = reading_list_manager.get_trend_by_year_topic(rl_df = books_df)
 
         # Assert
         assert_frame_equal(expected_df, actual_df)
