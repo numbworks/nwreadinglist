@@ -40,20 +40,20 @@ class SettingBag():
     excel_path : str
     excel_books_nrows : int
 
-    working_folder_path : str    
     excel_books_skiprows : int
     excel_books_tabname : str
     excel_null_value : str
+    working_folder_path : str    
     now : datetime
+    kbsize_ascending : bool
+    kbsize_remove_if_zero : bool
+    kbsize_n : int    
     n_generic : int
     n_by_month : int
-    n_by_kbsize : int
     rounding_digits : int
     is_worth_min_books : int
     is_worth_min_avgrating : float
     is_worth_criteria : str
-    kbsize_ascending : bool
-    kbsize_remove_if_zero : bool
     formatted_rating : bool
     enable_sparklines_maximum : bool
     rl_file_name : str    
@@ -80,20 +80,20 @@ class SettingBag():
             read_years : list[int],
             excel_path : str,
             excel_books_nrows : int,
-            working_folder_path : str = "/home/nwreadinglist/",        
             excel_books_skiprows : int = 0,
             excel_books_tabname : str = "Books",
             excel_null_value : str = "-",
+            working_folder_path : str = "/home/nwreadinglist/",
             now : datetime  = datetime.now(),
+            kbsize_ascending : bool = False,
+            kbsize_remove_if_zero : bool = True,  
+            kbsize_n : int = 10,
             n_generic : int = 5,
             n_by_month : int = 12,
-            n_by_kbsize : int = 10,
             rounding_digits : int = 2,
             is_worth_min_books : int = 8,
             is_worth_min_avgrating : float = 2.50,
-            is_worth_criteria : str = "Yes",
-            kbsize_ascending : bool = False,
-            kbsize_remove_if_zero : bool = True,      
+            is_worth_criteria : str = "Yes",    
             formatted_rating : bool = True,
             enable_sparklines_maximum : bool = True,
             rl_last_update : datetime = datetime.now(),
@@ -126,20 +126,20 @@ class SettingBag():
         self.excel_path = excel_path
         self.excel_books_nrows = excel_books_nrows
 
-        self.working_folder_path = working_folder_path
         self.excel_books_skiprows = excel_books_skiprows
         self.excel_books_tabname = excel_books_tabname
         self.excel_null_value = excel_null_value
+        self.working_folder_path = working_folder_path        
         self.now = now
         self.n_generic = n_generic
         self.n_by_month = n_by_month
-        self.n_by_kbsize = n_by_kbsize
+        self.kbsize_ascending = kbsize_ascending
+        self.kbsize_remove_if_zero = kbsize_remove_if_zero        
+        self.kbsize_n = kbsize_n
         self.rounding_digits = rounding_digits
         self.is_worth_min_books = is_worth_min_books
         self.is_worth_min_avgrating = is_worth_min_avgrating
         self.is_worth_criteria = is_worth_criteria
-        self.kbsize_ascending = kbsize_ascending
-        self.kbsize_remove_if_zero = kbsize_remove_if_zero
         self.formatted_rating = formatted_rating
         self.enable_sparklines_maximum = enable_sparklines_maximum
         self.rl_last_update = rl_last_update
@@ -1088,24 +1088,24 @@ class RLManager():
 
         return filtered_df
 
-    def get_rl(self) -> DataFrame:
+    def get_rl(self, excel_path : str, excel_books_skiprows : int, excel_books_nrows : int, excel_books_tabname : str, excel_null_value : str) -> DataFrame:
         
         '''Retrieves the content of the "Books" tab and returns it as a Dataframe.'''
 
         rl_df = pd.read_excel(
-            io = self.__setting_bag.excel_path, 	
-            skiprows = self.__setting_bag.excel_books_skiprows,
-            nrows = self.__setting_bag.excel_books_nrows,
-            sheet_name = self.__setting_bag.excel_books_tabname, 
+            io = excel_path, 	
+            skiprows = excel_books_skiprows,
+            nrows = excel_books_nrows,
+            sheet_name = excel_books_tabname, 
             engine = 'openpyxl'
             )
         
         rl_df = self.__enforce_dataframe_definition_for_rl_df(
             rl_df = rl_df, 
-            excel_null_value = self.__setting_bag.excel_null_value)
+            excel_null_value = excel_null_value)
 
         return rl_df
-    def get_rl_asrt(self, rl_df : DataFrame) -> DataFrame:
+    def get_rl_asrt(self, rl_df : DataFrame, rounding_digits : int, now : datetime) -> DataFrame:
 
         '''
                 Years	Books	Pages	TotalSpend  LastUpdate
@@ -1129,11 +1129,11 @@ class RLManager():
         cn_total_spend : str = "TotalSpend"
         cn_last_update : str = "LastUpdate"
 
-        total_spend_str : str = self.__component_bag.formatter.format_usd_amount(
+        total_spend_str : str = self.__formatter.format_usd_amount(
             amount = sum_street_price, 
-            rounding_digits = self.__setting_bag.rounding_digits)
+            rounding_digits = rounding_digits)
         
-        last_update_str : str = self.__component_bag.formatter.format_to_iso_8601(dt = self.__setting_bag.now)
+        last_update_str : str = self.__formatter.format_to_iso_8601(dt = now)
 
         rl_asrt_dict : dict = {
             f"{cn_years}": f"{str(count_years)}",
@@ -1146,7 +1146,7 @@ class RLManager():
         rl_asrt_df : DataFrame = pd.DataFrame(rl_asrt_dict, index=[0])
         
         return rl_asrt_df        
-    def get_rl_by_kbsize(self, rl_df : DataFrame) -> DataFrame:
+    def get_rl_by_kbsize(self, rl_df : DataFrame, kbsize_ascending : bool, kbsize_remove_if_zero : bool, kbsize_n : int) -> DataFrame:
         
         '''
             Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
@@ -1157,11 +1157,11 @@ class RLManager():
 
         rl_by_kbsize_df : DataFrame = self.__slice_by_kbsize(
             rl_df = rl_df, 
-            ascending = self.__setting_bag.kbsize_ascending, 
-            remove_if_zero = self.__setting_bag.kbsize_remove_if_zero)
+            ascending = kbsize_ascending, 
+            remove_if_zero = kbsize_remove_if_zero)
         
-        rl_by_kbsize_df = self.__component_bag.converter.convert_index_to_one_based(df = rl_by_kbsize_df)
-        rl_by_kbsize_df = rl_by_kbsize_df.head(n = self.__setting_bag.n_by_kbsize)
+        rl_by_kbsize_df = self.__converter.convert_index_to_one_based(df = rl_by_kbsize_df)
+        rl_by_kbsize_df = rl_by_kbsize_df.head(n = kbsize_n)
 
         return rl_by_kbsize_df   
     def get_sas_by_month_tpl(self, rl_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
