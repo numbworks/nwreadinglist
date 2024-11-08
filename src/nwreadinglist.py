@@ -1164,7 +1164,7 @@ class RLManager():
         rl_by_kbsize_df = rl_by_kbsize_df.head(n = kbsize_n)
 
         return rl_by_kbsize_df   
-    def get_sas_by_month_tpl(self, rl_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
+    def get_sas_by_month_tpl(self, rl_df : DataFrame, read_years : list[int], now : datetime) -> Tuple[DataFrame, DataFrame]:
 
         '''
             The method returns a tuple of dataframes (sas_by_month_df, sas_by_month_upd_df), 
@@ -1186,7 +1186,6 @@ class RLManager():
         '''
 
         sas_by_month_df : DataFrame = pd.DataFrame()
-        read_years : list[int] = self.__setting_bag.read_years
         add_trend : bool = True
 
         for i in range(len(read_years)):
@@ -1207,10 +1206,10 @@ class RLManager():
         
         sas_by_month_upd_df : DataFrame = self.__update_future_rs_to_empty(
             sas_by_month_df = sas_by_month_df, 
-            now = self.__setting_bag.now)
+            now = now)
 
         return (sas_by_month_df, sas_by_month_upd_df)
-    def get_sas_by_year_street_price(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame) -> DataFrame:
+    def get_sas_by_year_street_price(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame, read_years : list[int], rounding_digits : int) -> DataFrame:
 
         '''
                 2016	    ↕	2017	    ↕	2018	    ↕	2019	    ↕	2020	    ↕	2021	    ↕	2022	↕	2023
@@ -1221,8 +1220,8 @@ class RLManager():
         sas_by_year_df : DataFrame = self.__get_sas_by_year(sas_by_month_df = sas_by_month_tpl[0])
         sas_by_street_price_df : DataFrame = self.__get_sas_by_street_price(
             rl_df = rl_df, 
-            read_years = self.__setting_bag.read_years,
-            rounding_digits = self.__setting_bag.rounding_digits)
+            read_years = read_years,
+            rounding_digits = rounding_digits)
 
         sas_by_year_street_price_df : DataFrame = pd.concat(objs = [sas_by_year_df, sas_by_street_price_df])
         sas_by_year_street_price_df.reset_index(drop = True, inplace = True)
@@ -1268,6 +1267,7 @@ class RLManager():
             right_on = cn_topic)
 
         return sas_by_topic_df
+    
     def get_sas_by_publisher_tpl(self, rl_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
         
         """
