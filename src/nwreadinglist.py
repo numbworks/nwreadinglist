@@ -28,236 +28,6 @@ class SettingBag():
 
     '''Represents a collection of settings.'''
 
-    save_rl_by_month_md : bool
-    save_rl_by_publisher_md : bool
-    save_rl_by_rating_md : bool
-    save_rl_by_topic_md : bool
-    save_rl_topic_trend_md : bool
-    save_rl_md : bool
-    read_years : list[int]
-    excel_path : str
-    excel_books_nrows : int
-
-    show_rl_df : bool
-    show_sas_by_month_df : bool
-    show_sas_by_year_street_price_df : bool
-    show_rl_asrt_df : bool
-    show_sas_by_topic_df : bool
-    show_sas_by_publisher_df : bool
-    show_sas_by_rating_df : bool
-    show_rl_by_kbsize_df : bool
-    show_yearly_trend_by_topic_df : bool
-    show_books_by_year_box_plot : bool
-    show_rl_by_kbsize_box_plot : bool
-    show_rl_asrt_md : bool
-    show_rl_by_month_md : bool
-    show_rl_by_publisher_md : bool
-    show_rl_by_rating_md : bool
-    show_rl_by_topic_md : bool
-    show_rl_topic_trend_md : bool
-    show_rl_md : bool
-    working_folder_path : str    
-    excel_books_skiprows : int
-    excel_books_tabname : str
-    excel_null_value : str
-    now : datetime
-    n_generic : int
-    n_by_month : int
-    n_by_kbsize : int
-    rounding_digits : int
-    is_worth_min_books : int
-    is_worth_min_avgrating : float
-    is_worth_criteria : str
-    kbsize_ascending : bool
-    kbsize_remove_if_zero : bool
-    formatted_rating : bool
-    enable_sparklines_maximum : bool
-    rl_by_month_file_name : str
-    rl_by_publisher_file_name : str
-    rl_by_rating_file_name : str
-    rl_by_topic_file_name : str
-    rl_topic_trend_file_name : str
-    rl_file_name : str
-    rl_last_update : datetime
-    rl_smaller_font : bool
-    rl_by_month_smaller_font : bool
-    definitions : dict
-
-    def __init__(
-        self,
-        save_rl_by_month_md : bool,
-        save_rl_by_publisher_md : bool,
-        save_rl_by_rating_md : bool,
-        save_rl_by_topic_md : bool,
-        save_rl_topic_trend_md : bool,
-        save_rl_md : bool,
-        read_years : list[int],
-        excel_path : str,
-        excel_books_nrows : int,
-
-        show_rl_df : bool = False,
-        show_sas_by_month_df : bool = True,
-        show_sas_by_year_street_price_df : bool = True,
-        show_rl_asrt_df : bool = True,
-        show_sas_by_topic_df : bool = True,
-        show_sas_by_publisher_df : bool = True,
-        show_sas_by_rating_df : bool = True,
-        show_rl_by_kbsize_df : bool = True,
-        show_yearly_trend_by_topic_df : bool = True,
-        show_books_by_year_box_plot : bool = True,
-        show_rl_by_kbsize_box_plot : bool = True,
-        show_rl_asrt_md : bool = True,
-        show_rl_by_month_md : bool = False,
-        show_rl_by_publisher_md : bool = False,
-        show_rl_by_rating_md : bool = False,
-        show_rl_by_topic_md : bool = False,
-        show_rl_topic_trend_md : bool = False,
-        show_rl_md : bool = False,
-        working_folder_path : str = "/home/nwreadinglist/",        
-        excel_books_skiprows : int = 0,
-        excel_books_tabname : str = "Books",
-        excel_null_value : str = "-",
-        now : datetime  = datetime.now(),
-        n_generic : int = 5,
-        n_by_month : int = 12,
-        n_by_kbsize : int = 10,
-        rounding_digits : int = 2,
-        is_worth_min_books : int = 8,
-        is_worth_min_avgrating : float = 2.50,
-        is_worth_criteria : str = "Yes",
-        kbsize_ascending : bool = False,
-        kbsize_remove_if_zero : bool = True,      
-        formatted_rating : bool = True,
-        enable_sparklines_maximum : bool = True,
-        rl_by_month_file_name : str = "READINGLISTBYMONTH.md",
-        rl_by_publisher_file_name : str = "READINGLISTBYPUBLISHER.md",
-        rl_by_rating_file_name : str = "READINGLISTBYRATING.md",
-        rl_by_topic_file_name : str = "READINGLISTBYTOPIC.md",
-        rl_topic_trend_file_name : str = "READINGLISTTOPICTREND.md",
-        rl_file_name : str = "READINGLIST.md",
-        rl_last_update : datetime = datetime.now(),
-        rl_smaller_font : bool = False,
-        rl_by_month_smaller_font : bool = False,
-        definitions : dict = {
-            "RL": "Reading List",
-            "KBSize": "This metric is the word count of the notes I took about a given book.",
-            "SAS": "Studying Activity Summary."
-            }
-        ) -> None:
-
-        self.show_rl_df = show_rl_df
-        self.show_sas_by_month_df = show_sas_by_month_df
-        self.show_sas_by_year_street_price_df = show_sas_by_year_street_price_df
-        self.show_rl_asrt_df = show_rl_asrt_df
-        self.show_sas_by_topic_df = show_sas_by_topic_df
-        self.show_sas_by_publisher_df = show_sas_by_publisher_df
-        self.show_sas_by_rating_df = show_sas_by_rating_df
-        self.show_rl_by_kbsize_df = show_rl_by_kbsize_df
-        self.show_yearly_trend_by_topic_df = show_yearly_trend_by_topic_df
-        self.show_books_by_year_box_plot = show_books_by_year_box_plot
-        self.show_rl_by_kbsize_box_plot = show_rl_by_kbsize_box_plot
-        self.show_rl_asrt_md = show_rl_asrt_md
-        self.show_rl_by_month_md = show_rl_by_month_md
-        self.show_rl_by_publisher_md = show_rl_by_publisher_md
-        self.show_rl_by_rating_md = show_rl_by_rating_md
-        self.show_rl_by_topic_md = show_rl_by_topic_md
-        self.show_rl_topic_trend_md = show_rl_topic_trend_md
-        self.show_rl_md = show_rl_md
-        self.save_rl_by_month_md = save_rl_by_month_md
-        self.save_rl_by_publisher_md = save_rl_by_publisher_md
-        self.save_rl_by_rating_md = save_rl_by_rating_md
-        self.save_rl_by_topic_md = save_rl_by_topic_md
-        self.save_rl_topic_trend_md = save_rl_topic_trend_md
-        self.save_rl_md = save_rl_md
-        self.working_folder_path = working_folder_path
-        self.read_years = read_years
-        self.excel_path = excel_path
-        self.excel_books_nrows = excel_books_nrows
-
-        self.excel_books_skiprows = excel_books_skiprows
-        self.excel_books_tabname = excel_books_tabname 
-        self.excel_null_value = excel_null_value
-        self.now = now
-        self.n_generic = n_generic 
-        self.n_by_month = n_by_month
-        self.n_by_kbsize = n_by_kbsize
-        self.rounding_digits = rounding_digits
-        self.is_worth_min_books = is_worth_min_books
-        self.is_worth_min_avgrating = is_worth_min_avgrating
-        self.is_worth_criteria = is_worth_criteria
-        self.kbsize_ascending = kbsize_ascending
-        self.kbsize_remove_if_zero = kbsize_remove_if_zero
-        self.formatted_rating = formatted_rating
-        self.enable_sparklines_maximum = enable_sparklines_maximum
-        self.rl_by_month_file_name = rl_by_month_file_name
-        self.rl_by_publisher_file_name = rl_by_publisher_file_name 
-        self.rl_by_rating_file_name = rl_by_rating_file_name
-        self.rl_by_topic_file_name = rl_by_topic_file_name
-        self.rl_topic_trend_file_name = rl_topic_trend_file_name 
-        self.rl_file_name = rl_file_name
-        self.rl_last_update = rl_last_update
-        self.rl_smaller_font = rl_smaller_font
-        self.rl_by_month_smaller_font = rl_by_month_smaller_font
-        self.definitions = definitions
-class ComponentBag():
-
-    '''Represents a collection of components.'''
-
-    formatter : Formatter
-    converter : Converter
-    file_path_manager : FilePathManager
-    file_manager : FileManager
-    logging_function : Callable[[str], None]
-    markdown_helper : MarkdownHelper
-
-    def __init__(
-            self, 
-            formatter : Formatter = Formatter(), 
-            converter : Converter = Converter(), 
-            file_path_manager : FilePathManager = FilePathManager(),
-            file_manager : FileManager = FileManager(file_path_manager = FilePathManager()),
-            logging_function : Callable[[str], None] = LambdaProvider().get_default_logging_function(),
-            markdown_helper : MarkdownHelper = MarkdownHelper(formatter = Formatter())) -> None:
-
-        self.formatter = formatter
-        self.converter = converter
-        self.file_path_manager = file_path_manager
-        self.file_manager = file_manager
-        self.logging_function = logging_function
-        self.markdown_helper = markdown_helper
-@dataclass(frozen = True)
-class RLSummary():
-
-    '''Collects all the dataframes created by RLManager'''
-
-    rl_df : DataFrame
-    rl_asrt_df : DataFrame
-    rl_by_kbsize_df : DataFrame
-    rl_by_kbsize_box_plot: Callable[[Any], None]
-    rl_by_books_year_box_plot : Callable[[Any], None]
-    sas_by_month_tpl : Tuple[DataFrame, DataFrame]
-    sas_by_year_street_price_df : DataFrame
-    sas_by_topic_df : DataFrame
-    sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]
-    sas_by_rating_df : DataFrame
-    trend_by_year_topic_df : DataFrame
-@dataclass(frozen = True)
-class MDSummary():
-
-    '''Collects all the dataframes created by MDManager'''
-
-    rl_md : str
-    rl_asrt_md : str    
-    rl_by_month_md : str
-    rl_by_publisher_md : str
-    rl_by_rating_md : str
-    rl_by_topic_md : str
-    rl_by_topic_trend_md : str # rename
-
-class SettingBagNew():
-
-    '''Represents a collection of settings.'''
-
     options_rl : list[Literal["show"]]
     options_rl_asrt : list[Literal["show"]]
     options_rl_by_kbsize : list[Literal["show"]]
@@ -377,9 +147,61 @@ class SettingBagNew():
         self.rl_by_month_smaller_font = rl_by_month_smaller_font
         self.file_names = file_names
         self.definitions = definitions
+class ComponentBag():
 
+    '''Represents a collection of components.'''
 
-        
+    formatter : Formatter
+    converter : Converter
+    file_path_manager : FilePathManager
+    file_manager : FileManager
+    logging_function : Callable[[str], None]
+    markdown_helper : MarkdownHelper
+
+    def __init__(
+            self, 
+            formatter : Formatter = Formatter(), 
+            converter : Converter = Converter(), 
+            file_path_manager : FilePathManager = FilePathManager(),
+            file_manager : FileManager = FileManager(file_path_manager = FilePathManager()),
+            logging_function : Callable[[str], None] = LambdaProvider().get_default_logging_function(),
+            markdown_helper : MarkdownHelper = MarkdownHelper(formatter = Formatter())) -> None:
+
+        self.formatter = formatter
+        self.converter = converter
+        self.file_path_manager = file_path_manager
+        self.file_manager = file_manager
+        self.logging_function = logging_function
+        self.markdown_helper = markdown_helper
+@dataclass(frozen = True)
+class RLSummary():
+
+    '''Collects all the dataframes created by RLManager'''
+
+    rl_df : DataFrame
+    rl_asrt_df : DataFrame
+    rl_by_kbsize_df : DataFrame
+    rl_by_kbsize_box_plot: Callable[[Any], None]
+    rl_by_books_year_box_plot : Callable[[Any], None]
+    sas_by_month_tpl : Tuple[DataFrame, DataFrame]
+    sas_by_year_street_price_df : DataFrame
+    sas_by_topic_df : DataFrame
+    sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]
+    sas_by_rating_df : DataFrame
+    trend_by_year_topic_df : DataFrame
+@dataclass(frozen = True)
+class MDSummary():
+
+    '''Collects all the dataframes created by MDManager'''
+
+    rl_md : str
+    rl_asrt_md : str    
+    rl_by_month_md : str
+    rl_by_publisher_md : str
+    rl_by_rating_md : str
+    rl_by_topic_md : str
+    rl_by_topic_trend_md : str # rename
+
 
 # STATIC CLASSES
 # CLASSES
@@ -408,17 +230,23 @@ class YearProvider():
         years : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
 
         return years
-class ReadingListManager():
+class RLManager():
 
     '''Collects all the logic related to the management of "Reading List.xlsx".'''
 
-    __component_bag : ComponentBag
-    __setting_bag : SettingBag
+    __converter : Converter
+    __formatter : Formatter
 
-    def __init__(self, component_bag : ComponentBag, setting_bag : SettingBag) -> None:
+    def __init__(
+            self,
+            converter : Converter,
+            formatter : Formatter
+        ) -> None:
+        
+        self.__converter = converter
+        self.__formatter = formatter
 
-        self.__component_bag = component_bag
-        self.__setting_bag = setting_bag
+
 
     def __enforce_dataframe_definition_for_rl_df(self, rl_df : DataFrame, excel_null_value : str) -> DataFrame:
 
@@ -512,7 +340,6 @@ class ReadingListManager():
     def __try_complete_sa_by_year(self, sa_by_year_df : DataFrame, read_year : int) -> DataFrame:
 
         '''
-
             We expect sa_by_year_df to have 12 months: 
             
                 - if that's the case, we are done with it and we return it;
@@ -558,7 +385,6 @@ class ReadingListManager():
                     4	5	    1 (288)
                     ... ...     ...
                     11	12	    11 (3019)
-        
         '''
 
         cn_month : str = "Month"
@@ -578,7 +404,6 @@ class ReadingListManager():
     def __get_sa_by_year(self, rl_df : DataFrame, read_year : int) -> DataFrame:
         
         '''
-
             filtered_df:
                 
                 Filter book_df by read_year
@@ -613,7 +438,6 @@ class ReadingListManager():
                 0	1	    13 (5157)
                 1	2	    1 (106)
                 ... ...     ...
-
         '''
 
         cn_readyear : str = "ReadYear"
@@ -968,7 +792,7 @@ class ReadingListManager():
 
         sliced_df = sliced_df.sort_values(by = cn_kbsize, ascending = ascending).reset_index(drop = True)   
         sliced_df[cn_a4sheets] = sliced_df[cn_kbsize].apply(
-            lambda x : self.__component_bag.converter.convert_word_count_to_A4_sheets(word_count = x))
+            lambda x : self.__converter.convert_word_count_to_A4_sheets(word_count = x))
 
         return sliced_df    
     def __create_read_years_dataframe(self, read_years : list[int]) -> DataFrame:
@@ -1115,7 +939,7 @@ class ReadingListManager():
         condition : Series = (sas_by_month_upd_df[cn_month] > now_month)
         sas_by_month_upd_df[cn_year] = np.where(condition, new_value, sas_by_month_upd_df[cn_year])
             
-        idx_year : int = sas_by_month_upd_df.columns.get_loc(cn_year)
+        idx_year : Any = sas_by_month_upd_df.columns.get_loc(cn_year)
         idx_trend : int = (idx_year - 1)
         sas_by_month_upd_df.iloc[:, idx_trend] = np.where(condition, new_value, sas_by_month_upd_df.iloc[:, idx_trend])
 
@@ -1241,11 +1065,11 @@ class ReadingListManager():
         new_column_names : list = [str(x) for x in read_years]
         for column_name in new_column_names:
             sas_by_street_price_df[column_name] = sas_by_street_price_df[column_name].apply(
-                lambda x : self.__component_bag.formatter.format_usd_amount(
+                lambda x : self.__formatter.format_usd_amount(
                     amount = float64(x), rounding_digits = rounding_digits))
 
         return sas_by_street_price_df
-    def __filter_by_is_worth(self, sas_by_publisher_df : DataFrame) -> DataFrame:
+    def __filter_by_is_worth(self, sas_by_publisher_df : DataFrame, is_worth_criteria : str) -> DataFrame:
 
         '''
                 Publisher	Books	AvgRating	IsWorth
@@ -1257,7 +1081,7 @@ class ReadingListManager():
         filtered_df : DataFrame = sas_by_publisher_df.copy(deep = True)
 
         cn_isworth : str = "IsWorth"
-        condition : Series = (filtered_df[cn_isworth] == self.__setting_bag.is_worth_criteria)
+        condition : Series = (filtered_df[cn_isworth] == is_worth_criteria)
         filtered_df = filtered_df.loc[condition]
         
         filtered_df.reset_index(drop = True, inplace = True)
