@@ -254,7 +254,7 @@ class MDSummary():
     rl_by_topic_md : str
     rl_by_topic_trend_md : str # rename
 
-class SettingBag2():
+class SettingBagNew():
 
     '''Represents a collection of settings.'''
 
@@ -266,6 +266,120 @@ class SettingBag2():
     options_sas_by_topic : list[Literal["show"]]
     options_sas_by_publisher : list[Literal["show"]]
     options_sas_by_rating : list[Literal["show"]]
+    read_years : list[int]
+    excel_path : str
+    excel_books_nrows : int
+
+    working_folder_path : str    
+    excel_books_skiprows : int
+    excel_books_tabname : str
+    excel_null_value : str
+    now : datetime
+    n_generic : int
+    n_by_month : int
+    n_by_kbsize : int
+    rounding_digits : int
+    is_worth_min_books : int
+    is_worth_min_avgrating : float
+    is_worth_criteria : str
+    kbsize_ascending : bool
+    kbsize_remove_if_zero : bool
+    formatted_rating : bool
+    enable_sparklines_maximum : bool
+    rl_file_name : str    
+    rl_by_month_file_name : str
+    rl_by_publisher_file_name : str
+    rl_by_rating_file_name : str
+    rl_by_topic_file_name : str
+    rl_topic_trend_file_name : str
+    rl_last_update : datetime
+    rl_smaller_font : bool
+    rl_by_month_smaller_font : bool
+    definitions : dict
+
+    def __init__(
+            self,
+            options_rl : list[Literal["show"]],
+            options_rl_asrt : list[Literal["show"]],
+            options_rl_by_kbsize : list[Literal["show"]],
+            options_sas_by_month : list[Literal["show"]],
+            options_sas_by_year_street_price : list[Literal["show"]],
+            options_sas_by_topic : list[Literal["show"]],
+            options_sas_by_publisher : list[Literal["show"]],
+            options_sas_by_rating : list[Literal["show"]],
+            read_years : list[int],
+            excel_path : str,
+            excel_books_nrows : int,
+            working_folder_path : str = "/home/nwreadinglist/",        
+            excel_books_skiprows : int = 0,
+            excel_books_tabname : str = "Books",
+            excel_null_value : str = "-",
+            now : datetime  = datetime.now(),
+            n_generic : int = 5,
+            n_by_month : int = 12,
+            n_by_kbsize : int = 10,
+            rounding_digits : int = 2,
+            is_worth_min_books : int = 8,
+            is_worth_min_avgrating : float = 2.50,
+            is_worth_criteria : str = "Yes",
+            kbsize_ascending : bool = False,
+            kbsize_remove_if_zero : bool = True,      
+            formatted_rating : bool = True,
+            enable_sparklines_maximum : bool = True,
+            rl_last_update : datetime = datetime.now(),
+            rl_smaller_font : bool = False,
+            rl_by_month_smaller_font : bool = False,
+            file_names : dict[str, str] = {
+                "rl" : "READINGLIST.md",
+                "rl_by_month" : "READINGLISTBYMONTH.md",
+                "rl_by_publisher" : "READINGLISTBYPUBLISHER.md",
+                "rl_by_rating" : "READINGLISTBYRATING.md",
+                "rl_by_topic" : "READINGLISTBYTOPIC.md",
+                "rl_topic_trend" : "READINGLISTTOPICTREND.md"
+            },
+            definitions : dict[str, str] = {
+                "RL": "Reading List",
+                "KBSize": "This metric is the word count of the notes I took about a given book.",
+                "SAS": "Studying Activity Summary."
+                }            
+            ) -> None:
+
+        self.options_rl = options_rl
+        self.options_rl_asrt = options_rl_asrt
+        self.options_rl_by_kbsize = options_rl_by_kbsize
+        self.options_sas_by_month = options_sas_by_month
+        self.options_sas_by_year_street_price = options_sas_by_year_street_price
+        self.options_sas_by_topic = options_sas_by_topic
+        self.options_sas_by_publisher = options_sas_by_publisher
+        self.options_sas_by_rating = options_sas_by_rating
+        self.read_years = read_years
+        self.excel_path = excel_path
+        self.excel_books_nrows = excel_books_nrows
+
+        self.working_folder_path = working_folder_path
+        self.excel_books_skiprows = excel_books_skiprows
+        self.excel_books_tabname = excel_books_tabname
+        self.excel_null_value = excel_null_value
+        self.now = now
+        self.n_generic = n_generic
+        self.n_by_month = n_by_month
+        self.n_by_kbsize = n_by_kbsize
+        self.rounding_digits = rounding_digits
+        self.is_worth_min_books = is_worth_min_books
+        self.is_worth_min_avgrating = is_worth_min_avgrating
+        self.is_worth_criteria = is_worth_criteria
+        self.kbsize_ascending = kbsize_ascending
+        self.kbsize_remove_if_zero = kbsize_remove_if_zero
+        self.formatted_rating = formatted_rating
+        self.enable_sparklines_maximum = enable_sparklines_maximum
+        self.rl_last_update = rl_last_update
+        self.rl_smaller_font = rl_smaller_font
+        self.rl_by_month_smaller_font = rl_by_month_smaller_font
+        self.file_names = file_names
+        self.definitions = definitions
+
+
+        
 
 # STATIC CLASSES
 # CLASSES
