@@ -202,7 +202,6 @@ class MDSummary():
     rl_by_topic_md : str
     rl_by_topic_trend_md : str # rename
 
-
 # STATIC CLASSES
 # CLASSES
 class DefaultPathProvider():
@@ -230,10 +229,9 @@ class YearProvider():
         years : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
 
         return years
+class RLDataFrameHelper():
 
-class RLHelper():
-
-    '''Collects helper functions for RLManager.'''
+    '''Collects helper functions for RLDataFramer.'''
 
     def format_reading_status(self, books : int, pages : int) -> str:
 
@@ -385,25 +383,24 @@ class RLHelper():
         read_years_df : DataFrame = pd.DataFrame(data = read_years, columns = [cn_read_year])
 
         return read_years_df
+class RLDataFramer():
 
-class RLManager():
-
-    '''Collects all the logic related to the management of "Reading List.xlsx".'''
+    '''Collects all the logic related to dataframe creation out of "Reading List.xlsx".'''
 
     __converter : Converter
     __formatter : Formatter
-    __rl_helper : RLHelper
+    __df_helper : RLDataFrameHelper
 
     def __init__(
             self,
             converter : Converter,
             formatter : Formatter,
-            rl_helper : RLHelper
+            df_helper : RLDataFrameHelper
         ) -> None:
         
         self.__converter = converter
         self.__formatter = formatter
-        self.__rl_helper = rl_helper
+        self.__df_helper = df_helper
 
     def __enforce_dataframe_definition_for_rl_df(self, rl_df : DataFrame, excel_null_value : str) -> DataFrame:
 
@@ -513,7 +510,7 @@ class RLManager():
 
         if sa_by_year_df[cn_month].count() != 12:
 
-            default_df : DataFrame = self.__rl_helper.get_default_sa_by_year(read_year = read_year)
+            default_df : DataFrame = self.__df_helper.get_default_sa_by_year(read_year = read_year)
             missing_df : DataFrame = default_df.loc[~default_df[cn_month].astype(str).isin(sa_by_year_df[cn_month].astype(str))]
 
             completed_df : DataFrame = pd.concat([sa_by_year_df, missing_df], ignore_index = True)
@@ -582,7 +579,7 @@ class RLManager():
             how = "inner", 
             left_on = cn_readmonth, 
             right_on = cn_readmonth)
-        sa_by_year_df[read_year] = sa_by_year_df.apply(lambda x : self.__rl_helper.format_reading_status(books = x[cn_books], pages = x[cn_pages]), axis = 1) 
+        sa_by_year_df[read_year] = sa_by_year_df.apply(lambda x : self.__df_helper.format_reading_status(books = x[cn_books], pages = x[cn_pages]), axis = 1) 
 
         cn_month : str = "Month"
         sa_by_year_df[cn_month] = sa_by_year_df[cn_readmonth]
@@ -659,7 +656,7 @@ class RLManager():
             cn_trend_1 : str = str(read_years[i-1])   # for ex. "2016"
             cn_trend_2 : str = str(read_years[i])     # for ex. "2017"
             
-            expansion_df[cn_trend] = expansion_df.apply(lambda x : self.__rl_helper.get_trend_by_books(trend_1 = x[cn_trend_1], trend_2 = x[cn_trend_2]), axis = 1) 
+            expansion_df[cn_trend] = expansion_df.apply(lambda x : self.__df_helper.get_trend_by_books(trend_1 = x[cn_trend_1], trend_2 = x[cn_trend_2]), axis = 1) 
 
             new_column_names : list = [cn_month, cn_trend_1, cn_trend, cn_trend_2]   # for ex. ["Month", "2016", "↕", "2017"]
             expansion_df = expansion_df.reindex(columns = new_column_names)
@@ -717,7 +714,7 @@ class RLManager():
                 cn_trend_1 : str = str(yeatrend[i])       # 2016 => "2016"
                 cn_trend_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
                 
-                expanded_df[cn_trend] = expanded_df.apply(lambda x : self.__rl_helper.get_trend_by_books(trend_1 = x[cn_trend_1], trend_2 = x[cn_trend_2]), axis = 1) 
+                expanded_df[cn_trend] = expanded_df.apply(lambda x : self.__df_helper.get_trend_by_books(trend_1 = x[cn_trend_1], trend_2 = x[cn_trend_2]), axis = 1) 
                 
                 new_item_position : int = (new_column_names.index(cn_trend_1) + 1)
                 new_column_names.insert(new_item_position, cn_trend)
@@ -748,7 +745,7 @@ class RLManager():
                 cn_value_1 : str = str(yeatrend[i])       # 2016 => "2016"
                 cn_value_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
                 
-                expanded_df[cn_trend] = expanded_df.apply(lambda x : self.__rl_helper.get_trend_when_float64(value_1 = x[cn_value_1], value_2 = x[cn_value_2]), axis = 1) 
+                expanded_df[cn_trend] = expanded_df.apply(lambda x : self.__df_helper.get_trend_when_float64(value_1 = x[cn_value_1], value_2 = x[cn_value_2]), axis = 1) 
                 
                 new_item_position : int = (new_column_names.index(cn_value_1) + 1)
                 new_column_names.insert(new_item_position, cn_trend)
@@ -860,7 +857,7 @@ class RLManager():
         books_by_topic_read_year_df : DataFrame = self.__group_books_by_multiple_columns(rl_df = rl_df, column_names = [cn_topic, cn_read_year])
 
         topics_df : DataFrame = self.__get_topics_dataframe(df = rl_df)
-        read_years_df : DataFrame = self.__rl_helper.create_read_years_dataframe(read_years = read_years)
+        read_years_df : DataFrame = self.__df_helper.create_read_years_dataframe(read_years = read_years)
         default_df : DataFrame = self.__get_default_topic_read_year_dataframe(topics_df = topics_df, read_years_df = read_years_df)
 
         completed_df : DataFrame = pd.merge(
@@ -995,11 +992,11 @@ class RLManager():
         yeatrend : list = sas_by_year_df.columns.to_list()
         for year in yeatrend:
 
-            cn_year_books : str = self.__rl_helper.format_year_books_column_name(year_cn = year)
-            cn_year_pages : str = self.__rl_helper.format_year_pages_column_name(year_cn = year)
+            cn_year_books : str = self.__df_helper.format_year_books_column_name(year_cn = year)
+            cn_year_pages : str = self.__df_helper.format_year_pages_column_name(year_cn = year)
 
-            sas_by_year_df[cn_year_books] = sas_by_year_df[year].apply(lambda x : self.__rl_helper.extract_books_from_trend(trend = x))
-            sas_by_year_df[cn_year_pages] = sas_by_year_df[year].apply(lambda x : self.__rl_helper.extract_pages_from_trend(trend = x))
+            sas_by_year_df[cn_year_books] = sas_by_year_df[year].apply(lambda x : self.__df_helper.extract_books_from_trend(trend = x))
+            sas_by_year_df[cn_year_pages] = sas_by_year_df[year].apply(lambda x : self.__df_helper.extract_pages_from_trend(trend = x))
 
             sas_by_year_df.drop(labels = year, inplace = True, axis = 1)
 
@@ -1007,15 +1004,15 @@ class RLManager():
 
         for year in yeatrend:
 
-            cn_year_books = self.__rl_helper.format_year_books_column_name(year_cn = year)
-            cn_year_pages = self.__rl_helper.format_year_pages_column_name(year_cn = year)
+            cn_year_books = self.__df_helper.format_year_books_column_name(year_cn = year)
+            cn_year_pages = self.__df_helper.format_year_pages_column_name(year_cn = year)
 
-            sas_by_year_df[year] = sas_by_year_df.apply(lambda x : self.__rl_helper.format_reading_status(books = x[cn_year_books], pages = x[cn_year_pages]), axis = 1) 
+            sas_by_year_df[year] = sas_by_year_df.apply(lambda x : self.__df_helper.format_reading_status(books = x[cn_year_books], pages = x[cn_year_pages]), axis = 1) 
 
             sas_by_year_df.drop(labels = [cn_year_books, cn_year_pages], inplace = True, axis = 1)
 
         sas_by_year_df = self.__add_trend_to_sas_by_year(sas_by_year_df = sas_by_year_df, yeatrend = yeatrend)
-        sas_by_year_df.rename(columns = (lambda x : self.__rl_helper.try_consolidate_trend_column_name(column_name = x)), inplace = True)
+        sas_by_year_df.rename(columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)), inplace = True)
 
         return sas_by_year_df
     def __get_sas_by_street_price(self, rl_df : DataFrame, read_years : list, rounding_digits : int) -> DataFrame:
@@ -1065,7 +1062,7 @@ class RLManager():
         sas_by_street_price_df.columns = sas_by_street_price_df.columns.astype(str)
         
         sas_by_street_price_df = self.__add_trend_to_sas_by_street_price(sas_by_street_price_df = sas_by_street_price_df, yeatrend = read_years)
-        sas_by_street_price_df.rename(columns = (lambda x : self.__rl_helper.try_consolidate_trend_column_name(column_name = x)), inplace = True)
+        sas_by_street_price_df.rename(columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)), inplace = True)
 
         new_column_names : list = [str(x) for x in read_years]
         for column_name in new_column_names:
@@ -1206,7 +1203,7 @@ class RLManager():
                     add_trend = add_trend)
 
         sas_by_month_df.rename(
-            columns = (lambda x : self.__rl_helper.try_consolidate_trend_column_name(column_name = x)), 
+            columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)), 
             inplace = True)
         
         sas_by_month_upd_df : DataFrame = self.__update_future_rs_to_empty(
