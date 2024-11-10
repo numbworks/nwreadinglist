@@ -36,7 +36,7 @@ class SettingBag():
 
     '''Represents a collection of settings.'''
 
-    options_rl : list[Literal["show"]]
+    options_rl : list[Literal["show", "save"]]
     options_rl_asrt : list[Literal["show", "log"]]
     options_rl_by_kbsize : list[Literal["show"]]
     options_sas_by_month : list[Literal["show"]]
@@ -44,6 +44,7 @@ class SettingBag():
     options_sas_by_topic : list[Literal["show"]]
     options_sas_by_publisher : list[Literal["show"]]
     options_sas_by_rating : list[Literal["show"]]
+    options_trend_by_year_topic : list[Literal["show"]]
     read_years : list[int]
     excel_path : str
     excel_books_nrows : int
@@ -70,7 +71,7 @@ class SettingBag():
 
     def __init__(
             self,
-            options_rl : list[Literal["show"]],
+            options_rl : list[Literal["show", "save"]],
             options_rl_asrt : list[Literal["show", "log"]],
             options_rl_by_kbsize : list[Literal["show"]],
             options_sas_by_month : list[Literal["show"]],
@@ -78,6 +79,7 @@ class SettingBag():
             options_sas_by_topic : list[Literal["show"]],
             options_sas_by_publisher : list[Literal["show"]],
             options_sas_by_rating : list[Literal["show"]],
+            options_trend_by_year_topic : list[Literal["show"]],
             read_years : list[int],
             excel_path : str,
             excel_books_nrows : int,
@@ -121,6 +123,7 @@ class SettingBag():
         self.options_sas_by_topic = options_sas_by_topic
         self.options_sas_by_publisher = options_sas_by_publisher
         self.options_sas_by_rating = options_sas_by_rating
+        self.options_trend_by_year_topic = options_trend_by_year_topic
         self.read_years = read_years
         self.excel_path = excel_path
         self.excel_books_nrows = excel_books_nrows
@@ -1720,6 +1723,23 @@ class ReadingListProcessor():
 
         if not hasattr(self, '_ReadingListProcessor__rl_summary'):
             raise Exception("Please run the 'initialize' method first.")
+    def __save_rl_md(self, rl_md : str) -> None:
+
+        ''''''
+
+        id : str = "rl"
+
+        file_path : str = self.__component_bag.file_path_manager.create_file_path(
+            folder_path = self.__setting_bag.working_folder_path,
+            file_name = self.__extract_file_name_and_paragraph_title(id = id)[0]
+        )
+        
+        self.__component_bag.file_manager.save_content(
+            content = rl_md, 
+            file_path = file_path
+        )
+
+        self.__component_bag.logging_function(f"Saved as '{file_path}'.")
 
     def initialize(self) -> None:
 
@@ -1774,6 +1794,9 @@ class ReadingListProcessor():
         for option in self.__setting_bag.options_rl:
             if option == "show":
                 self.__component_bag.displayer.display(df = self.__rl_summary.rl_df)
+
+            if option == "save":
+                self.__save_rl_md(rl_md = self.__rl_summary.rl_asrt_md)
     def process_rl_asrt(self) -> None:
 
         '''
@@ -1789,8 +1812,7 @@ class ReadingListProcessor():
                 self.__component_bag.displayer.display(df = self.__rl_summary.rl_asrt_df)
 
             if option == "log":
-                content : str = self.__component_bag.md_factory.create_rl_asrt_md(rl_asrt_df = self.__rl_summary.rl_asrt_df)
-                self.__component_bag.logging_function(content)
+                self.__component_bag.logging_function(self.__rl_summary.rl_asrt_md)
     def process_rl_by_kbsize(self) -> None:
 
         '''
@@ -1869,6 +1891,19 @@ class ReadingListProcessor():
         for option in self.__setting_bag.options_sas_by_year_street_price:
             if option == "show":
                 self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_year_street_price_df)
+    def process_trend_by_year_topic(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_trend_by_year_topic.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        for option in self.__setting_bag.options_trend_by_year_topic:
+            if option == "show":
+                self.__component_bag.displayer.display(df = self.__rl_summary.trend_by_year_topic_df)    
     def get_summary(self) -> Optional[RLSummary]:
 
         '''Returns __rl_summary.'''
