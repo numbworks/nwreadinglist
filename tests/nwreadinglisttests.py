@@ -15,7 +15,7 @@ from unittest.mock import Mock, call, patch
 # LOCAL MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
 from nwreadinglist import DefaultPathProvider, YearProvider, SettingBag, ComponentBag
-from nwreadinglist import RLDataFramer, RLMarkdowner
+from nwreadinglist import RLDataFrameFactory, RLMarkdownFactory
 from nwshared import MarkdownHelper, Formatter, FilePathManager
 
 # SUPPORT METHODS
@@ -77,15 +77,15 @@ class ObjectMother():
             rl_last_update = datetime(2024, 3, 4)
         )
     @staticmethod
-    def create_reading_list_manager() -> RLDataFramer:
+    def create_reading_list_manager() -> RLDataFrameFactory:
 
-        return RLDataFramer(
+        return RLDataFrameFactory(
             component_bag = ComponentBag(), 
             setting_bag = ObjectMother().create_setting_bag())
     @staticmethod
-    def create_markdown_processor() -> RLMarkdowner:
+    def create_markdown_processor() -> RLMarkdownFactory:
 
-        return RLMarkdowner(
+        return RLMarkdownFactory(
             component_bag = ComponentBag(), 
             setting_bag = ObjectMother().create_setting_bag())
       
@@ -322,21 +322,21 @@ class ObjectMother():
         return (sas_by_rating_df, expected)
 
     @staticmethod
-    def create_service_objects_for_readmemd(show_readme_md : bool) -> Tuple[ComponentBag, SettingBag, RLMarkdowner]:
+    def create_service_objects_for_readmemd(show_readme_md : bool) -> Tuple[ComponentBag, SettingBag, RLMarkdownFactory]:
 
         component_bag : Mock = Mock()
         
         setting_bag : Mock = Mock()
         setting_bag.show_readme_md = show_readme_md
 
-        markdown_processor : RLMarkdowner = RLMarkdowner(
+        markdown_processor : RLMarkdownFactory = RLMarkdownFactory(
 			component_bag = component_bag, 
 			setting_bag = setting_bag
 			)        
 
         return (component_bag, setting_bag, markdown_processor)    
     @staticmethod
-    def create_service_objects_for_rlbymonthmd(rl_by_month_smaller_font : bool) -> Tuple[ComponentBag, SettingBag, RLMarkdowner]:
+    def create_service_objects_for_rlbymonthmd(rl_by_month_smaller_font : bool) -> Tuple[ComponentBag, SettingBag, RLMarkdownFactory]:
 
         component_bag : Mock = Mock()
         component_bag.logging_function = Mock()
@@ -352,14 +352,14 @@ class ObjectMother():
         setting_bag.save_rl_by_month_md = True
         setting_bag.rl_by_month_smaller_font = rl_by_month_smaller_font
 
-        markdown_processor : RLMarkdowner = RLMarkdowner(
+        markdown_processor : RLMarkdownFactory = RLMarkdownFactory(
 			component_bag = component_bag, 
 			setting_bag = setting_bag
 			)        
 
         return (component_bag, setting_bag, markdown_processor)    
     @staticmethod    
-    def create_service_objects_for_rlbyratingmd() -> Tuple[ComponentBag, SettingBag, RLMarkdowner]:
+    def create_service_objects_for_rlbyratingmd() -> Tuple[ComponentBag, SettingBag, RLMarkdownFactory]:
 
         component_bag : Mock = Mock()
         component_bag.logging_function = Mock()
@@ -374,7 +374,7 @@ class ObjectMother():
         setting_bag.show_rl_by_rating_md = True
         setting_bag.save_rl_by_rating_md = True
 
-        markdown_processor : RLMarkdowner = RLMarkdowner(
+        markdown_processor : RLMarkdownFactory = RLMarkdownFactory(
 			component_bag = component_bag, 
 			setting_bag = setting_bag
 			)        
@@ -418,7 +418,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
     def test_formatreadingstatus_shouldreturnexpectedstring_wheninvoked(self, books : int, pages : int, expected : str):
         
         # Arrange
-        reading_list_manager : RLDataFramer = ObjectMother().create_reading_list_manager()
+        reading_list_manager : RLDataFrameFactory = ObjectMother().create_reading_list_manager()
 
         # Act
         actual : str = reading_list_manager._ReadingListManager__format_reading_status(books = books, pages = pages)
@@ -432,7 +432,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
     def test_extractbooksfromtrend_shouldreturnexpectedint_wheninvoked(self, trend : str, expected : int):
         
         # Arrange
-        reading_list_manager : RLDataFramer = ObjectMother().create_reading_list_manager()
+        reading_list_manager : RLDataFrameFactory = ObjectMother().create_reading_list_manager()
 
         # Act
         actual : int = reading_list_manager._ReadingListManager__extract_books_from_trend(trend = trend)
@@ -447,7 +447,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
     def test_gettrend_shouldreturnexpectedstring_wheninvoked(self, value_1 : int, value_2 : int, expected : str):
         
         # Arrange
-        reading_list_manager : RLDataFramer = ObjectMother().create_reading_list_manager()
+        reading_list_manager : RLDataFrameFactory = ObjectMother().create_reading_list_manager()
 
         # Act
         actual : str = reading_list_manager._ReadingListManager__get_trend(value_1 = value_1, value_2 = value_2)
@@ -462,7 +462,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
     def test_gettrendbybooks_shouldreturnexpectedstring_wheninvoked(self, trend_1 : str, trend_2 : str, expected : str):
         
         # Arrange
-        reading_list_manager : RLDataFramer = ObjectMother().create_reading_list_manager()
+        reading_list_manager : RLDataFrameFactory = ObjectMother().create_reading_list_manager()
 
         # Act
         actual : str = reading_list_manager._ReadingListManager__get_trend_by_books(trend_1 = trend_1, trend_2 = trend_2)
@@ -476,7 +476,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
     def test_tryconsolidatetrendcolumnname_shouldreturnexpectedstring_wheninvoked(self, column_name : str, expected : str):
         
         # Arrange
-        reading_list_manager : RLDataFramer = ObjectMother().create_reading_list_manager()
+        reading_list_manager : RLDataFrameFactory = ObjectMother().create_reading_list_manager()
 
         # Act
         actual : str = reading_list_manager._ReadingListManager__try_consolidate_trend_column_name(column_name = column_name)
@@ -490,7 +490,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
     def test_extractpagesfromtrend_shouldreturnexpectedint_wheninvoked(self, trend : str, expected : int):
         
         # Arrange
-        reading_list_manager : RLDataFramer = ObjectMother().create_reading_list_manager()
+        reading_list_manager : RLDataFrameFactory = ObjectMother().create_reading_list_manager()
 
         # Act
         actual : int = reading_list_manager._ReadingListManager__extract_pages_from_trend(trend = trend)
@@ -503,7 +503,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
     def test_formatyearbookscolumnname_shouldreturnexpectedstring_wheninvoked(self, year_cn : str, expected : str):
         
         # Arrange
-        reading_list_manager : RLDataFramer = ObjectMother().create_reading_list_manager()
+        reading_list_manager : RLDataFrameFactory = ObjectMother().create_reading_list_manager()
 
         # Act
         actual : str = reading_list_manager._ReadingListManager__format_year_books_column_name(year_cn = year_cn)
@@ -516,7 +516,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
     def test_formatyearpagescolumnname_shouldreturnexpectedstring_wheninvoked(self, year_cn : str, expected : str):
         
         # Arrange
-        reading_list_manager : RLDataFramer = ObjectMother().create_reading_list_manager()
+        reading_list_manager : RLDataFrameFactory = ObjectMother().create_reading_list_manager()
 
         # Act
         actual : str = reading_list_manager._ReadingListManager__format_year_pages_column_name(year_cn = year_cn)
@@ -530,7 +530,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
     def test_extractyearfromcolumnname_shouldreturnexpectedstring_wheninvoked(self, column_name : str, expected : str):
         
         # Arrange
-        reading_list_manager : RLDataFramer = ObjectMother().create_reading_list_manager()
+        reading_list_manager : RLDataFrameFactory = ObjectMother().create_reading_list_manager()
 
         # Act
         actual : str = reading_list_manager._ReadingListManager__extract_year_from_column_name(column_name = column_name)
@@ -545,7 +545,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
     def test_gettrendwhenfloat64_shouldreturnexpectedstring_wheninvoked(self, value_1 : float64, value_2 : float64, expected : str):
         
         # Arrange
-        reading_list_manager : RLDataFramer = ObjectMother().create_reading_list_manager()
+        reading_list_manager : RLDataFrameFactory = ObjectMother().create_reading_list_manager()
 
         # Act
         actual : str = reading_list_manager._ReadingListManager__get_trend_when_float64(value_1 = value_1, value_2 = value_2)
@@ -557,7 +557,7 @@ class ReadingListManagerTestCase(unittest.TestCase):
         
         # Arrange
         expected_df : DataFrame = ObjectMother().create_default_sa_by_2024_df()
-        reading_list_manager : RLDataFramer = ObjectMother().create_reading_list_manager()
+        reading_list_manager : RLDataFrameFactory = ObjectMother().create_reading_list_manager()
 
         # Act
         actual_df : DataFrame = reading_list_manager._ReadingListManager__get_default_sa_by_year(read_year = 2024)
@@ -571,12 +571,12 @@ class ReadingListManagerTestCase(unittest.TestCase):
         books_df : DataFrame = ObjectMother().create_books_df()
         expected_column_names : list[str] = ObjectMother().create_books_df_column_names()
         expected_dtype_names : list[str] = ObjectMother().create_books_df_dtype_names()
-        reading_list_manager : RLDataFramer = ObjectMother().create_reading_list_manager()
+        reading_list_manager : RLDataFrameFactory = ObjectMother().create_reading_list_manager()
 
         # Act
         actual_df : DataFrame = pd.DataFrame()
         with patch.object(pd, 'read_excel', return_value = books_df) as mocked_context:
-            actual_df = reading_list_manager.get_rl()
+            actual_df = reading_list_manager.create_rl()
 
         # Assert
         self.assertEqual(expected_column_names, actual_df.columns.tolist())
@@ -586,10 +586,10 @@ class ReadingListManagerTestCase(unittest.TestCase):
         # Arrange
         books_df : DataFrame = ObjectMother().create_books_df()
         expected_df : DataFrame = ObjectMother().create_sas_by_topic_df()
-        reading_list_manager : RLDataFramer = ObjectMother().create_reading_list_manager()
+        reading_list_manager : RLDataFrameFactory = ObjectMother().create_reading_list_manager()
 
         # Act
-        actual_df : DataFrame = reading_list_manager.get_sas_by_topic(rl_df = books_df)
+        actual_df : DataFrame = reading_list_manager.create_sas_by_topic(rl_df = books_df)
 
         # Assert
         assert_frame_equal(expected_df, actual_df)
@@ -598,10 +598,10 @@ class ReadingListManagerTestCase(unittest.TestCase):
         # Arrange
         books_df : DataFrame = ObjectMother().create_books_df()
         expected_df : DataFrame = ObjectMother().create_sas_by_rating_df()
-        reading_list_manager : RLDataFramer = ObjectMother().create_reading_list_manager()
+        reading_list_manager : RLDataFrameFactory = ObjectMother().create_reading_list_manager()
 
         # Act
-        actual_df : DataFrame = reading_list_manager.get_sas_by_rating(rl_df = books_df)
+        actual_df : DataFrame = reading_list_manager.create_sas_by_rating(rl_df = books_df)
 
         # Assert
         assert_frame_equal(expected_df, actual_df)
@@ -610,10 +610,10 @@ class ReadingListManagerTestCase(unittest.TestCase):
         # Arrange
         books_df : DataFrame = ObjectMother().create_books_df()
         expected_df : DataFrame = ObjectMother().create_cumulative_df()
-        reading_list_manager : RLDataFramer = ObjectMother().create_reading_list_manager()
+        reading_list_manager : RLDataFrameFactory = ObjectMother().create_reading_list_manager()
 
         # Act
-        actual_df : DataFrame = reading_list_manager.get_rl_asrt(rl_df = books_df)
+        actual_df : DataFrame = reading_list_manager.create_rl_asrt(rl_df = books_df)
 
         # Assert
         assert_frame_equal(expected_df, actual_df)
@@ -622,10 +622,10 @@ class ReadingListManagerTestCase(unittest.TestCase):
         # Arrange
         books_df : DataFrame = ObjectMother().create_books_df()
         expected_df : DataFrame = ObjectMother().create_yt_by_topic_df()
-        reading_list_manager : RLDataFramer = ObjectMother().create_reading_list_manager()
+        reading_list_manager : RLDataFrameFactory = ObjectMother().create_reading_list_manager()
 
         # Act
-        actual_df : DataFrame = reading_list_manager.get_trend_by_year_topic(rl_df = books_df)
+        actual_df : DataFrame = reading_list_manager.create_trend_by_year_topic(rl_df = books_df)
 
         # Assert
         assert_frame_equal(expected_df, actual_df)

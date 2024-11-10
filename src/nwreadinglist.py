@@ -383,7 +383,7 @@ class RLDataFrameHelper():
         read_years_df : DataFrame = pd.DataFrame(data = read_years, columns = [cn_read_year])
 
         return read_years_df
-class RLDataFramer():
+class RLDataFrameFactory():
 
     '''Collects all the logic related to dataframe creation out of "Reading List.xlsx".'''
 
@@ -520,7 +520,7 @@ class RLDataFramer():
             return completed_df
 
         return sa_by_year_df
-    def __get_sa_by_year(self, rl_df : DataFrame, read_year : int) -> DataFrame:
+    def __create_sa_by_year(self, rl_df : DataFrame, read_year : int) -> DataFrame:
         
         '''
             filtered_df:
@@ -640,7 +640,7 @@ class RLDataFramer():
         '''
         
         actual_df : DataFrame = sas_by_month_df.copy(deep = True)
-        sa_by_year_df : DataFrame = self.__get_sa_by_year(rl_df = rl_df, read_year = read_years[i])
+        sa_by_year_df : DataFrame = self.__create_sa_by_year(rl_df = rl_df, read_year = read_years[i])
 
         cn_month : str = "Month"      
         expansion_df = pd.merge(
@@ -805,7 +805,7 @@ class RLDataFramer():
             lambda x : self.__converter.convert_word_count_to_A4_sheets(word_count = x))
 
         return sliced_df    
-    def __get_topics_dataframe(self, df : DataFrame) -> DataFrame:
+    def __create_topics_dataframe(self, df : DataFrame) -> DataFrame:
 
         '''Creates a dataframe of unique topics out of the provided dataframe.'''
 
@@ -813,7 +813,7 @@ class RLDataFramer():
         topics_df : DataFrame = pd.DataFrame(data = df[cn_topic].unique(), columns = [cn_topic])
         
         return topics_df
-    def __get_default_topic_read_year_dataframe(self, topics_df : DataFrame, read_years_df : DataFrame) -> DataFrame:
+    def __create_default_topic_read_year_dataframe(self, topics_df : DataFrame, read_years_df : DataFrame) -> DataFrame:
 
         '''
                 Topic	                ReadYear
@@ -825,7 +825,7 @@ class RLDataFramer():
         default_df : DataFrame = pd.merge(left = topics_df, right = read_years_df, how='cross')
 
         return default_df
-    def __get_books_by_topic_read_year(self, rl_df : DataFrame, read_years : list[int]) -> DataFrame:
+    def __create_books_by_topic_read_year(self, rl_df : DataFrame, read_years : list[int]) -> DataFrame:
 
         '''
             [0] - Groups rl_df by Topic_ReadYear:
@@ -856,9 +856,9 @@ class RLDataFramer():
 
         books_by_topic_read_year_df : DataFrame = self.__group_books_by_multiple_columns(rl_df = rl_df, column_names = [cn_topic, cn_read_year])
 
-        topics_df : DataFrame = self.__get_topics_dataframe(df = rl_df)
+        topics_df : DataFrame = self.__create_topics_dataframe(df = rl_df)
         read_years_df : DataFrame = self.__df_helper.create_read_years_dataframe(read_years = read_years)
-        default_df : DataFrame = self.__get_default_topic_read_year_dataframe(topics_df = topics_df, read_years_df = read_years_df)
+        default_df : DataFrame = self.__create_default_topic_read_year_dataframe(topics_df = topics_df, read_years_df = read_years_df)
 
         completed_df : DataFrame = pd.merge(
             left = books_by_topic_read_year_df, 
@@ -946,7 +946,7 @@ class RLDataFramer():
         sas_by_month_upd_df.iloc[:, idx_trend] = np.where(condition, new_value, sas_by_month_upd_df.iloc[:, idx_trend])
 
         return sas_by_month_upd_df       
-    def __get_sas_by_year(self, sas_by_month_df : DataFrame) -> DataFrame:
+    def __create_sas_by_year(self, sas_by_month_df : DataFrame) -> DataFrame:
 
         '''
             sas_by_year_df:
@@ -1015,7 +1015,7 @@ class RLDataFramer():
         sas_by_year_df.rename(columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)), inplace = True)
 
         return sas_by_year_df
-    def __get_sas_by_street_price(self, rl_df : DataFrame, read_years : list, rounding_digits : int) -> DataFrame:
+    def __create_sas_by_street_price(self, rl_df : DataFrame, read_years : list, rounding_digits : int) -> DataFrame:
 
         '''
             [...]
@@ -1090,7 +1090,7 @@ class RLDataFramer():
 
         return filtered_df
 
-    def get_rl(self, excel_path : str, excel_books_skiprows : int, excel_books_nrows : int, excel_books_tabname : str, excel_null_value : str) -> DataFrame:
+    def create_rl(self, excel_path : str, excel_books_skiprows : int, excel_books_nrows : int, excel_books_tabname : str, excel_null_value : str) -> DataFrame:
         
         '''Retrieves the content of the "Books" tab and returns it as a Dataframe.'''
 
@@ -1107,7 +1107,7 @@ class RLDataFramer():
             excel_null_value = excel_null_value)
 
         return rl_df
-    def get_rl_asrt(self, rl_df : DataFrame, rounding_digits : int, now : datetime) -> DataFrame:
+    def create_rl_asrt(self, rl_df : DataFrame, rounding_digits : int, now : datetime) -> DataFrame:
 
         '''
                 Years	Books	Pages	TotalSpend  LastUpdate
@@ -1148,7 +1148,7 @@ class RLDataFramer():
         rl_asrt_df : DataFrame = pd.DataFrame(rl_asrt_dict, index=[0])
         
         return rl_asrt_df        
-    def get_rl_by_kbsize(self, rl_df : DataFrame, kbsize_ascending : bool, kbsize_remove_if_zero : bool, kbsize_n : int) -> DataFrame:
+    def create_rl_by_kbsize(self, rl_df : DataFrame, kbsize_ascending : bool, kbsize_remove_if_zero : bool, kbsize_n : int) -> DataFrame:
         
         '''
             Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
@@ -1166,7 +1166,7 @@ class RLDataFramer():
         rl_by_kbsize_df = rl_by_kbsize_df.head(n = kbsize_n)
 
         return rl_by_kbsize_df   
-    def get_sas_by_month_tpl(self, rl_df : DataFrame, read_years : list[int], now : datetime) -> Tuple[DataFrame, DataFrame]:
+    def create_sas_by_month_tpl(self, rl_df : DataFrame, read_years : list[int], now : datetime) -> Tuple[DataFrame, DataFrame]:
 
         '''
             The method returns a tuple of dataframes (sas_by_month_df, sas_by_month_upd_df), 
@@ -1193,7 +1193,7 @@ class RLDataFramer():
         for i in range(len(read_years)):
 
             if i == 0:
-                sas_by_month_df = self.__get_sa_by_year(rl_df = rl_df, read_year = read_years[i])
+                sas_by_month_df = self.__create_sa_by_year(rl_df = rl_df, read_year = read_years[i])
             else:
                 sas_by_month_df = self.__expand_sa_by_year(
                     rl_df = rl_df, 
@@ -1211,7 +1211,7 @@ class RLDataFramer():
             now = now)
 
         return (sas_by_month_df, sas_by_month_upd_df)
-    def get_sas_by_year_street_price(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame, read_years : list[int], rounding_digits : int) -> DataFrame:
+    def create_sas_by_year_street_price(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame, read_years : list[int], rounding_digits : int) -> DataFrame:
 
         '''
                 2016	    ↕	2017	    ↕	2018	    ↕	2019	    ↕	2020	    ↕	2021	    ↕	2022	↕	2023
@@ -1219,8 +1219,8 @@ class RLDataFramer():
             1	$1447.14	↑	$2123.36	↓	$1249.15	↓	$748.70	    ↓	$538.75	    ↓	$169.92	    ↓	$49.99	↓	$5.00
         '''
 
-        sas_by_year_df : DataFrame = self.__get_sas_by_year(sas_by_month_df = sas_by_month_tpl[0])
-        sas_by_street_price_df : DataFrame = self.__get_sas_by_street_price(
+        sas_by_year_df : DataFrame = self.__create_sas_by_year(sas_by_month_df = sas_by_month_tpl[0])
+        sas_by_street_price_df : DataFrame = self.__create_sas_by_street_price(
             rl_df = rl_df, 
             read_years = read_years,
             rounding_digits = rounding_digits)
@@ -1229,7 +1229,7 @@ class RLDataFramer():
         sas_by_year_street_price_df.reset_index(drop = True, inplace = True)
 
         return sas_by_year_street_price_df      
-    def get_sas_by_topic(self, rl_df : DataFrame) -> DataFrame:
+    def create_sas_by_topic(self, rl_df : DataFrame) -> DataFrame:
 
         """
             by_books_df:
@@ -1269,7 +1269,7 @@ class RLDataFramer():
             right_on = cn_topic)
 
         return sas_by_topic_df
-    def get_sas_by_publisher_tpl(self, rl_df : DataFrame, rounding_digits : int, is_worth_min_books : int, is_worth_min_avgrating : float, is_worth_criteria : str) -> Tuple[DataFrame, DataFrame]:
+    def create_sas_by_publisher_tpl(self, rl_df : DataFrame, rounding_digits : int, is_worth_min_books : int, is_worth_min_avgrating : float, is_worth_criteria : str) -> Tuple[DataFrame, DataFrame]:
         
         """
             The method returns a tuple of dataframes (sas_by_publisher_df, sas_by_publisher_flt_df), 
@@ -1329,7 +1329,7 @@ class RLDataFramer():
         sas_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(sas_by_publisher_df = sas_by_publisher_df, is_worth_criteria = is_worth_criteria)
 
         return (sas_by_publisher_df, sas_by_publisher_flt_df)       
-    def get_sas_by_rating(self, rl_df : DataFrame, formatted_rating : bool) -> DataFrame:
+    def create_sas_by_rating(self, rl_df : DataFrame, formatted_rating : bool) -> DataFrame:
 
         '''
                 Rating  Books
@@ -1349,7 +1349,7 @@ class RLDataFramer():
                 lambda x : self.__formatter.format_rating(rating = x))
 
         return sas_by_rating_df    
-    def get_trend_by_year_topic(self, rl_df : DataFrame, read_years : list[int], enable_sparklines_maximum : bool) -> DataFrame:
+    def create_trend_by_year_topic(self, rl_df : DataFrame, read_years : list[int], enable_sparklines_maximum : bool) -> DataFrame:
 
         '''
             Get trend by year and topic as numbers and sparklines.
@@ -1364,7 +1364,7 @@ class RLDataFramer():
         cn_books : str = "Books"
         cn_trend : str = "Trend"
 
-        by_topic_read_year_df : DataFrame = self.__get_books_by_topic_read_year(rl_df = rl_df, read_years = read_years)
+        by_topic_read_year_df : DataFrame = self.__create_books_by_topic_read_year(rl_df = rl_df, read_years = read_years)
         
         pivoted_df : DataFrame = self.__pivot_column_values_to_cell(
             df = by_topic_read_year_df, 
@@ -1376,19 +1376,14 @@ class RLDataFramer():
             return self.__add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend, maximum = maximum)
         else: 
             return self.__add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend)
-class RLMarkdowner():
+class RLMarkdownFactory():
 
     '''Collects all the logic related to Markdown creation out of Reading List dataframes.'''
 
     __markdown_helper : MarkdownHelper
     __formatter : Formatter
-    # paragraph_title
-    
-    def __init__(
-            self,
-            markdown_helper : MarkdownHelper,
-            formatter : Formatter
-            ) -> None:
+
+    def __init__(self, markdown_helper : MarkdownHelper, formatter : Formatter) -> None:
 
         self.__markdown_helper = markdown_helper
         self.__formatter = formatter
@@ -1426,11 +1421,9 @@ class RLMarkdowner():
 
         return formatted_rl_df
 
-    def create_rl_md(self, last_update : datetime, rl_df : DataFrame, use_smaller_font : bool) -> str:
+    def create_rl_md(self, md_paragraph_title : str, last_update : datetime, rl_df : DataFrame, use_smaller_font : bool) -> str:
 
-        '''Creates the Markdown content for a "Reading List" file out of the provided dataframe.'''
-
-        md_paragraph_title : str = "Reading List"
+        '''Creates the expected Markdown content for the provided arguments.'''
 
         markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
         formatted_rl_df : DataFrame = self.__get_formatted_rl(rl_df = rl_df)
@@ -1448,7 +1441,7 @@ class RLMarkdowner():
         return md_content
     def create_rl_asrt_md(self, rl_asrt_df : DataFrame) -> str:
 
-        '''Creates the Markdown content for a README file out of the provided dataframe.'''
+        '''Creates the expected Markdown content for the provided arguments.'''
 
         rl_asrt_md : str = rl_asrt_df.to_markdown(index = False)
 
@@ -1456,9 +1449,9 @@ class RLMarkdowner():
         md_content += "\n"
 
         return md_content
-    def create_sas_by_month_md(self, last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, use_smaller_font : bool) -> str:
+    def create_sas_by_month_md(self, md_paragraph_title : str, last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, use_smaller_font : bool) -> str:
 
-        '''Creates the Markdown content for a "Reading List By Month" file out of the provided dataframes.'''
+        '''Creates the expected Markdown content for the provided arguments.'''
 
         copy_of_sas_by_month_df : DataFrame = sas_by_month_df.copy(deep=True)
         copy_of_sas_by_year_street_price_df : DataFrame = sas_by_year_street_price_df.copy(deep=True)
@@ -1466,8 +1459,6 @@ class RLMarkdowner():
         if use_smaller_font:
             copy_of_sas_by_month_df = self.__markdown_helper.add_subscript_tags_to_dataframe(df = copy_of_sas_by_month_df)
             copy_of_sas_by_year_street_price_df = self.__markdown_helper.add_subscript_tags_to_dataframe(df = copy_of_sas_by_year_street_price_df)
-
-        md_paragraph_title : str = "Reading List By Month"
 
         markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
         sas_by_month_md : str = copy_of_sas_by_month_df.to_markdown(index = False)
@@ -1484,11 +1475,9 @@ class RLMarkdowner():
         md_content += ""
 
         return md_content
-    def create_sas_by_publisher_md(self, last_update : datetime, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> str:
+    def create_sas_by_publisher_md(self, md_paragraph_title : str, last_update : datetime, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> str:
 
-        '''Creates the Markdown content for a "Reading List By Publisher" file out of the provided dataframes.'''
-
-        md_paragraph_title : str = "Reading List By Publisher"
+        '''Creates the expected Markdown content for the provided arguments.'''
 
         markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
         sas_by_publisher_flt_md : str = sas_by_publisher_tpl[1].to_markdown(index = False)
@@ -1505,11 +1494,9 @@ class RLMarkdowner():
         md_content += ""
 
         return md_content
-    def create_sas_by_rating_md(self, last_update : datetime, sas_by_rating_df : DataFrame) -> str:
+    def create_sas_by_rating_md(self, md_paragraph_title : str, last_update : datetime, sas_by_rating_df : DataFrame) -> str:
 
-        '''Creates the Markdown content for a "Reading List By Rating" file out of the provided dataframe.'''
-
-        md_paragraph_title : str = "Reading List By Rating"
+        '''Creates the expected Markdown content for the provided arguments.'''
 
         markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
         sas_by_rating_md : str = sas_by_rating_df.to_markdown(index = False)
@@ -1520,11 +1507,9 @@ class RLMarkdowner():
         md_content += "\n"
 
         return md_content
-    def create_sas_by_topic_md(self, last_update : datetime, sas_by_topic_df : DataFrame) -> str:
+    def create_sas_by_topic_md(self, md_paragraph_title : str, last_update : datetime, sas_by_topic_df : DataFrame) -> str:
 
-        '''Creates the Markdown content for a "Reading List By Topic" file out of the provided dataframe.'''
-
-        md_paragraph_title : str = "Reading List By Topic"
+        '''Creates the expected Markdown content for the provided arguments.'''
 
         markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
         sas_by_topic_md : str = sas_by_topic_df.to_markdown(index = False)
@@ -1535,11 +1520,9 @@ class RLMarkdowner():
         md_content += "\n"
 
         return md_content
-    def create_trend_by_year_topic_md(self, last_update : datetime, trend_by_year_topic_df : DataFrame) -> str:
+    def create_trend_by_year_topic_md(self, md_paragraph_title : str, last_update : datetime, trend_by_year_topic_df : DataFrame) -> str:
 
-        '''Creates the Markdown content for a "Reading List Topic Trend" file out of the provided dataframe.'''
-
-        md_paragraph_title : str = "Reading List Topic Trend"
+        '''Creates the expected Markdown content for the provided arguments.'''
 
         markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
         trend_by_year_topic_md : str = trend_by_year_topic_df.to_markdown(index = False)
