@@ -103,8 +103,7 @@ class SettingBag():
                 MarkdownInfo(id = "sas", file_name = "STUDYINGACTIVITY.md", paragraph_title = "Studying Activity"),
                 MarkdownInfo(id = "sas_by_publisher", file_name = "STUDYINGACTIVITYBYPUBLISHER.md", paragraph_title = "Studying Activity By Publisher"),
                 MarkdownInfo(id = "sas_by_rating", file_name = "STUDYINGACTIVITYBYRATING.md", paragraph_title = "Studying Activity By Rating"),
-                MarkdownInfo(id = "sas_by_topic", file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic"),
-                MarkdownInfo(id = "trend_by_year_topic", file_name = "TRENDBYYEARTOPIC.md", paragraph_title = "Trend By Year Topic")             
+                MarkdownInfo(id = "sas_by_topic", file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic")      
             ],
             definitions : dict[str, str] = {
                 "RL": "Reading List",
@@ -165,7 +164,6 @@ class RLSummary():
     sas_by_topic_md : str
     sas_by_publisher_md : str
     sas_by_rating_md : str
-    trend_by_year_topic_md : str
 
 # STATIC CLASSES
 class _MessageCollection():
@@ -1475,30 +1473,23 @@ class RLMarkdownFactory():
         md_content += "\n"
 
         return md_content
-    def create_sas_by_topic_md(self, paragraph_title : str, last_update : datetime, sas_by_topic_df : DataFrame) -> str:
+    def create_sas_by_topic_md(self, paragraph_title : str, last_update : datetime, sas_by_topic_df : DataFrame, trend_by_year_topic_df : DataFrame) -> str:
 
         '''Creates the expected Markdown content for the provided arguments.'''
 
         markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
         sas_by_topic_md : str = sas_by_topic_df.to_markdown(index = False)
+        trend_by_year_topic_md : str = trend_by_year_topic_df.to_markdown(index = False)
 
         md_content : str = markdown_header
         md_content += "\n"
         md_content += sas_by_topic_md
         md_content += "\n"
-
-        return md_content
-    def create_trend_by_year_topic_md(self, paragraph_title : str, last_update : datetime, trend_by_year_topic_df : DataFrame) -> str:
-
-        '''Creates the expected Markdown content for the provided arguments.'''
-
-        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
-        trend_by_year_topic_md : str = trend_by_year_topic_df.to_markdown(index = False)
-
-        md_content : str = markdown_header
+        md_content += ""
         md_content += "\n"
         md_content += trend_by_year_topic_md
         md_content += "\n"
+        md_content += ""        
 
         return md_content
 class ComponentBag():
@@ -1677,7 +1668,7 @@ class ReadingListProcessor():
         )
 
         return sas_md
-    def __create_sas_by_topic_md(self, sas_by_topic_df : DataFrame) -> str:
+    def __create_sas_by_topic_md(self, sas_by_topic_df : DataFrame, trend_by_year_topic_df : DataFrame) -> str:
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
@@ -1686,7 +1677,8 @@ class ReadingListProcessor():
         sas_by_topic_md : str = self.__component_bag.md_factory.create_sas_by_topic_md(
             paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
             last_update = self.__setting_bag.markdown_last_update,
-            sas_by_topic_df = sas_by_topic_df
+            sas_by_topic_df = sas_by_topic_df,
+            trend_by_year_topic_df = trend_by_year_topic_df
         )
 
         return sas_by_topic_md
@@ -1716,19 +1708,6 @@ class ReadingListProcessor():
         )
 
         return sas_by_rating_md
-    def __create_trend_by_year_topic_md(self, trend_by_year_topic_df : DataFrame) -> str:
-
-        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
-
-        id : str = "trend_by_year_topic"
-
-        trend_by_year_topic_md : str = self.__component_bag.md_factory.create_trend_by_year_topic_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
-            last_update = self.__setting_bag.markdown_last_update,
-            trend_by_year_topic_df = trend_by_year_topic_df
-        )
-
-        return trend_by_year_topic_md
     def __validate_summary(self) -> None:
         
         '''Raises an exception if __rl_summary is None.'''
@@ -1766,10 +1745,9 @@ class ReadingListProcessor():
         rl_md : str = self.__create_rl_md(rl_df = rl_df)
         rl_asrt_md : str = self.__component_bag.md_factory.create_rl_asrt_md(rl_asrt_df = rl_asrt_df)
         sas_by_month_md : str = self.__create_sas_md(sas_by_month_tpl = sas_by_month_tpl, sas_by_year_street_price_df = sas_by_year_street_price_df)
-        sas_by_topic_md : str = self.__create_sas_by_topic_md(sas_by_topic_df = sas_by_topic_df)
+        sas_by_topic_md : str = self.__create_sas_by_topic_md(sas_by_topic_df = sas_by_topic_df, trend_by_year_topic_df = trend_by_year_topic_df)
         sas_by_publisher_md : str = self.__create_sas_by_publisher_md(sas_by_publisher_tpl = sas_by_publisher_tpl)
         sas_by_rating_md : str = self.__create_sas_by_rating_md(sas_by_rating_df = sas_by_rating_df)
-        trend_by_year_topic_md : str = self.__create_trend_by_year_topic_md(trend_by_year_topic_df = trend_by_year_topic_df)
 
         self.__rl_summary = RLSummary(
             rl_df = rl_df,
@@ -1786,8 +1764,7 @@ class ReadingListProcessor():
             sas_md = sas_by_month_md,
             sas_by_topic_md = sas_by_topic_md,
             sas_by_publisher_md = sas_by_publisher_md,
-            sas_by_rating_md = sas_by_rating_md,
-            trend_by_year_topic_md = trend_by_year_topic_md
+            sas_by_rating_md = sas_by_rating_md
         )
     def process_rl(self) -> None:
 
@@ -1916,32 +1893,14 @@ class ReadingListProcessor():
         self.__validate_summary()
 
         options : list = self.__setting_bag.options_sas_by_topic
-        df : DataFrame = self.__rl_summary.sas_by_topic_df
+        df_1 : DataFrame = self.__rl_summary.sas_by_topic_df
+        df_2 : DataFrame = self.__rl_summary.trend_by_year_topic_df
         id : str = "sas_by_topic"
         content : str = self.__rl_summary.sas_by_topic_md
 
         if "display" in options:
-            self.__component_bag.displayer.display(df = df)
-
-        if "save" in options:
-            self.__save_and_log(id = id, content = content)
-    def process_trend_by_year_topic(self) -> None:
-
-        '''
-            Performs all the actions listed in __setting_bag.options_trend_by_year_topic.
-            
-            It raises an exception if the 'initialize' method has not been run yet.
-        '''
-
-        self.__validate_summary()
-
-        options : list = self.__setting_bag.options_trend_by_year_topic
-        df : DataFrame = self.__rl_summary.trend_by_year_topic_df
-        id : str = "trend_by_year_topic"
-        content : str = self.__rl_summary.trend_by_year_topic_md
-
-        if "display" in options:
-            self.__component_bag.displayer.display(df = df)
+            self.__component_bag.displayer.display(df = df_1)
+            self.__component_bag.displayer.display(df = df_2)
 
         if "save" in options:
             self.__save_and_log(id = id, content = content)
