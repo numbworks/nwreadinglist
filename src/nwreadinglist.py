@@ -1718,7 +1718,7 @@ class ReadingListProcessor():
         
         '''Raises an exception if __rl_summary is None.'''
 
-        if not self.__rl_summary:
+        if not hasattr(self, '_ReadingListProcessor__rl_summary'):
             raise Exception("Please run the 'initialize' method first.")
 
     def initialize(self) -> None:
