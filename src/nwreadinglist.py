@@ -1408,7 +1408,7 @@ class RLDataFrameFactory():
                     (sas_by_publisher_df[cn_avgrating] >= is_worth_min_avgrating), 
                     (sas_by_publisher_df[cn_ab_perc] >= is_worth_min_ab_perc))
                 ), "Yes", "No")
-
+        
         sas_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(sas_by_publisher_df = sas_by_publisher_df, is_worth_criteria = is_worth_criteria)
 
         return (sas_by_publisher_df, sas_by_publisher_flt_df)       
@@ -1503,6 +1503,17 @@ class RLMarkdownFactory():
         formatted_rl_df[cn_topic] = rl_df[cn_topic]   
 
         return formatted_rl_df
+    def __create_sas_by_publisher_footer(self, is_worth_min_books : int, is_worth_min_ab_perc : float, is_worth_min_avgrating : float) -> str:
+        
+        cn_books : str = "Books"
+        cn_ab_perc : str = "AB%"
+        cn_avgrating : str = "AvgRating"        
+
+        return str(
+            f"'Yes' if: "
+            f"{cn_books} >= '{is_worth_min_books}' & "
+            f"({cn_avgrating} >= '{is_worth_min_avgrating}' | {cn_ab_perc} >= '{is_worth_min_ab_perc}')"
+            )
 
     def create_rl_md(self, paragraph_title : str, last_update : datetime, rl_df : DataFrame) -> str:
 
@@ -1546,13 +1557,25 @@ class RLMarkdownFactory():
         md_content += ""
 
         return md_content
-    def create_sas_by_publisher_md(self, paragraph_title : str, last_update : datetime, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> str:
+    def create_sas_by_publisher_md(
+            self, 
+            paragraph_title : str, 
+            last_update : datetime, 
+            sas_by_publisher_tpl : Tuple[DataFrame, DataFrame],
+            is_worth_min_books : int, 
+            is_worth_min_ab_perc : float, 
+            is_worth_min_avgrating : float) -> str:
 
         '''Creates the expected Markdown content for the provided arguments.'''
 
         markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
         sas_by_publisher_flt_md : str = sas_by_publisher_tpl[1].to_markdown(index = False)
         sas_by_publisher_md : str = sas_by_publisher_tpl[0].to_markdown(index = False)
+        sas_by_publisher_footer : str = self.__create_sas_by_publisher_footer(
+            is_worth_min_books = is_worth_min_books,
+            is_worth_min_ab_perc = is_worth_min_ab_perc,
+            is_worth_min_avgrating = is_worth_min_avgrating
+        )
 
         md_content : str = markdown_header
         md_content += "\n"
@@ -1561,6 +1584,9 @@ class RLMarkdownFactory():
         md_content += ""
         md_content += "\n"
         md_content += sas_by_publisher_md
+        md_content += "\n"
+        md_content += ""
+        md_content += sas_by_publisher_footer
         md_content += "\n"
         md_content += ""
 
@@ -1800,7 +1826,10 @@ class ReadingListProcessor():
         sas_by_publisher_md : str = self.__component_bag.md_factory.create_sas_by_publisher_md(
             paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
             last_update = self.__setting_bag.md_last_update,
-            sas_by_publisher_tpl = sas_by_publisher_tpl
+            sas_by_publisher_tpl = sas_by_publisher_tpl,
+            is_worth_min_books = self.__setting_bag.is_worth_min_books,
+            is_worth_min_ab_perc = self.__setting_bag.is_worth_min_ab_perc,
+            is_worth_min_avgrating = self.__setting_bag.is_worth_min_avgrating            
         )
 
         return sas_by_publisher_md
