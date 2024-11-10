@@ -1376,142 +1376,23 @@ class RLDataFramer():
             return self.__add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend, maximum = maximum)
         else: 
             return self.__add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend)
-class MarkdownProcessor():
+class RLMarkdowner():
 
-    '''Collects all the logic related to the processing of Markdown content.'''
+    '''Collects all the logic related to Markdown creation out of Reading List dataframes.'''
 
-    __component_bag : ComponentBag
-    __setting_bag : SettingBag    
+    __markdown_helper : MarkdownHelper
+    __formatter : Formatter
+    # paragraph_title
+    
+    def __init__(
+            self,
+            markdown_helper : MarkdownHelper,
+            formatter : Formatter
+            ) -> None:
 
-    def __init__(self, component_bag : ComponentBag, setting_bag : SettingBag) -> None:
+        self.__markdown_helper = markdown_helper
+        self.__formatter = formatter
 
-        self.__component_bag = component_bag
-        self.__setting_bag = setting_bag
-
-    def __get_rl_asrt_md(self, rl_asrt_df : DataFrame) -> str:
-
-        '''Creates the Markdown content for a README file out of the provided dataframe.'''
-
-        rl_asrt_md : str = rl_asrt_df.to_markdown(index = False)
-
-        md_content : str = rl_asrt_md
-        md_content += "\n"
-
-        return md_content
-    def __get_rl_by_month_md(self, last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, use_smaller_font : bool) -> str:
-
-        '''Creates the Markdown content for a "Reading List By Month" file out of the provided dataframes.'''
-
-        copy_of_sas_by_month_df : DataFrame = sas_by_month_df.copy(deep=True)
-        copy_of_sas_by_year_street_price_df : DataFrame = sas_by_year_street_price_df.copy(deep=True)
-
-        if use_smaller_font:
-            copy_of_sas_by_month_df = self.__component_bag.markdown_helper.add_subscript_tags_to_dataframe(df = copy_of_sas_by_month_df)
-            copy_of_sas_by_year_street_price_df = self.__component_bag.markdown_helper.add_subscript_tags_to_dataframe(df = copy_of_sas_by_year_street_price_df)
-
-        md_paragraph_title : str = "Reading List By Month"
-
-        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-        sas_by_month_md : str = copy_of_sas_by_month_df.to_markdown(index = False)
-        sas_by_year_street_price_md  : str = copy_of_sas_by_year_street_price_df.to_markdown(index = False)
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += sas_by_month_md
-        md_content += "\n"
-        md_content += ""
-        md_content += "\n"
-        md_content += sas_by_year_street_price_md
-        md_content += "\n"
-        md_content += ""
-
-        return md_content
-    def __get_rl_by_publisher_md(self, last_update : datetime, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> str:
-
-        '''Creates the Markdown content for a "Reading List By Publisher" file out of the provided dataframes.'''
-
-        md_paragraph_title : str = "Reading List By Publisher"
-
-        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-        sas_by_publisher_flt_md : str = sas_by_publisher_tpl[1].to_markdown(index = False)
-        sas_by_publisher_md : str = sas_by_publisher_tpl[0].to_markdown(index = False)
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += sas_by_publisher_flt_md
-        md_content += "\n"
-        md_content += ""
-        md_content += "\n"
-        md_content += sas_by_publisher_md
-        md_content += "\n"
-        md_content += ""
-
-        return md_content
-    def __get_rl_by_rating_md(self, last_update : datetime, sas_by_rating_df : DataFrame) -> str:
-
-        '''Creates the Markdown content for a "Reading List By Rating" file out of the provided dataframe.'''
-
-        md_paragraph_title : str = "Reading List By Rating"
-
-        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-        sas_by_rating_md : str = sas_by_rating_df.to_markdown(index = False)
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += sas_by_rating_md
-        md_content += "\n"
-
-        return md_content
-    def __get_rl_by_topic_md(self, last_update : datetime, sas_by_topic_df : DataFrame) -> str:
-
-        '''Creates the Markdown content for a "Reading List By Topic" file out of the provided dataframe.'''
-
-        md_paragraph_title : str = "Reading List By Topic"
-
-        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-        sas_by_topic_md : str = sas_by_topic_df.to_markdown(index = False)
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += sas_by_topic_md
-        md_content += "\n"
-
-        return md_content
-    def __get_rl_md(self, last_update : datetime, rl_df : DataFrame, use_smaller_font : bool) -> str:
-
-        '''Creates the Markdown content for a "Reading List" file out of the provided dataframe.'''
-
-        md_paragraph_title : str = "Reading List"
-
-        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-        formatted_rl_df : DataFrame = self.__get_formatted_rl(rl_df = rl_df)
-
-        if use_smaller_font:
-            formatted_rl_df = self.__component_bag.markdown_helper.add_subscript_tags_to_dataframe(df = formatted_rl_df)    
-
-        formatted_rl_md : str = formatted_rl_df.to_markdown(index = False)
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += formatted_rl_md
-        md_content += "\n"
-
-        return md_content
-    def __get_rl_topic_trend_md(self, last_update : datetime, yt_by_topic_df : DataFrame) -> str:
-
-        '''Creates the Markdown content for a "Reading List Topic Trend" file out of the provided dataframe.'''
-
-        md_paragraph_title : str = "Reading List Topic Trend"
-
-        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-        yt_by_topic_md : str = yt_by_topic_df.to_markdown(index = False)
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += yt_by_topic_md
-        md_content += "\n"
-
-        return md_content
     def __get_formatted_rl(self, rl_df : DataFrame) -> DataFrame:
 
         '''
@@ -1540,136 +1421,137 @@ class MarkdownProcessor():
         formatted_rl_df[cn_pages] = rl_df[cn_pages]
         formatted_rl_df[cn_read_date] = rl_df[cn_read_date]   
         formatted_rl_df[cn_publisher] = rl_df[cn_publisher]   
-        formatted_rl_df[cn_rating] = rl_df[cn_rating].apply(lambda x : self.__component_bag.formatter.format_rating(rating = x))
+        formatted_rl_df[cn_rating] = rl_df[cn_rating].apply(lambda x : self.__formatter.format_rating(rating = x))
         formatted_rl_df[cn_topic] = rl_df[cn_topic]   
 
         return formatted_rl_df
 
-    def process_rl_asrt_md(self, rl_asrt_df : DataFrame) -> None:
+    def create_rl_md(self, last_update : datetime, rl_df : DataFrame, use_smaller_font : bool) -> str:
 
-        '''Performs all the tasks related to the README file.'''
+        '''Creates the Markdown content for a "Reading List" file out of the provided dataframe.'''
 
-        content : str = self.__get_rl_asrt_md(rl_asrt_df = rl_asrt_df)
+        md_paragraph_title : str = "Reading List"
 
-        if self.__setting_bag.show_rl_asrt_md:
-            self.__component_bag.logging_function(content)
-    def process_rl_by_month_md(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], sas_by_year_street_price_df : DataFrame) -> None:
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        formatted_rl_df : DataFrame = self.__get_formatted_rl(rl_df = rl_df)
 
-        '''Performs all the tasks related to the "Reading List By Month" file.''' 
+        if use_smaller_font:
+            formatted_rl_df = self.__markdown_helper.add_subscript_tags_to_dataframe(df = formatted_rl_df)    
 
-        content : str = self.__get_rl_by_month_md(      
-            last_update = self.__setting_bag.rl_last_update, 
-            sas_by_month_df = sas_by_month_tpl[0], 
-            sas_by_year_street_price_df = sas_by_year_street_price_df,
-            use_smaller_font = self.__setting_bag.rl_by_month_smaller_font)
+        formatted_rl_md : str = formatted_rl_df.to_markdown(index = False)
 
-        if self.__setting_bag.show_rl_by_month_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_by_month_file_name)
-            self.__component_bag.logging_function(file_name_content)    
-            self.__component_bag.logging_function(content)
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += formatted_rl_md
+        md_content += "\n"
 
-        if self.__setting_bag.save_rl_by_month_md:
-            file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.rl_by_month_file_name)
-            
-            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_rl_by_publisher_md(self, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> None:
+        return md_content
+    def create_rl_asrt_md(self, rl_asrt_df : DataFrame) -> str:
 
-        '''Performs all the tasks related to the "Reading List By Publisher" file.'''
+        '''Creates the Markdown content for a README file out of the provided dataframe.'''
 
-        content : str = self.__get_rl_by_publisher_md(      
-            last_update = self.__setting_bag.rl_last_update, 
-            sas_by_publisher_tpl = sas_by_publisher_tpl)
+        rl_asrt_md : str = rl_asrt_df.to_markdown(index = False)
 
-        if self.__setting_bag.show_rl_by_publisher_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_by_publisher_file_name)
-            self.__component_bag.logging_function(file_name_content)        
-            self.__component_bag.logging_function(content)
+        md_content : str = rl_asrt_md
+        md_content += "\n"
 
-        if self.__setting_bag.save_rl_by_publisher_md:
-            file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.rl_by_publisher_file_name)
-            
-            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_rl_by_rating_md(self, sas_by_rating_df : DataFrame) -> None:
+        return md_content
+    def create_sas_by_month_md(self, last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, use_smaller_font : bool) -> str:
 
-        '''Performs all the tasks related to the "Reading List By Rating" file.'''
+        '''Creates the Markdown content for a "Reading List By Month" file out of the provided dataframes.'''
 
-        content : str = self.__get_rl_by_rating_md(       
-            last_update = self.__setting_bag.rl_last_update, 
-            sas_by_rating_df = sas_by_rating_df)
+        copy_of_sas_by_month_df : DataFrame = sas_by_month_df.copy(deep=True)
+        copy_of_sas_by_year_street_price_df : DataFrame = sas_by_year_street_price_df.copy(deep=True)
 
-        if self.__setting_bag.show_rl_by_rating_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_by_rating_file_name)
-            self.__component_bag.logging_function(file_name_content)
-            self.__component_bag.logging_function(content)
+        if use_smaller_font:
+            copy_of_sas_by_month_df = self.__markdown_helper.add_subscript_tags_to_dataframe(df = copy_of_sas_by_month_df)
+            copy_of_sas_by_year_street_price_df = self.__markdown_helper.add_subscript_tags_to_dataframe(df = copy_of_sas_by_year_street_price_df)
 
-        if self.__setting_bag.save_rl_by_rating_md:            
-            file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.rl_by_rating_file_name)
-            
-            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_rl_by_topic_md(self, sas_by_topic_df : DataFrame) -> None:
+        md_paragraph_title : str = "Reading List By Month"
 
-        '''Performs all the tasks related to the "Reading List By Topic" file.'''
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        sas_by_month_md : str = copy_of_sas_by_month_df.to_markdown(index = False)
+        sas_by_year_street_price_md  : str = copy_of_sas_by_year_street_price_df.to_markdown(index = False)
 
-        content : str = self.__get_rl_by_topic_md( 
-            last_update = self.__setting_bag.rl_last_update, 
-            sas_by_topic_df = sas_by_topic_df)
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += sas_by_month_md
+        md_content += "\n"
+        md_content += ""
+        md_content += "\n"
+        md_content += sas_by_year_street_price_md
+        md_content += "\n"
+        md_content += ""
 
-        if self.__setting_bag.show_rl_by_topic_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_by_topic_file_name)
-            self.__component_bag.logging_function(file_name_content)
-            self.__component_bag.logging_function(content)
+        return md_content
+    def create_sas_by_publisher_md(self, last_update : datetime, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> str:
 
-        if self.__setting_bag.save_rl_by_topic_md:
-            file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.rl_by_topic_file_name)
-            
-            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_rl_by_topic_trend_md(self, yt_by_topic_df : DataFrame) -> None:
+        '''Creates the Markdown content for a "Reading List By Publisher" file out of the provided dataframes.'''
 
-        '''Performs all the tasks related to the "Reading List Topic Trend" file.'''
+        md_paragraph_title : str = "Reading List By Publisher"
 
-        content : str = self.__get_rl_topic_trend_md(
-            last_update = self.__setting_bag.rl_last_update, 
-            yt_by_topic_df = yt_by_topic_df)
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        sas_by_publisher_flt_md : str = sas_by_publisher_tpl[1].to_markdown(index = False)
+        sas_by_publisher_md : str = sas_by_publisher_tpl[0].to_markdown(index = False)
 
-        if self.__setting_bag.show_rl_topic_trend_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_topic_trend_file_name)           
-            self.__component_bag.logging_function(file_name_content)
-            self.__component_bag.logging_function(content)
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += sas_by_publisher_flt_md
+        md_content += "\n"
+        md_content += ""
+        md_content += "\n"
+        md_content += sas_by_publisher_md
+        md_content += "\n"
+        md_content += ""
 
-        if self.__setting_bag.save_rl_topic_trend_md:           
-            file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.rl_topic_trend_file_name)
-            
-            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_rl_md(self, rl_df : DataFrame) -> None:
+        return md_content
+    def create_sas_by_rating_md(self, last_update : datetime, sas_by_rating_df : DataFrame) -> str:
 
-        '''Performs all the tasks related to the "Reading List" file.'''
+        '''Creates the Markdown content for a "Reading List By Rating" file out of the provided dataframe.'''
 
-        content : str = self.__get_rl_md(
-            last_update = self.__setting_bag.rl_last_update, 
-            rl_df = rl_df,
-            use_smaller_font = self.__setting_bag.rl_smaller_font)
+        md_paragraph_title : str = "Reading List By Rating"
 
-        if self.__setting_bag.show_rl_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_file_name)
-            self.__component_bag.logging_function(file_name_content)
-            self.__component_bag.logging_function(content)
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        sas_by_rating_md : str = sas_by_rating_df.to_markdown(index = False)
 
-        if self.__setting_bag.save_rl_md:
-            file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.rl_file_name)
-            
-            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += sas_by_rating_md
+        md_content += "\n"
+
+        return md_content
+    def create_sas_by_topic_md(self, last_update : datetime, sas_by_topic_df : DataFrame) -> str:
+
+        '''Creates the Markdown content for a "Reading List By Topic" file out of the provided dataframe.'''
+
+        md_paragraph_title : str = "Reading List By Topic"
+
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        sas_by_topic_md : str = sas_by_topic_df.to_markdown(index = False)
+
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += sas_by_topic_md
+        md_content += "\n"
+
+        return md_content
+    def create_trend_by_year_topic_md(self, last_update : datetime, trend_by_year_topic_df : DataFrame) -> str:
+
+        '''Creates the Markdown content for a "Reading List Topic Trend" file out of the provided dataframe.'''
+
+        md_paragraph_title : str = "Reading List Topic Trend"
+
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        trend_by_year_topic_md : str = trend_by_year_topic_df.to_markdown(index = False)
+
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += trend_by_year_topic_md
+        md_content += "\n"
+
+        return md_content
+
+
 
 # MAIN
 if __name__ == "__main__":

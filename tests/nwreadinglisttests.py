@@ -15,7 +15,7 @@ from unittest.mock import Mock, call, patch
 # LOCAL MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
 from nwreadinglist import DefaultPathProvider, YearProvider, SettingBag, ComponentBag
-from nwreadinglist import RLDataFramer, MarkdownProcessor
+from nwreadinglist import RLDataFramer, RLMarkdowner
 from nwshared import MarkdownHelper, Formatter, FilePathManager
 
 # SUPPORT METHODS
@@ -83,9 +83,9 @@ class ObjectMother():
             component_bag = ComponentBag(), 
             setting_bag = ObjectMother().create_setting_bag())
     @staticmethod
-    def create_markdown_processor() -> MarkdownProcessor:
+    def create_markdown_processor() -> RLMarkdowner:
 
-        return MarkdownProcessor(
+        return RLMarkdowner(
             component_bag = ComponentBag(), 
             setting_bag = ObjectMother().create_setting_bag())
       
@@ -322,21 +322,21 @@ class ObjectMother():
         return (sas_by_rating_df, expected)
 
     @staticmethod
-    def create_service_objects_for_readmemd(show_readme_md : bool) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
+    def create_service_objects_for_readmemd(show_readme_md : bool) -> Tuple[ComponentBag, SettingBag, RLMarkdowner]:
 
         component_bag : Mock = Mock()
         
         setting_bag : Mock = Mock()
         setting_bag.show_readme_md = show_readme_md
 
-        markdown_processor : MarkdownProcessor = MarkdownProcessor(
+        markdown_processor : RLMarkdowner = RLMarkdowner(
 			component_bag = component_bag, 
 			setting_bag = setting_bag
 			)        
 
         return (component_bag, setting_bag, markdown_processor)    
     @staticmethod
-    def create_service_objects_for_rlbymonthmd(rl_by_month_smaller_font : bool) -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
+    def create_service_objects_for_rlbymonthmd(rl_by_month_smaller_font : bool) -> Tuple[ComponentBag, SettingBag, RLMarkdowner]:
 
         component_bag : Mock = Mock()
         component_bag.logging_function = Mock()
@@ -352,14 +352,14 @@ class ObjectMother():
         setting_bag.save_rl_by_month_md = True
         setting_bag.rl_by_month_smaller_font = rl_by_month_smaller_font
 
-        markdown_processor : MarkdownProcessor = MarkdownProcessor(
+        markdown_processor : RLMarkdowner = RLMarkdowner(
 			component_bag = component_bag, 
 			setting_bag = setting_bag
 			)        
 
         return (component_bag, setting_bag, markdown_processor)    
     @staticmethod    
-    def create_service_objects_for_rlbyratingmd() -> Tuple[ComponentBag, SettingBag, MarkdownProcessor]:
+    def create_service_objects_for_rlbyratingmd() -> Tuple[ComponentBag, SettingBag, RLMarkdowner]:
 
         component_bag : Mock = Mock()
         component_bag.logging_function = Mock()
@@ -374,7 +374,7 @@ class ObjectMother():
         setting_bag.show_rl_by_rating_md = True
         setting_bag.save_rl_by_rating_md = True
 
-        markdown_processor : MarkdownProcessor = MarkdownProcessor(
+        markdown_processor : RLMarkdowner = RLMarkdowner(
 			component_bag = component_bag, 
 			setting_bag = setting_bag
 			)        
