@@ -12,6 +12,7 @@ import os
 import pandas as pd
 from dataclasses import dataclass
 from datetime import datetime
+from enum import StrEnum
 from numpy import float64
 from pandas import DataFrame
 from pandas import Series
@@ -32,6 +33,61 @@ class MDInfo():
     id : str
     file_name : str
     paragraph_title : str
+@dataclass(frozen = True)
+class RLSummary():
+
+    '''Collects all the dataframes and markdowns.'''
+
+    rl_df : DataFrame
+    rl_asrt_df : DataFrame
+    rl_by_kbsize_df : DataFrame
+    sas_by_month_tpl : Tuple[DataFrame, DataFrame]
+    sas_by_year_street_price_df : DataFrame
+    sas_by_topic_df : DataFrame
+    sas_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]
+    sas_by_rating_df : DataFrame
+    trend_by_year_topic_df : DataFrame
+
+    rl_md : str
+    rl_asrt_md : str
+    sas_md : str
+    sas_by_topic_md : str
+    sas_by_publisher_md : str
+    sas_by_rating_md : str
+class RLCN(StrEnum):
+    
+    '''Collects all the column names used by RLDataFrameFactory.'''
+    
+    MONTH = "Month"
+    TREND = "↕"
+    TITLE = "Title"
+    YEAR = "Year"
+    TYPE = "Type"
+    FORMAT = "Format"
+    LANGUAGE = "Language"
+    PAGES = "Pages"
+    READDATE = "ReadDate"
+    READYEAR = "ReadYear"
+    READMONTH = "ReadMonth"
+    WORTHBUYING = "WorthBuying"
+    WORTHREADINGAGAIN = "WorthReadingAgain"
+    PUBLISHER = "Publisher"
+    RATING = "Rating"
+    STREETPRICE = "StreetPrice"
+    CURRENCY = "Currency"
+    COMMENT = "Comment"
+    TOPIC = "Topic"
+    ONGOODREADS = "OnGoodreads"
+    COMMENTLENGHT = "CommentLenght"
+    KBSIZE = "KBSize"
+    BOOKS = "Books"
+    A4SHEETS = "A4Sheets"
+    ABPERC = "AB%"
+    AVGRATING = "AvgRating"
+    ISWORTH = "IsWorth"
+    YEARS = "Years"
+    TOTALSPEND = "TotalSpend"
+    LASTUPDATE = "LastUpdate"
 class SettingBag():
 
     '''Represents a collection of settings.'''
@@ -152,27 +208,6 @@ class SettingBag():
         self.md_last_update = md_last_update
         self.md_infos = md_infos
         self.definitions = definitions
-@dataclass(frozen = True)
-class RLSummary():
-
-    '''Collects all the dataframes and markdowns.'''
-
-    rl_df : DataFrame
-    rl_asrt_df : DataFrame
-    rl_by_kbsize_df : DataFrame
-    sas_by_month_tpl : Tuple[DataFrame, DataFrame]
-    sas_by_year_street_price_df : DataFrame
-    sas_by_topic_df : DataFrame
-    sas_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]
-    sas_by_rating_df : DataFrame
-    trend_by_year_topic_df : DataFrame
-
-    rl_md : str
-    rl_asrt_md : str
-    sas_md : str
-    sas_by_topic_md : str
-    sas_by_publisher_md : str
-    sas_by_rating_md : str
 
 # STATIC CLASSES
 class _MessageCollection():
@@ -239,17 +274,16 @@ class RLDataFrameHelper():
                 1	2	    0 (0)
                 ... ...     ...    
         '''
-
-        cn_month : str = "Month"    
+  
         default_df : DataFrame = pd.DataFrame(
             {
-                f"{cn_month}": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                f"{RLCN.MONTH}": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
                 f"{str(read_year)}": ["0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)"]
             },
             index=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
         )
 
-        default_df = default_df.astype({cn_month: int})
+        default_df = default_df.astype({RLCN.MONTH: int})
         default_df = default_df.astype({str(read_year): str})
 
         return default_df
@@ -300,10 +334,8 @@ class RLDataFrameHelper():
             "↕1"    => "↕"
         '''
 
-        cn_trend : str = "↕"
-
-        if column_name.startswith(cn_trend):
-            return cn_trend
+        if column_name.startswith(RLCN.TREND):
+            return RLCN.TREND
         
         return column_name
     def extract_pages_from_trend(self, trend : str) -> int:
@@ -366,8 +398,7 @@ class RLDataFrameHelper():
 
         '''Create a dataframe out of the provided list of Read Years.'''
 
-        cn_read_year : str = "ReadYear"
-        read_years_df : DataFrame = pd.DataFrame(data = read_years, columns = [cn_read_year])
+        read_years_df : DataFrame = pd.DataFrame(data = read_years, columns = [RLCN.READYEAR])
 
         return read_years_df
 class RLDataFrameFactory():
@@ -394,26 +425,26 @@ class RLDataFrameFactory():
         '''Enforces definition for the provided dataframe.'''
 
         column_names : list[str] = []
-        column_names.append("Title")                # [0], str
-        column_names.append("Year")                 # [1], int
-        column_names.append("Type")                 # [2], str
-        column_names.append("Format")               # [3], str
-        column_names.append("Language")             # [4], str
-        column_names.append("Pages")                # [5], int
-        column_names.append("ReadDate")             # [6], date
-        column_names.append("ReadYear")             # [7], int
-        column_names.append("ReadMonth")            # [8], int    
-        column_names.append("WorthBuying")          # [9], str
-        column_names.append("WorthReadingAgain")    # [10], str
-        column_names.append("Publisher")            # [11], str
-        column_names.append("Rating")               # [12], int
-        column_names.append("StreetPrice")          # [13], float
-        column_names.append("Currency")             # [14], str
-        column_names.append("Comment")              # [15], str
-        column_names.append("Topic")                # [16], str
-        column_names.append("OnGoodreads")          # [17], str
-        column_names.append("CommentLenght")        # [18], int
-        column_names.append("KBSize")               # [19], int
+        column_names.append(RLCN.TITLE)             # [0], str
+        column_names.append(RLCN.YEAR)              # [1], int
+        column_names.append(RLCN.TYPE)              # [2], str
+        column_names.append(RLCN.FORMAT)            # [3], str
+        column_names.append(RLCN.LANGUAGE)          # [4], str
+        column_names.append(RLCN.PAGES)             # [5], int
+        column_names.append(RLCN.READDATE)          # [6], date
+        column_names.append(RLCN.READYEAR)          # [7], int
+        column_names.append(RLCN.READMONTH)         # [8], int    
+        column_names.append(RLCN.WORTHBUYING)       # [9], str
+        column_names.append(RLCN.WORTHREADINGAGAIN) # [10], str
+        column_names.append(RLCN.PUBLISHER)         # [11], str
+        column_names.append(RLCN.RATING)            # [12], int
+        column_names.append(RLCN.STREETPRICE)       # [13], float
+        column_names.append(RLCN.CURRENCY)          # [14], str
+        column_names.append(RLCN.COMMENT)           # [15], str
+        column_names.append(RLCN.TOPIC)             # [16], str
+        column_names.append(RLCN.ONGOODREADS)       # [17], str
+        column_names.append(RLCN.COMMENTLENGHT)     # [18], int
+        column_names.append(RLCN.KBSIZE)            # [19], int
 
         rl_df = rl_df[column_names]
         rl_df = rl_df.replace(to_replace = excel_null_value, value = np.nan)
@@ -493,15 +524,13 @@ class RLDataFrameFactory():
                     11	12	    11 (3019)
         '''
 
-        cn_month : str = "Month"
-
-        if sa_by_year_df[cn_month].count() != 12:
+        if sa_by_year_df[RLCN.MONTH].count() != 12:
 
             default_df : DataFrame = self.__df_helper.get_default_sa_by_year(read_year = read_year)
-            missing_df : DataFrame = default_df.loc[~default_df[cn_month].astype(str).isin(sa_by_year_df[cn_month].astype(str))]
+            missing_df : DataFrame = default_df.loc[~default_df[RLCN.MONTH].astype(str).isin(sa_by_year_df[RLCN.MONTH].astype(str))]
 
             completed_df : DataFrame = pd.concat([sa_by_year_df, missing_df], ignore_index = True)
-            completed_df = completed_df.sort_values(by = cn_month, ascending = [True])
+            completed_df = completed_df.sort_values(by = RLCN.MONTH, ascending = [True])
             completed_df = completed_df.reset_index(drop = True)
 
             return completed_df
@@ -546,32 +575,26 @@ class RLDataFrameFactory():
                 ... ...     ...
         '''
 
-        cn_readyear : str = "ReadYear"
-        condition : Series = (rl_df[cn_readyear] == read_year)
+        condition : Series = (rl_df[RLCN.READYEAR] == read_year)
         filtered_df : DataFrame = rl_df.loc[condition]
 
-        cn_readmonth : str = "ReadMonth" 
-        cn_title : str = "Title"
-        cn_books : str = "Books"
-        by_books_df : DataFrame = filtered_df.groupby([cn_readmonth])[cn_title].size().sort_values(ascending = [False]).reset_index(name = cn_books)
-        by_books_df = by_books_df.sort_values(by = cn_readmonth).reset_index(drop = True)   
+        by_books_df : DataFrame = filtered_df.groupby([RLCN.READMONTH])[RLCN.TITLE].size().sort_values(ascending = [False]).reset_index(name = RLCN.BOOKS)
+        by_books_df = by_books_df.sort_values(by = RLCN.READMONTH).reset_index(drop = True)   
     
-        cn_pages : str = "Pages"
-        by_pages_df : DataFrame = filtered_df.groupby([cn_readmonth])[cn_pages].sum().sort_values(ascending = [False]).reset_index(name = cn_pages)
-        by_pages_df = by_pages_df.sort_values(by = cn_readmonth).reset_index(drop = True)
+        by_pages_df : DataFrame = filtered_df.groupby([RLCN.READMONTH])[RLCN.PAGES].sum().sort_values(ascending = [False]).reset_index(name = RLCN.PAGES)
+        by_pages_df = by_pages_df.sort_values(by = RLCN.READMONTH).reset_index(drop = True)
 
         sa_by_year_df : DataFrame = pd.merge(
             left = by_books_df, 
             right = by_pages_df, 
             how = "inner", 
-            left_on = cn_readmonth, 
-            right_on = cn_readmonth)
-        sa_by_year_df[read_year] = sa_by_year_df.apply(lambda x : self.__df_helper.format_reading_status(books = x[cn_books], pages = x[cn_pages]), axis = 1) 
+            left_on = RLCN.READMONTH, 
+            right_on = RLCN.READMONTH)
+        sa_by_year_df[read_year] = sa_by_year_df.apply(lambda x : self.__df_helper.format_reading_status(books = x[RLCN.BOOKS], pages = x[RLCN.PAGES]), axis = 1) 
 
-        cn_month : str = "Month"
-        sa_by_year_df[cn_month] = sa_by_year_df[cn_readmonth]
-        sa_by_year_df = sa_by_year_df[[cn_month, read_year]]
-        sa_by_year_df = sa_by_year_df.astype({cn_month: int})
+        sa_by_year_df[RLCN.MONTH] = sa_by_year_df[RLCN.READMONTH]
+        sa_by_year_df = sa_by_year_df[[RLCN.MONTH, read_year]]
+        sa_by_year_df = sa_by_year_df.astype({RLCN.MONTH: int})
         sa_by_year_df = sa_by_year_df.astype({read_year: str})    
         sa_by_year_df.columns = sa_by_year_df.columns.astype(str) # 2016 => "2016"
 
@@ -628,14 +651,13 @@ class RLDataFrameFactory():
         
         actual_df : DataFrame = sas_by_month_df.copy(deep = True)
         sa_by_year_df : DataFrame = self.__create_sa_by_year(rl_df = rl_df, read_year = read_years[i])
-
-        cn_month : str = "Month"      
+    
         expansion_df = pd.merge(
             left = actual_df, 
             right = sa_by_year_df, 
             how = "inner", 
-            left_on = cn_month, 
-            right_on = cn_month)
+            left_on = RLCN.MONTH, 
+            right_on = RLCN.MONTH)
 
         if add_trend == True:
 
@@ -645,10 +667,10 @@ class RLDataFrameFactory():
             
             expansion_df[cn_trend] = expansion_df.apply(lambda x : self.__df_helper.get_trend_by_books(trend_1 = x[cn_trend_1], trend_2 = x[cn_trend_2]), axis = 1) 
 
-            new_column_names : list = [cn_month, cn_trend_1, cn_trend, cn_trend_2]   # for ex. ["Month", "2016", "↕", "2017"]
+            new_column_names : list = [RLCN.MONTH, cn_trend_1, cn_trend, cn_trend_2]   # for ex. ["Month", "2016", "↕", "2017"]
             expansion_df = expansion_df.reindex(columns = new_column_names)
 
-            shared_columns : list = [cn_month, str(read_years[i-1])] # ["Month", "2016"]
+            shared_columns : list = [RLCN.MONTH, str(read_years[i-1])] # ["Month", "2016"]
             actual_df = pd.merge(
                 left = actual_df, 
                 right = expansion_df, 
@@ -744,20 +766,14 @@ class RLDataFrameFactory():
 
         '''Groups books according to the provided column name. The book titles act as unique identifiers.'''
 
-        cn_uniqueitemidentifier : str = "Title"
-        cn_items : str = "Books"
-
-        grouped_df : DataFrame = rl_df.groupby([column_name])[cn_uniqueitemidentifier].size().sort_values(ascending = [False]).reset_index(name = cn_items)
+        grouped_df : DataFrame = rl_df.groupby([column_name])[RLCN.TITLE].size().sort_values(ascending = [False]).reset_index(name = RLCN.BOOKS)
         
         return grouped_df
     def __group_books_by_multiple_columns(self, rl_df : DataFrame, column_names : list[str]) -> DataFrame:
 
         '''Groups books according to the provided column names (note: order matters). The book titles act as unique identifiers.'''
 
-        cn_uniqueitemidentifier : str = "Title"
-        cn_items : str = "Books"
-
-        grouped_df : DataFrame = rl_df.groupby(by = column_names)[cn_uniqueitemidentifier].count().reset_index(name = cn_items)
+        grouped_df : DataFrame = rl_df.groupby(by = column_names)[RLCN.TITLE].count().reset_index(name = RLCN.BOOKS)
         grouped_df = grouped_df.sort_values(by = column_names, ascending = [True, True])
 
         return grouped_df
@@ -775,10 +791,7 @@ class RLDataFrameFactory():
 
         copied_df : DataFrame = df.copy(deep = True)
 
-        cn_kbsize : str = "KBSize"
-        cn_a4sheets : str = "A4Sheets"
-
-        copied_df[cn_a4sheets] = copied_df[cn_kbsize].apply(
+        copied_df[RLCN.A4SHEETS] = copied_df[RLCN.KBSIZE].apply(
             lambda x : self.__converter.convert_word_count_to_A4_sheets(word_count = x))
 
         return copied_df
@@ -793,21 +806,13 @@ class RLDataFrameFactory():
         '''
 
         sliced_df : DataFrame = rl_df.copy(deep=True)
-
-        cn_title : str = "Title"
-        cn_readyear : str = "ReadYear"
-        cn_topic : str = "Topic"
-        cn_publisher : str = "Publisher"
-        cn_rating : str = "Rating"
-        cn_kbsize : str = "KBSize"
-
-        sliced_df = sliced_df[[cn_title, cn_readyear, cn_topic, cn_publisher, cn_rating, cn_kbsize]]
+        sliced_df = sliced_df[[RLCN.TITLE, RLCN.READYEAR, RLCN.TOPIC, RLCN.PUBLISHER, RLCN.RATING, RLCN.KBSIZE]]
 
         if remove_if_zero:
-            condition : Series = (sliced_df[cn_kbsize] != 0)
+            condition : Series = (sliced_df[RLCN.KBSIZE] != 0)
             sliced_df = sliced_df.loc[condition]
 
-        sliced_df = sliced_df.sort_values(by = cn_kbsize, ascending = ascending).reset_index(drop = True)   
+        sliced_df = sliced_df.sort_values(by = RLCN.KBSIZE, ascending = ascending).reset_index(drop = True)   
         sliced_df = self.__add_a4sheets_column(df = sliced_df)
 
         return sliced_df    
@@ -815,8 +820,7 @@ class RLDataFrameFactory():
 
         '''Creates a dataframe of unique topics out of the provided dataframe.'''
 
-        cn_topic : str = "Topic"
-        topics_df : DataFrame = pd.DataFrame(data = df[cn_topic].unique(), columns = [cn_topic])
+        topics_df : DataFrame = pd.DataFrame(data = df[RLCN.TOPIC].unique(), columns = [RLCN.TOPIC])
         
         return topics_df
     def __create_default_topic_read_year_dataframe(self, topics_df : DataFrame, read_years_df : DataFrame) -> DataFrame:
@@ -856,11 +860,7 @@ class RLDataFrameFactory():
             from "int" to "float" in order to host it. Casting it back to "int" is therefore necessary.
         '''
 
-        cn_topic : str = "Topic"
-        cn_read_year : str = "ReadYear"
-        cn_books : str = "Books"    
-
-        books_by_topic_read_year_df : DataFrame = self.__group_books_by_multiple_columns(rl_df = rl_df, column_names = [cn_topic, cn_read_year])
+        books_by_topic_read_year_df : DataFrame = self.__group_books_by_multiple_columns(rl_df = rl_df, column_names = [RLCN.TOPIC, RLCN.READYEAR])
 
         topics_df : DataFrame = self.__create_topics_dataframe(df = rl_df)
         read_years_df : DataFrame = self.__df_helper.create_read_years_dataframe(read_years = read_years)
@@ -871,10 +871,10 @@ class RLDataFrameFactory():
             right = default_df,
             how = "outer")
 
-        completed_df.sort_values(by = [cn_topic, cn_read_year], ascending = [True, True], inplace = True)
+        completed_df.sort_values(by = [RLCN.TOPIC, RLCN.READYEAR], ascending = [True, True], inplace = True)
         completed_df.reset_index(inplace = True, drop = True)
         completed_df.fillna(value = 0, inplace = True)
-        completed_df = completed_df.astype({cn_books: int})
+        completed_df = completed_df.astype({RLCN.BOOKS: int})
 
         return completed_df
     def __pivot_column_values_to_cell(self, df : DataFrame, cn_index : str, cn_values : str) -> DataFrame:
@@ -941,10 +941,9 @@ class RLDataFrameFactory():
         now_year : int = now.year
         now_month : int = now.month	
         cn_year : str = str(now_year)
-        cn_month : str = "Month"
         new_value : str = ""
 
-        condition : Series = (sas_by_month_upd_df[cn_month] > now_month)
+        condition : Series = (sas_by_month_upd_df[RLCN.MONTH] > now_month)
         sas_by_month_upd_df[cn_year] = np.where(condition, new_value, sas_by_month_upd_df[cn_year])
             
         idx_year : Any = sas_by_month_upd_df.columns.get_loc(cn_year)
@@ -1051,18 +1050,15 @@ class RLDataFrameFactory():
 
         sas_by_street_price_df : DataFrame = rl_df.copy(deep=True)
 
-        cn_readyear : str = "ReadYear"
-        cn_streetprice : str = "StreetPrice"
-
-        condition : Series = (sas_by_street_price_df[cn_readyear].isin(read_years))
+        condition : Series = (sas_by_street_price_df[RLCN.READYEAR].isin(read_years))
         sas_by_street_price_df = sas_by_street_price_df.loc[condition]
-        sas_by_street_price_df = sas_by_street_price_df[[cn_readyear, cn_streetprice]]
+        sas_by_street_price_df = sas_by_street_price_df[[RLCN.READYEAR, RLCN.STREETPRICE]]
 
-        sas_by_street_price_df = sas_by_street_price_df.groupby([cn_readyear])[cn_streetprice].sum().sort_values(ascending = [False]).reset_index(name = cn_streetprice)
-        sas_by_street_price_df = sas_by_street_price_df.sort_values(by = cn_readyear, ascending = [True])
+        sas_by_street_price_df = sas_by_street_price_df.groupby([RLCN.READYEAR])[RLCN.STREETPRICE].sum().sort_values(ascending = [False]).reset_index(name = RLCN.STREETPRICE)
+        sas_by_street_price_df = sas_by_street_price_df.sort_values(by = RLCN.READYEAR, ascending = [True])
         sas_by_street_price_df = sas_by_street_price_df.reset_index(drop = True)
 
-        sas_by_street_price_df = sas_by_street_price_df.set_index(cn_readyear).transpose()
+        sas_by_street_price_df = sas_by_street_price_df.set_index(RLCN.READYEAR).transpose()
         sas_by_street_price_df.reset_index(drop = True, inplace = True)
         sas_by_street_price_df.rename_axis(None, axis = 1, inplace = True)
         sas_by_street_price_df.columns = sas_by_street_price_df.columns.astype(str)
@@ -1081,14 +1077,10 @@ class RLDataFrameFactory():
         
         '''Creates a footer message for sas_by_publisher.'''
 
-        cn_books : str = "Books"
-        cn_ab_perc : str = "AB%"
-        cn_avgrating : str = "AvgRating"
-
         sas_by_publisher_footer : str = str(
             f"'Yes' if "
-            f"'{cn_books}' >= '{is_worth_min_books}' & "
-            f"('{cn_avgrating}' >= '{is_worth_min_avgrating}' | '{cn_ab_perc}' >= '{is_worth_min_ab_perc}')"
+            f"'{RLCN.BOOKS}' >= '{is_worth_min_books}' & "
+            f"('{RLCN.AVGRATING}' >= '{is_worth_min_avgrating}' | '{RLCN.ABPERC}' >= '{is_worth_min_ab_perc}')"
             )
 
         return sas_by_publisher_footer
@@ -1103,8 +1095,7 @@ class RLDataFrameFactory():
 
         filtered_df : DataFrame = sas_by_publisher_df.copy(deep = True)
 
-        cn_isworth : str = "IsWorth"
-        condition : Series = (filtered_df[cn_isworth] == is_worth_criteria)
+        condition : Series = (filtered_df[RLCN.ISWORTH] == is_worth_criteria)
         filtered_df = filtered_df.loc[condition]
         
         filtered_df.reset_index(drop = True, inplace = True)
@@ -1135,22 +1126,10 @@ class RLDataFrameFactory():
             0	8	    234	    62648	$6332.01    2023-09-23
         '''
 
-        cn_read_year : str = "ReadYear"
-        count_years : int = rl_df[cn_read_year].unique().size
-
-        cn_title : str = "Title"
-        count_books : int = rl_df[cn_title].size
-
-        cn_pages : str = "Pages"
-        sum_pages : int = rl_df[cn_pages].sum()
-
-        cn_street_price : str = "StreetPrice"
-        sum_street_price : float64 = rl_df[cn_street_price].sum()
-
-        cn_years : str = "Years"
-        cn_books : str = "Books"
-        cn_total_spend : str = "TotalSpend"
-        cn_last_update : str = "LastUpdate"
+        count_years : int = rl_df[RLCN.READYEAR].unique().size
+        count_books : int = rl_df[RLCN.TITLE].size
+        sum_pages : int = rl_df[RLCN.PAGES].sum()
+        sum_street_price : float64 = rl_df[RLCN.STREETPRICE].sum()
 
         total_spend_str : str = self.__formatter.format_usd_amount(
             amount = sum_street_price, 
@@ -1159,11 +1138,11 @@ class RLDataFrameFactory():
         last_update_str : str = self.__formatter.format_to_iso_8601(dt = now)
 
         rl_asrt_dict : dict = {
-            f"{cn_years}": f"{str(count_years)}",
-            f"{cn_books}": f"{str(count_books)}",
-            f"{cn_pages}": f"{str(sum_pages)}",
-            f"{cn_total_spend}": f"{total_spend_str}",
-            f"{cn_last_update}": f"{last_update_str}"
+            f"{RLCN.YEARS}": f"{str(count_years)}",
+            f"{RLCN.BOOKS}": f"{str(count_books)}",
+            f"{RLCN.PAGES}": f"{str(sum_pages)}",
+            f"{RLCN.TOTALSPEND}": f"{total_spend_str}",
+            f"{RLCN.LASTUPDATE}": f"{last_update_str}"
             }
 
         rl_asrt_df : DataFrame = pd.DataFrame(rl_asrt_dict, index=[0])
@@ -1287,35 +1266,27 @@ class RLDataFrameFactory():
                 ... ...                     ...     ...     ...
         """
 
-        cn_title : str = "Title"
-        cn_topic : str = "Topic"  
-        cn_books : str = "Books"
-        by_books_df : DataFrame = rl_df.groupby([cn_topic])[cn_title].size().sort_values(ascending = False).reset_index(name = cn_books)
-
-        cn_pages = "Pages"
-        by_pages_df : DataFrame = rl_df.groupby([cn_topic])[cn_pages].sum().sort_values(ascending = False).reset_index(name = cn_pages)
+        by_books_df : DataFrame = rl_df.groupby([RLCN.TOPIC])[RLCN.TITLE].size().sort_values(ascending = False).reset_index(name = RLCN.BOOKS)
+        by_pages_df : DataFrame = rl_df.groupby([RLCN.TOPIC])[RLCN.PAGES].sum().sort_values(ascending = False).reset_index(name = RLCN.PAGES)
 
         sas_by_topic_df : DataFrame = pd.merge(
             left = by_books_df, 
             right = by_pages_df, 
             how = "inner", 
-            left_on = cn_topic, 
-            right_on = cn_topic)
+            left_on = RLCN.TOPIC, 
+            right_on = RLCN.TOPIC)
 
-        cn_kbsize = "KBSize"
-        by_kbsize_df : DataFrame = rl_df.groupby([cn_topic])[cn_kbsize].sum().sort_values(ascending = False).reset_index(name = cn_kbsize)
+        by_kbsize_df : DataFrame = rl_df.groupby([RLCN.TOPIC])[RLCN.KBSIZE].sum().sort_values(ascending = False).reset_index(name = RLCN.KBSIZE)
 
         sas_by_topic_df = pd.merge(
             left = sas_by_topic_df, 
             right = by_kbsize_df, 
             how = "inner", 
-            left_on = cn_topic, 
-            right_on = cn_topic)
+            left_on = RLCN.TOPIC, 
+            right_on = RLCN.TOPIC)
         
         sas_by_topic_df = self.__add_a4sheets_column(df = sas_by_topic_df)
-
-        cn_a4sheets : str = "A4Sheets"
-        sas_by_topic_df = sas_by_topic_df[[cn_topic, cn_books, cn_pages, cn_a4sheets]]
+        sas_by_topic_df = sas_by_topic_df[[RLCN.TOPIC, RLCN.BOOKS, RLCN.PAGES, RLCN.A4SHEETS]]
 
         return sas_by_topic_df
     def create_sas_by_publisher_tpl(
@@ -1377,49 +1348,38 @@ class RLDataFrameFactory():
                     1	O'Reilly	34	    4           9.43    2.18	    No
                     ... ...         ...     ...         ...     ...         ...
         """
-
-        cn_publisher : str = "Publisher"
-        cn_title : str = "Title"    
-        cn_books : str = "Books"
-        by_books_df : DataFrame = rl_df.groupby([cn_publisher])[cn_title].size().sort_values(ascending = [False]).reset_index(name = cn_books)
-        
-        cn_kbsize = "KBSize"
-        by_kbsize_df : DataFrame = rl_df.groupby([cn_publisher])[cn_kbsize].sum().sort_values(ascending = False).reset_index(name = cn_kbsize)
+  
+        by_books_df : DataFrame = rl_df.groupby([RLCN.PUBLISHER])[RLCN.TITLE].size().sort_values(ascending = [False]).reset_index(name = RLCN.BOOKS)
+        by_kbsize_df : DataFrame = rl_df.groupby([RLCN.PUBLISHER])[RLCN.KBSIZE].sum().sort_values(ascending = False).reset_index(name = RLCN.KBSIZE)
 
         sas_by_publisher_df : DataFrame = pd.merge(
             left = by_books_df, 
             right = by_kbsize_df, 
             how = "inner", 
-            left_on = cn_publisher, 
-            right_on = cn_publisher)
+            left_on = RLCN.PUBLISHER, 
+            right_on = RLCN.PUBLISHER)
         sas_by_publisher_df = self.__add_a4sheets_column(df = sas_by_publisher_df)
         
-        cn_a4sheets : str = "A4Sheets"
-        sas_by_publisher_df = sas_by_publisher_df[[cn_publisher, cn_books, cn_a4sheets]]
-
-        cn_ab_perc : str = "AB%"
-        sas_by_publisher_df[cn_ab_perc] = round(((sas_by_publisher_df[cn_a4sheets] / sas_by_publisher_df[cn_books]) * 100), rounding_digits)
-
-        cn_rating : str = "Rating"   
-        cn_avgrating : str = "AvgRating"
-        by_avgrating_df : DataFrame = rl_df.groupby([cn_publisher])[cn_rating].mean().sort_values(ascending = [False]).reset_index(name = cn_avgrating)
-        by_avgrating_df[cn_avgrating] = by_avgrating_df[cn_avgrating].apply(
+        sas_by_publisher_df = sas_by_publisher_df[[RLCN.PUBLISHER, RLCN.BOOKS, RLCN.A4SHEETS]]
+        sas_by_publisher_df[RLCN.ABPERC] = round(((sas_by_publisher_df[RLCN.A4SHEETS] / sas_by_publisher_df[RLCN.BOOKS]) * 100), rounding_digits)
+  
+        by_avgrating_df : DataFrame = rl_df.groupby([RLCN.PUBLISHER])[RLCN.RATING].mean().sort_values(ascending = [False]).reset_index(name = RLCN.AVGRATING)
+        by_avgrating_df[RLCN.AVGRATING] = by_avgrating_df[RLCN.AVGRATING].apply(
             lambda x : round(number = x, ndigits = rounding_digits)) # 2.5671 => 2.57
 
         sas_by_publisher_df = pd.merge(
             left = sas_by_publisher_df, 
             right = by_avgrating_df, 
             how = "inner", 
-            left_on = cn_publisher, 
-            right_on = cn_publisher)
+            left_on = RLCN.PUBLISHER, 
+            right_on = RLCN.PUBLISHER)
 
-        cn_isworth : str = "IsWorth"
-        sas_by_publisher_df[cn_isworth] = np.where(
+        sas_by_publisher_df[RLCN.ISWORTH] = np.where(
             np.logical_and(
-                sas_by_publisher_df[cn_books] >= is_worth_min_books,
+                sas_by_publisher_df[RLCN.BOOKS] >= is_worth_min_books,
                 np.logical_or(
-                    (sas_by_publisher_df[cn_avgrating] >= is_worth_min_avgrating), 
-                    (sas_by_publisher_df[cn_ab_perc] >= is_worth_min_ab_perc))
+                    (sas_by_publisher_df[RLCN.AVGRATING] >= is_worth_min_avgrating), 
+                    (sas_by_publisher_df[RLCN.ABPERC] >= is_worth_min_ab_perc))
                 ), "Yes", "No")
         
         sas_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(sas_by_publisher_df = sas_by_publisher_df, is_worth_criteria = is_worth_criteria)
@@ -1440,14 +1400,12 @@ class RLDataFrameFactory():
             ...
         '''
 
-        cn_rating : str = "Rating"
-
-        sas_by_rating_df : DataFrame = self.__group_books_by_single_column(rl_df = rl_df, column_name = cn_rating)
-        sas_by_rating_df.sort_values(by = cn_rating, ascending = False, inplace = True)
+        sas_by_rating_df : DataFrame = self.__group_books_by_single_column(rl_df = rl_df, column_name = RLCN.RATING)
+        sas_by_rating_df.sort_values(by = RLCN.RATING, ascending = False, inplace = True)
         sas_by_rating_df.reset_index(drop = True, inplace = True)
 
         if formatted_rating:
-            sas_by_rating_df[cn_rating] = sas_by_rating_df[cn_rating].apply(
+            sas_by_rating_df[RLCN.RATING] = sas_by_rating_df[RLCN.RATING].apply(
                 lambda x : self.__formatter.format_rating(rating = x))
 
         return sas_by_rating_df    
@@ -1462,22 +1420,18 @@ class RLDataFrameFactory():
             ...          
         '''
 
-        cn_topic : str = "Topic"
-        cn_books : str = "Books"
-        cn_trend : str = "Trend"
-
         by_topic_read_year_df : DataFrame = self.__create_books_by_topic_read_year(rl_df = rl_df, read_years = read_years)
         
         pivoted_df : DataFrame = self.__pivot_column_values_to_cell(
             df = by_topic_read_year_df, 
-            cn_index = cn_topic, 
-            cn_values = cn_books)
+            cn_index = RLCN.TOPIC, 
+            cn_values = RLCN.BOOKS)
 
         if trend_sparklines_maximum:
-            maximum : int = by_topic_read_year_df[cn_books].max()
-            return self.__add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend, maximum = maximum)
+            maximum : int = by_topic_read_year_df[RLCN.BOOKS].max()
+            return self.__add_sparklines(df = pivoted_df, cn_values = RLCN.BOOKS, cn_sparklines = RLCN.TREND, maximum = maximum)
         else: 
-            return self.__add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend)
+            return self.__add_sparklines(df = pivoted_df, cn_values = RLCN.BOOKS, cn_sparklines = RLCN.TREND)
 class RLMarkdownFactory():
 
     '''Collects all the logic related to Markdown creation out of Reading List dataframes.'''
