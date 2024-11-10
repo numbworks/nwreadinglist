@@ -39,8 +39,7 @@ class SettingBag():
     options_rl : list[Literal["display", "save"]]
     options_rl_asrt : list[Literal["display", "log"]]
     options_rl_by_kbsize : list[Literal["display"]]
-    options_sas_by_month : list[Literal["display"]]
-    options_sas_by_year_street_price : list[Literal["display"]]
+    options_sas : list[Literal["display"]]
     options_sas_by_topic : list[Literal["display"]]
     options_sas_by_publisher : list[Literal["display"]]
     options_sas_by_rating : list[Literal["display"]]
@@ -74,8 +73,7 @@ class SettingBag():
             options_rl : list[Literal["display", "save"]],
             options_rl_asrt : list[Literal["display", "log"]],
             options_rl_by_kbsize : list[Literal["display"]],
-            options_sas_by_month : list[Literal["display"]],
-            options_sas_by_year_street_price : list[Literal["display"]],
+            options_sas : list[Literal["display"]],
             options_sas_by_topic : list[Literal["display"]],
             options_sas_by_publisher : list[Literal["display"]],
             options_sas_by_rating : list[Literal["display"]],
@@ -102,7 +100,7 @@ class SettingBag():
             markdown_last_update : datetime = datetime.now(),
             markdown_infos : list[MarkdownInfo] = [
                 MarkdownInfo(id = "rl", file_name = "READINGLIST.md", paragraph_title = "Reading List"),
-                MarkdownInfo(id = "sas_by_month", file_name = "STUDYINGACTIVITYBYMONTH.md", paragraph_title = "Studying Activity By Month"),
+                MarkdownInfo(id = "sas", file_name = "STUDYINGACTIVITYBYMONTH.md", paragraph_title = "Studying Activity"),
                 MarkdownInfo(id = "sas_by_publisher", file_name = "STUDYINGACTIVITYBYPUBLISHER.md", paragraph_title = "Studying Activity By Publisher"),
                 MarkdownInfo(id = "sas_by_rating", file_name = "STUDYINGACTIVITYBYRATING.md", paragraph_title = "Studying Activity By Rating"),
                 MarkdownInfo(id = "sas_by_topic", file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic"),
@@ -118,8 +116,7 @@ class SettingBag():
         self.options_rl = options_rl
         self.options_rl_asrt = options_rl_asrt
         self.options_rl_by_kbsize = options_rl_by_kbsize
-        self.options_sas_by_month = options_sas_by_month
-        self.options_sas_by_year_street_price = options_sas_by_year_street_price
+        self.options_sas = options_sas
         self.options_sas_by_topic = options_sas_by_topic
         self.options_sas_by_publisher = options_sas_by_publisher
         self.options_sas_by_rating = options_sas_by_rating
@@ -1670,7 +1667,7 @@ class ReadingListProcessor():
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
-        id : str = "sas_by_month"
+        id : str = "sas"
 
         sas_by_month_md : str = self.__component_bag.md_factory.create_sas_by_month_md(
             paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
@@ -1842,19 +1839,20 @@ class ReadingListProcessor():
         for option in self.__setting_bag.options_rl_by_kbsize:
             if option == "display":
                 self.__component_bag.displayer.display(df = self.__rl_summary.rl_by_kbsize_df)
-    def process_sas_by_month(self) -> None:
+    def process_sas(self) -> None:
 
         '''
-            Performs all the actions listed in __setting_bag.options_sas_by_month.
+            Performs all the actions listed in __setting_bag.options_sas.
             
             It raises an exception if the 'initialize' method has not been run yet.
         '''
 
         self.__validate_summary()
 
-        for option in self.__setting_bag.options_sas_by_month:
+        for option in self.__setting_bag.options_sas:
             if option == "display":
                 self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_month_tpl[1])
+                self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_year_street_price_df)
     def process_sas_by_publisher(self) -> None:
 
         '''
@@ -1894,19 +1892,6 @@ class ReadingListProcessor():
         for option in self.__setting_bag.options_sas_by_topic:
             if option == "display":
                 self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_topic_df)
-    def process_sas_by_year_street_price(self) -> None:
-
-        '''
-            Performs all the actions listed in __setting_bag.options_sas_by_year_street_price.
-            
-            It raises an exception if the 'initialize' method has not been run yet.
-        '''
-
-        self.__validate_summary()
-
-        for option in self.__setting_bag.options_sas_by_year_street_price:
-            if option == "display":
-                self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_year_street_price_df)
     def process_trend_by_year_topic(self) -> None:
 
         '''
