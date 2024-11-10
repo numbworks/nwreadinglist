@@ -37,7 +37,7 @@ class SettingBag():
     '''Represents a collection of settings.'''
 
     options_rl : list[Literal["show"]]
-    options_rl_asrt : list[Literal["show"]]
+    options_rl_asrt : list[Literal["show", "log"]]
     options_rl_by_kbsize : list[Literal["show"]]
     options_sas_by_month : list[Literal["show"]]
     options_sas_by_year_street_price : list[Literal["show"]]
@@ -71,7 +71,7 @@ class SettingBag():
     def __init__(
             self,
             options_rl : list[Literal["show"]],
-            options_rl_asrt : list[Literal["show"]],
+            options_rl_asrt : list[Literal["show", "log"]],
             options_rl_by_kbsize : list[Literal["show"]],
             options_sas_by_month : list[Literal["show"]],
             options_sas_by_year_street_price : list[Literal["show"]],
@@ -1787,6 +1787,10 @@ class ReadingListProcessor():
         for option in self.__setting_bag.options_rl_asrt:
             if option == "show":
                 self.__component_bag.displayer.display(df = self.__rl_summary.rl_asrt_df)
+
+            if option == "log":
+                content : str = self.__component_bag.md_factory.create_rl_asrt_md(rl_asrt_df = self.__rl_summary.rl_asrt_df)
+                self.__component_bag.logging_function(content)
     def process_rl_by_kbsize(self) -> None:
 
         '''
@@ -1812,7 +1816,7 @@ class ReadingListProcessor():
 
         for option in self.__setting_bag.options_sas_by_month:
             if option == "show":
-                return None
+                self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_month_tpl[1])
     def process_sas_by_publisher(self) -> None:
 
         '''
@@ -1825,7 +1829,7 @@ class ReadingListProcessor():
 
         for option in self.__setting_bag.options_sas_by_publisher:
             if option == "show":
-                return None
+                self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_publisher_tpl[1], formatters = { "AvgRating" : "{:.2f}" })
     def process_sas_by_rating(self) -> None:
 
         '''
@@ -1838,7 +1842,7 @@ class ReadingListProcessor():
 
         for option in self.__setting_bag.options_sas_by_rating:
             if option == "show":
-                return None
+                self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_rating_df)
     def process_sas_by_topic(self) -> None:
 
         '''
@@ -1851,7 +1855,7 @@ class ReadingListProcessor():
 
         for option in self.__setting_bag.options_sas_by_topic:
             if option == "show":
-                return None
+                self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_topic_df)
     def process_sas_by_year_street_price(self) -> None:
 
         '''
@@ -1864,10 +1868,12 @@ class ReadingListProcessor():
 
         for option in self.__setting_bag.options_sas_by_year_street_price:
             if option == "show":
-                return None
+                self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_year_street_price_df)
     def get_summary(self) -> Optional[RLSummary]:
 
         '''Returns __rl_summary.'''
+
+        self.__validate_summary()
 
         return self.__rl_summary
 
