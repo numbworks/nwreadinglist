@@ -2016,7 +2016,7 @@ class ReadingListProcessor():
 
         if "save" in options:
             self.__save_and_log(id = id, content = content)
-    def get_summary(self) -> Optional[RLSummary]:
+    def get_summary(self) -> RLSummary:
 
         '''Returns __rl_summary.'''
 
