@@ -1401,8 +1401,13 @@ class RLDataFrameFactory():
             right_on = cn_publisher)
 
         cn_isworth : str = "IsWorth"
-        condition : Series = (sas_by_publisher_df[cn_books] >= is_worth_min_books) & ((sas_by_publisher_df[cn_avgrating] >= is_worth_min_avgrating) | (sas_by_publisher_df[cn_ab_perc] >= is_worth_min_ab_perc))
-        sas_by_publisher_df[cn_isworth] = np.where(condition, "Yes", "No")
+        sas_by_publisher_df[cn_isworth] = np.where(
+            np.logical_and(
+                sas_by_publisher_df[cn_books] >= is_worth_min_books,
+                np.logical_or(
+                    (sas_by_publisher_df[cn_avgrating] >= is_worth_min_avgrating), 
+                    (sas_by_publisher_df[cn_ab_perc] >= is_worth_min_ab_perc))
+                ), "Yes", "No")
 
         sas_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(sas_by_publisher_df = sas_by_publisher_df, is_worth_criteria = is_worth_criteria)
 
