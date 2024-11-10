@@ -1521,7 +1521,6 @@ class ReadingListProcessor():
 
     '''Collects all the logic related to the processing of "Reading List.xlsx".'''
 
-
     __component_bag : ComponentBag
     __setting_bag : SettingBag
     __rl_summary : Optional[RLSummary]
@@ -1638,8 +1637,10 @@ class ReadingListProcessor():
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
+        id : str = "rl"
+
         rl_md : str = self.__component_bag.md_factory.create_rl_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "rl")[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
             last_update = self.__setting_bag.markdown_last_update,
             rl_df = rl_df
         )
@@ -1649,8 +1650,10 @@ class ReadingListProcessor():
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
+        id : str = "sas_by_month"
+
         sas_by_month_md : str = self.__component_bag.md_factory.create_sas_by_month_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "sas_by_month")[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
             last_update = self.__setting_bag.markdown_last_update,
             sas_by_month_df = sas_by_month_tpl[1],
             sas_by_year_street_price_df = sas_by_year_street_price_df
@@ -1661,8 +1664,10 @@ class ReadingListProcessor():
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
+        id : str = "sas_by_topic"
+
         sas_by_topic_md : str = self.__component_bag.md_factory.create_sas_by_topic_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "sas_by_topic")[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
             last_update = self.__setting_bag.markdown_last_update,
             sas_by_topic_df = sas_by_topic_df
         )
@@ -1672,8 +1677,10 @@ class ReadingListProcessor():
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
+        id : str = "sas_by_publisher"
+
         sas_by_publisher_md : str = self.__component_bag.md_factory.create_sas_by_publisher_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "sas_by_publisher")[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
             last_update = self.__setting_bag.markdown_last_update,
             sas_by_publisher_tpl = sas_by_publisher_tpl
         )
@@ -1683,8 +1690,10 @@ class ReadingListProcessor():
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
+        id : str = "sas_by_rating"
+
         sas_by_rating_md : str = self.__component_bag.md_factory.create_sas_by_rating_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "sas_by_rating")[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
             last_update = self.__setting_bag.markdown_last_update,
             sas_by_rating_df = sas_by_rating_df
         )
@@ -1694,15 +1703,23 @@ class ReadingListProcessor():
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
+        id : str = "trend_by_year_topic"
+
         trend_by_year_topic_md : str = self.__component_bag.md_factory.create_trend_by_year_topic_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "trend_by_year_topic")[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
             last_update = self.__setting_bag.markdown_last_update,
             trend_by_year_topic_df = trend_by_year_topic_df
         )
 
         return trend_by_year_topic_md
+    def __validate_summary(self) -> None:
+        
+        '''Raises an exception if __rl_summary is None.'''
 
-    def init(self) -> None:
+        if not self.__rl_summary:
+            raise Exception("Please run the 'initialize' method first.")
+
+    def initialize(self) -> None:
 
         '''Creates a RLSummary object and assign it to __rl_summary.'''
 
@@ -1748,6 +1765,44 @@ class ReadingListProcessor():
 
         return self.__rl_summary
 
+    def process_rl(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rl.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        for option in self.__setting_bag.options_rl:
+            if option == "show":
+                return None
+    def process_rl_asrt(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rl_asrt.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        for option in self.__setting_bag.options_rl_asrt:
+            if option == "show":
+                return None
+    def process_rl_by_kbsize(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rl_by_kbsize.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+            
+
+        for option in self.__setting_bag.options_rl_by_kbsize:
+            if option == "show":
+                return None
 
 # MAIN
 if __name__ == "__main__":
