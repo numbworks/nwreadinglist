@@ -1235,9 +1235,10 @@ class RLDataFrameFactory():
                 ... ...                     ...     ...     
         """
 
+        cn_title : str = "Title"
         cn_topic : str = "Topic"  
         cn_books : str = "Books"
-        by_books_df : DataFrame = rl_df.groupby([cn_topic]).size().sort_values(ascending = False).reset_index(name = cn_books)
+        by_books_df : DataFrame = rl_df.groupby([cn_topic])[cn_title].size().sort_values(ascending = False).reset_index(name = cn_books)
 
         cn_pages = "Pages"
         by_pages_df : DataFrame = rl_df.groupby([cn_topic])[cn_pages].sum().sort_values(ascending = False).reset_index(name = cn_pages)
