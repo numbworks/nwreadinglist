@@ -39,7 +39,7 @@ class SettingBag():
     options_rl : list[Literal["display", "save"]]
     options_rl_asrt : list[Literal["display", "log"]]
     options_rl_by_kbsize : list[Literal["display"]]
-    options_sas : list[Literal["display"]]
+    options_sas : list[Literal["display", "save"]]
     options_sas_by_topic : list[Literal["display"]]
     options_sas_by_publisher : list[Literal["display"]]
     options_sas_by_rating : list[Literal["display"]]
@@ -73,7 +73,7 @@ class SettingBag():
             options_rl : list[Literal["display", "save"]],
             options_rl_asrt : list[Literal["display", "log"]],
             options_rl_by_kbsize : list[Literal["display"]],
-            options_sas : list[Literal["display"]],
+            options_sas : list[Literal["display", "save"]],
             options_sas_by_topic : list[Literal["display"]],
             options_sas_by_publisher : list[Literal["display"]],
             options_sas_by_rating : list[Literal["display"]],
@@ -100,7 +100,7 @@ class SettingBag():
             markdown_last_update : datetime = datetime.now(),
             markdown_infos : list[MarkdownInfo] = [
                 MarkdownInfo(id = "rl", file_name = "READINGLIST.md", paragraph_title = "Reading List"),
-                MarkdownInfo(id = "sas", file_name = "STUDYINGACTIVITYBYMONTH.md", paragraph_title = "Studying Activity"),
+                MarkdownInfo(id = "sas", file_name = "STUDYINGACTIVITY.md", paragraph_title = "Studying Activity"),
                 MarkdownInfo(id = "sas_by_publisher", file_name = "STUDYINGACTIVITYBYPUBLISHER.md", paragraph_title = "Studying Activity By Publisher"),
                 MarkdownInfo(id = "sas_by_rating", file_name = "STUDYINGACTIVITYBYRATING.md", paragraph_title = "Studying Activity By Rating"),
                 MarkdownInfo(id = "sas_by_topic", file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic"),
@@ -161,7 +161,7 @@ class RLSummary():
 
     rl_md : str
     rl_asrt_md : str
-    sas_by_month_md : str
+    sas_md : str
     sas_by_topic_md : str
     sas_by_publisher_md : str
     sas_by_rating_md : str
@@ -174,14 +174,14 @@ class _MessageCollection():
 
     @staticmethod
     def no_markdowninfo_found(id : str) -> str:
-        return f"No MarkdownInfo object found for id = '{id}'."
+        return f"No MarkdownInfo object found for id='{id}'."
     @staticmethod
     def please_run_initialize_first() -> str:
         return "Please run the 'initialize' method first."
 
     @staticmethod
-    def id_successfully_saved_as(id : str, file_path : str) -> str:
-        return f"'{id}*' has been successfully saved as '{file_path}'."
+    def this_content_successfully_saved_as(id : str, file_path : str) -> str:
+        return f"This content (id: '{id}') has been successfully saved as '{file_path}'."
 
 # CLASSES
 class DefaultPathProvider():
@@ -1735,23 +1735,18 @@ class ReadingListProcessor():
 
         if not hasattr(self, '_ReadingListProcessor__rl_summary'):
             raise Exception(_MessageCollection.please_run_initialize_first())
-    def __save_rl_md(self, rl_md : str) -> None:
+    def __save_and_log(self, id : str, content : str) -> None:
 
         '''Creates the provided Markdown content using __setting_bag.'''
-
-        id : str = "rl"
 
         file_path : str = self.__component_bag.file_path_manager.create_file_path(
             folder_path = self.__setting_bag.working_folder_path,
             file_name = self.__extract_file_name_and_paragraph_title(id = id)[0]
         )
         
-        self.__component_bag.file_manager.save_content(
-            content = rl_md, 
-            file_path = file_path
-        )
+        self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
 
-        message : str = _MessageCollection.id_successfully_saved_as(id = id, file_path = file_path)
+        message : str = _MessageCollection.this_content_successfully_saved_as(id = id, file_path = file_path)
         self.__component_bag.logging_function(message)
 
     def initialize(self) -> None:
@@ -1788,7 +1783,7 @@ class ReadingListProcessor():
             trend_by_year_topic_df = trend_by_year_topic_df,
             rl_md = rl_md,
             rl_asrt_md = rl_asrt_md,
-            sas_by_month_md = sas_by_month_md,
+            sas_md = sas_by_month_md,
             sas_by_topic_md = sas_by_topic_md,
             sas_by_publisher_md = sas_by_publisher_md,
             sas_by_rating_md = sas_by_rating_md,
@@ -1804,12 +1799,11 @@ class ReadingListProcessor():
 
         self.__validate_summary()
 
-        for option in self.__setting_bag.options_rl:
-            if option == "display":
-                self.__component_bag.displayer.display(df = self.__rl_summary.rl_df)
+        if "display" in self.__setting_bag.options_rl:
+            self.__component_bag.displayer.display(df = self.__rl_summary.rl_df)
 
-            if option == "save":
-                self.__save_rl_md(rl_md = self.__rl_summary.rl_asrt_md)
+        if "save" in self.__setting_bag.options_rl:
+            self.__save_and_log(id = "rl", content = self.__rl_summary.rl_md)
     def process_rl_asrt(self) -> None:
 
         '''
@@ -1820,12 +1814,11 @@ class ReadingListProcessor():
 
         self.__validate_summary()
 
-        for option in self.__setting_bag.options_rl_asrt:
-            if option == "display":
-                self.__component_bag.displayer.display(df = self.__rl_summary.rl_asrt_df)
+        if "display" in self.__setting_bag.options_rl_asrt:
+            self.__component_bag.displayer.display(df = self.__rl_summary.rl_asrt_df)
 
-            if option == "log":
-                self.__component_bag.logging_function(self.__rl_summary.rl_asrt_md)
+        if "log" in self.__setting_bag.options_rl_asrt:
+            self.__component_bag.logging_function(self.__rl_summary.rl_asrt_md)
     def process_rl_by_kbsize(self) -> None:
 
         '''
@@ -1836,9 +1829,8 @@ class ReadingListProcessor():
 
         self.__validate_summary()
 
-        for option in self.__setting_bag.options_rl_by_kbsize:
-            if option == "display":
-                self.__component_bag.displayer.display(df = self.__rl_summary.rl_by_kbsize_df)
+        if "display" in self.__setting_bag.options_rl_by_kbsize:
+            self.__component_bag.displayer.display(df = self.__rl_summary.rl_by_kbsize_df)
     def process_sas(self) -> None:
 
         '''
@@ -1849,10 +1841,12 @@ class ReadingListProcessor():
 
         self.__validate_summary()
 
-        for option in self.__setting_bag.options_sas:
-            if option == "display":
-                self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_month_tpl[1])
-                self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_year_street_price_df)
+        if "display" in self.__setting_bag.options_sas:
+            self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_month_tpl[1])
+            self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_year_street_price_df)
+
+        if "save" in self.__setting_bag.options_sas:
+            self.__save_and_log(id = "sas", content = self.__rl_summary.sas_md)
     def process_sas_by_publisher(self) -> None:
 
         '''
@@ -1863,9 +1857,8 @@ class ReadingListProcessor():
 
         self.__validate_summary()
 
-        for option in self.__setting_bag.options_sas_by_publisher:
-            if option == "display":
-                self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_publisher_tpl[1], formatters = { "AvgRating" : "{:.2f}" })
+        if "display" in self.__setting_bag.options_sas_by_publisher:
+            self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_publisher_tpl[1], formatters = { "AvgRating" : "{:.2f}" })
     def process_sas_by_rating(self) -> None:
 
         '''
@@ -1876,9 +1869,8 @@ class ReadingListProcessor():
 
         self.__validate_summary()
 
-        for option in self.__setting_bag.options_sas_by_rating:
-            if option == "display":
-                self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_rating_df)
+        if "display" in self.__setting_bag.options_sas_by_rating:
+            self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_rating_df)
     def process_sas_by_topic(self) -> None:
 
         '''
@@ -1889,9 +1881,8 @@ class ReadingListProcessor():
 
         self.__validate_summary()
 
-        for option in self.__setting_bag.options_sas_by_topic:
-            if option == "display":
-                self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_topic_df)
+        if "display" in self.__setting_bag.options_sas_by_topic:
+            self.__component_bag.displayer.display(df = self.__rl_summary.sas_by_topic_df)
     def process_trend_by_year_topic(self) -> None:
 
         '''
@@ -1902,9 +1893,8 @@ class ReadingListProcessor():
 
         self.__validate_summary()
 
-        for option in self.__setting_bag.options_trend_by_year_topic:
-            if option == "display":
-                self.__component_bag.displayer.display(df = self.__rl_summary.trend_by_year_topic_df)    
+        if "display" in self.__setting_bag.options_trend_by_year_topic:
+            self.__component_bag.displayer.display(df = self.__rl_summary.trend_by_year_topic_df)
     def get_summary(self) -> Optional[RLSummary]:
 
         '''Returns __rl_summary.'''
