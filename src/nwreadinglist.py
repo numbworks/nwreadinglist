@@ -1759,12 +1759,6 @@ class ReadingListProcessor():
             sas_by_rating_md = sas_by_rating_md,
             trend_by_year_topic_md = trend_by_year_topic_md
         )
-    def get_summary(self) -> Optional[RLSummary]:
-
-        '''Returns __rl_summary.'''
-
-        return self.__rl_summary
-
     def process_rl(self) -> None:
 
         '''
@@ -1798,11 +1792,83 @@ class ReadingListProcessor():
             
             It raises an exception if the 'initialize' method has not been run yet.
         '''
-            
+
+        self.__validate_summary()
 
         for option in self.__setting_bag.options_rl_by_kbsize:
             if option == "show":
                 return None
+    def process_sas_by_month(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_sas_by_month.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        for option in self.__setting_bag.options_sas_by_month:
+            if option == "show":
+                return None
+    def process_sas_by_publisher(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_sas_by_publisher.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        for option in self.__setting_bag.options_sas_by_publisher:
+            if option == "show":
+                return None
+    def process_sas_by_rating(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_sas_by_rating.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        for option in self.__setting_bag.options_sas_by_rating:
+            if option == "show":
+                return None
+    def process_sas_by_topic(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_sas_by_topic.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        for option in self.__setting_bag.options_sas_by_topic:
+            if option == "show":
+                return None
+    def process_sas_by_year_street_price(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_sas_by_year_street_price.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        for option in self.__setting_bag.options_sas_by_year_street_price:
+            if option == "show":
+                return None
+    def get_summary(self) -> Optional[RLSummary]:
+
+        '''Returns __rl_summary.'''
+
+        return self.__rl_summary
+
 
 # MAIN
 if __name__ == "__main__":
