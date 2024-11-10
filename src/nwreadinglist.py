@@ -1625,11 +1625,11 @@ class ReadingListProcessor():
         )
 
         return trend_by_year_topic_df
-    def __extract_file_name_and_paragraph_title(self, id: str, markdown_infos: list[MarkdownInfo]) -> Tuple[str, str]: 
+    def __extract_file_name_and_paragraph_title(self, id: str) -> Tuple[str, str]: 
     
         '''Returns (file_name, .paragraph_title) for the provided id or raise an Exception.'''
 
-        for markdown_info in markdown_infos: 
+        for markdown_info in self.__setting_bag.markdown_infos:
             if markdown_info.id == id: 
                 return (markdown_info.file_name, markdown_info.paragraph_title)
 
@@ -1639,7 +1639,7 @@ class ReadingListProcessor():
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
         rl_md : str = self.__component_bag.md_factory.create_rl_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "rl", markdown_infos = self.__setting_bag.markdown_infos)[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "rl")[1],
             last_update = self.__setting_bag.markdown_last_update,
             rl_df = rl_df
         )
@@ -1650,7 +1650,7 @@ class ReadingListProcessor():
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
         sas_by_month_md : str = self.__component_bag.md_factory.create_sas_by_month_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "sas_by_month", markdown_infos = self.__setting_bag.markdown_infos)[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "sas_by_month")[1],
             last_update = self.__setting_bag.markdown_last_update,
             sas_by_month_df = sas_by_month_tpl[1],
             sas_by_year_street_price_df = sas_by_year_street_price_df
@@ -1662,7 +1662,7 @@ class ReadingListProcessor():
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
         sas_by_topic_md : str = self.__component_bag.md_factory.create_sas_by_topic_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "sas_by_topic", markdown_infos = self.__setting_bag.markdown_infos)[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "sas_by_topic")[1],
             last_update = self.__setting_bag.markdown_last_update,
             sas_by_topic_df = sas_by_topic_df
         )
@@ -1673,7 +1673,7 @@ class ReadingListProcessor():
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
         sas_by_publisher_md : str = self.__component_bag.md_factory.create_sas_by_publisher_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "sas_by_publisher", markdown_infos = self.__setting_bag.markdown_infos)[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "sas_by_publisher")[1],
             last_update = self.__setting_bag.markdown_last_update,
             sas_by_publisher_tpl = sas_by_publisher_tpl
         )
@@ -1684,7 +1684,7 @@ class ReadingListProcessor():
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
         sas_by_rating_md : str = self.__component_bag.md_factory.create_sas_by_rating_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "sas_by_rating", markdown_infos = self.__setting_bag.markdown_infos)[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "sas_by_rating")[1],
             last_update = self.__setting_bag.markdown_last_update,
             sas_by_rating_df = sas_by_rating_df
         )
@@ -1695,14 +1695,14 @@ class ReadingListProcessor():
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
         trend_by_year_topic_md : str = self.__component_bag.md_factory.create_trend_by_year_topic_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "trend_by_year_topic", markdown_infos = self.__setting_bag.markdown_infos)[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "trend_by_year_topic")[1],
             last_update = self.__setting_bag.markdown_last_update,
             trend_by_year_topic_df = trend_by_year_topic_df
         )
 
         return trend_by_year_topic_md
 
-    def initialize(self) -> None:
+    def init(self) -> None:
 
         '''Creates a RLSummary object and assign it to __rl_summary.'''
 
@@ -1742,6 +1742,12 @@ class ReadingListProcessor():
             sas_by_rating_md = sas_by_rating_md,
             trend_by_year_topic_md = trend_by_year_topic_md
         )
+    def get_summary(self) -> Optional[RLSummary]:
+
+        '''Returns __rl_summary.'''
+
+        return self.__rl_summary
+
 
 # MAIN
 if __name__ == "__main__":
