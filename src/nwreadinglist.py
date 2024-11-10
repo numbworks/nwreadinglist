@@ -147,60 +147,31 @@ class SettingBag():
         self.rl_by_month_smaller_font = rl_by_month_smaller_font
         self.file_names = file_names
         self.definitions = definitions
-class ComponentBag():
-
-    '''Represents a collection of components.'''
-
-    formatter : Formatter
-    converter : Converter
-    file_path_manager : FilePathManager
-    file_manager : FileManager
-    logging_function : Callable[[str], None]
-    markdown_helper : MarkdownHelper
-
-    def __init__(
-            self, 
-            formatter : Formatter = Formatter(), 
-            converter : Converter = Converter(), 
-            file_path_manager : FilePathManager = FilePathManager(),
-            file_manager : FileManager = FileManager(file_path_manager = FilePathManager()),
-            logging_function : Callable[[str], None] = LambdaProvider().get_default_logging_function(),
-            markdown_helper : MarkdownHelper = MarkdownHelper(formatter = Formatter())) -> None:
-
-        self.formatter = formatter
-        self.converter = converter
-        self.file_path_manager = file_path_manager
-        self.file_manager = file_manager
-        self.logging_function = logging_function
-        self.markdown_helper = markdown_helper
 @dataclass(frozen = True)
 class RLSummary():
 
-    '''Collects all the dataframes created by RLManager'''
+    '''Collects all the dataframes and markdowns.'''
 
     rl_df : DataFrame
     rl_asrt_df : DataFrame
     rl_by_kbsize_df : DataFrame
-    rl_by_kbsize_box_plot: Callable[[Any], None]
-    rl_by_books_year_box_plot : Callable[[Any], None]
     sas_by_month_tpl : Tuple[DataFrame, DataFrame]
     sas_by_year_street_price_df : DataFrame
     sas_by_topic_df : DataFrame
     sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]
     sas_by_rating_df : DataFrame
     trend_by_year_topic_df : DataFrame
-@dataclass(frozen = True)
-class MDSummary():
 
-    '''Collects all the dataframes created by MDManager'''
+    rl_by_kbsize_box_plot: Callable[[Any], None]
+    rl_by_books_year_box_plot : Callable[[Any], None]
 
     rl_md : str
-    rl_asrt_md : str    
-    rl_by_month_md : str
-    rl_by_publisher_md : str
-    rl_by_rating_md : str
-    rl_by_topic_md : str
-    rl_by_topic_trend_md : str # rename
+    rl_asrt_md : str
+    sas_by_month_md : str
+    sas_by_topic_md : str
+    sas_by_publisher_md : str
+    sas_by_rating_md : str
+    trend_by_year_topic_md : str
 
 # STATIC CLASSES
 # CLASSES
@@ -231,7 +202,7 @@ class YearProvider():
         return years
 class RLDataFrameHelper():
 
-    '''Collects helper functions for RLDataFramer.'''
+    '''Collects helper functions for RLDataFrameFactory.'''
 
     def format_reading_status(self, books : int, pages : int) -> str:
 
@@ -1533,6 +1504,96 @@ class RLMarkdownFactory():
         md_content += "\n"
 
         return md_content
+class ComponentBag():
+
+    '''Represents a collection of components.'''
+
+    file_path_manager : FilePathManager
+    file_manager : FileManager
+    df_factory : RLDataFrameFactory
+    md_factory : RLMarkdownFactory
+    logging_function : Callable[[str], None]
+
+    def __init__(
+            self, 
+            file_path_manager : FilePathManager = FilePathManager(),
+            file_manager : FileManager = FileManager(file_path_manager = FilePathManager()),
+            df_factory : RLDataFrameFactory = RLDataFrameFactory(
+                converter = Converter(),
+                formatter = Formatter(),
+                df_helper = RLDataFrameHelper()
+                ),
+            md_factory : RLMarkdownFactory = RLMarkdownFactory(
+                markdown_helper = MarkdownHelper(formatter = Formatter()),
+                formatter = Formatter()
+            ),
+            logging_function : Callable[[str], None] = LambdaProvider().get_default_logging_function()
+        ) -> None:
+
+        self.file_path_manager = file_path_manager
+        self.file_manager = file_manager
+        self.df_factory = df_factory
+        self.md_factory = md_factory
+        self.logging_function = logging_function
+class ReadingListProcessor():
+
+    '''Collects all the logic related to the processing of "Reading List.xlsx".'''
+
+
+    __component_bag : ComponentBag
+    __setting_bag : SettingBag
+    __rl_summary : Optional[RLSummary]
+
+    def __init__(self, component_bag : ComponentBag, setting_bag : SettingBag) -> None:
+
+        self.__component_bag = component_bag
+        self.__setting_bag = setting_bag
+        self.__rl_summary = None      
+
+    def initialize(self) -> None:
+
+        ''''''
+
+        rl_df : DataFrame = self.__component_bag.df_factory.create_rl(
+            excel_path = self.__setting_bag.excel_path,
+            excel_books_skiprows = self.__setting_bag.excel_books_skiprows,
+            excel_books_nrows = self.__setting_bag.excel_books_nrows,
+            excel_books_tabname = self.__setting_bag.excel_books_tabname,
+            excel_null_value = self.__setting_bag.excel_null_value
+            )
+        rl_asrt_df : DataFrame = self.__component_bag.df_factory.create_rl_asrt(
+            rl_df = rl_df, 
+            rounding_digits = self.__setting_bag.rounding_digits,
+            now = self.__setting_bag.now
+            )
+        rl_by_kbsize_df : DataFrame = self.__component_bag.df_factory.create_rl_by_kbsize(
+            rl_df = rl_df,
+            kbsize_ascending = self.__setting_bag.kbsize_ascending,
+            kbsize_remove_if_zero = self.__setting_bag.kbsize_remove_if_zero,
+            kbsize_n = self.__setting_bag.kbsize_n
+        )
+        sas_by_month_tpl : Tuple[DataFrame, DataFrame] = self.__component_bag.df_factory.create_sas_by_month_tpl(
+            rl_df = rl_df,
+            read_years = self.__setting_bag.read_years,
+            now = self.__setting_bag.now
+        )
+
+        sas_by_year_street_price_df : DataFrame
+        sas_by_topic_df : DataFrame
+        sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]
+        sas_by_rating_df : DataFrame
+        trend_by_year_topic_df : DataFrame
+
+        rl_by_kbsize_box_plot: Callable[[Any], None]
+        rl_by_books_year_box_plot : Callable[[Any], None]
+
+        rl_md : str
+        rl_asrt_md : str
+        sas_by_month_md : str
+        sas_by_topic_md : str
+        sas_by_publisher_md : str
+        sas_by_rating_md : str
+        trend_by_year_topic_md : str
 
 
 
