@@ -24,6 +24,14 @@ from nwshared import LambdaProvider, MarkdownHelper
 
 # CONSTANTS
 # DTOs
+@dataclass(frozen = True)
+class MarkdownInfo():
+
+    '''Represents a collection of information related to a Markdown file.'''
+
+    id : str
+    file_name : str
+    paragraph_title : str
 class SettingBag():
 
     '''Represents a collection of settings.'''
@@ -56,16 +64,9 @@ class SettingBag():
     is_worth_criteria : str
     formatted_rating : bool
     enable_sparklines_maximum : bool
-    rl_file_name : str    
-    rl_by_month_file_name : str
-    rl_by_publisher_file_name : str
-    rl_by_rating_file_name : str
-    rl_by_topic_file_name : str
-    rl_topic_trend_file_name : str
-    rl_last_update : datetime
-    rl_smaller_font : bool
-    rl_by_month_smaller_font : bool
-    definitions : dict
+    markdown_last_update : datetime
+    markdown_infos : list[MarkdownInfo]
+    definitions : dict[str, str]
 
     def __init__(
             self,
@@ -96,22 +97,20 @@ class SettingBag():
             is_worth_criteria : str = "Yes",    
             formatted_rating : bool = True,
             enable_sparklines_maximum : bool = True,
-            rl_last_update : datetime = datetime.now(),
-            rl_smaller_font : bool = False,
-            rl_by_month_smaller_font : bool = False,
-            file_names : dict[str, str] = {
-                "rl" : "READINGLIST.md",
-                "rl_by_month" : "READINGLISTBYMONTH.md",
-                "rl_by_publisher" : "READINGLISTBYPUBLISHER.md",
-                "rl_by_rating" : "READINGLISTBYRATING.md",
-                "rl_by_topic" : "READINGLISTBYTOPIC.md",
-                "rl_topic_trend" : "READINGLISTTOPICTREND.md"
-            },
+            markdown_last_update : datetime = datetime.now(),
+            markdown_infos : list[MarkdownInfo] = [
+                MarkdownInfo(id = "rl", file_name = "READINGLIST.md", paragraph_title = "Reading List"),
+                MarkdownInfo(id = "sas_by_month", file_name = "STUDYINGACTIVITYBYMONTH.md", paragraph_title = "Studying Activity By Month"),
+                MarkdownInfo(id = "sas_by_publisher", file_name = "STUDYINGACTIVITYBYPUBLISHER.md", paragraph_title = "Studying Activity By Publisher"),
+                MarkdownInfo(id = "sas_by_rating", file_name = "STUDYINGACTIVITYBYRATING.md", paragraph_title = "Studying Activity By Rating"),
+                MarkdownInfo(id = "sas_by_topic", file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic"),
+                MarkdownInfo(id = "trend_by_year_topic", file_name = "TRENDBYYEARTOPIC", paragraph_title = "Trend By Year Topic")             
+            ],
             definitions : dict[str, str] = {
                 "RL": "Reading List",
                 "KBSize": "This metric is the word count of the notes I took about a given book.",
                 "SAS": "Studying Activity Summary."
-                }            
+                }
             ) -> None:
 
         self.options_rl = options_rl
@@ -142,10 +141,8 @@ class SettingBag():
         self.is_worth_criteria = is_worth_criteria
         self.formatted_rating = formatted_rating
         self.enable_sparklines_maximum = enable_sparklines_maximum
-        self.rl_last_update = rl_last_update
-        self.rl_smaller_font = rl_smaller_font
-        self.rl_by_month_smaller_font = rl_by_month_smaller_font
-        self.file_names = file_names
+        self.markdown_last_update = markdown_last_update
+        self.markdown_infos = markdown_infos
         self.definitions = definitions
 @dataclass(frozen = True)
 class RLSummary():
@@ -161,9 +158,6 @@ class RLSummary():
     sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]
     sas_by_rating_df : DataFrame
     trend_by_year_topic_df : DataFrame
-
-    rl_by_kbsize_box_plot: Callable[[Any], None]
-    rl_by_books_year_box_plot : Callable[[Any], None]
 
     rl_md : str
     rl_asrt_md : str
@@ -1392,16 +1386,12 @@ class RLMarkdownFactory():
 
         return formatted_rl_df
 
-    def create_rl_md(self, md_paragraph_title : str, last_update : datetime, rl_df : DataFrame, use_smaller_font : bool) -> str:
+    def create_rl_md(self, paragraph_title : str, last_update : datetime, rl_df : DataFrame) -> str:
 
         '''Creates the expected Markdown content for the provided arguments.'''
 
-        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
         formatted_rl_df : DataFrame = self.__get_formatted_rl(rl_df = rl_df)
-
-        if use_smaller_font:
-            formatted_rl_df = self.__markdown_helper.add_subscript_tags_to_dataframe(df = formatted_rl_df)    
-
         formatted_rl_md : str = formatted_rl_df.to_markdown(index = False)
 
         md_content : str = markdown_header
@@ -1420,7 +1410,7 @@ class RLMarkdownFactory():
         md_content += "\n"
 
         return md_content
-    def create_sas_by_month_md(self, md_paragraph_title : str, last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, use_smaller_font : bool) -> str:
+    def create_sas_by_month_md(self, paragraph_title : str, last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, use_smaller_font : bool) -> str:
 
         '''Creates the expected Markdown content for the provided arguments.'''
 
@@ -1431,7 +1421,7 @@ class RLMarkdownFactory():
             copy_of_sas_by_month_df = self.__markdown_helper.add_subscript_tags_to_dataframe(df = copy_of_sas_by_month_df)
             copy_of_sas_by_year_street_price_df = self.__markdown_helper.add_subscript_tags_to_dataframe(df = copy_of_sas_by_year_street_price_df)
 
-        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
         sas_by_month_md : str = copy_of_sas_by_month_df.to_markdown(index = False)
         sas_by_year_street_price_md  : str = copy_of_sas_by_year_street_price_df.to_markdown(index = False)
 
@@ -1446,11 +1436,11 @@ class RLMarkdownFactory():
         md_content += ""
 
         return md_content
-    def create_sas_by_publisher_md(self, md_paragraph_title : str, last_update : datetime, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> str:
+    def create_sas_by_publisher_md(self, paragraph_title : str, last_update : datetime, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> str:
 
         '''Creates the expected Markdown content for the provided arguments.'''
 
-        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
         sas_by_publisher_flt_md : str = sas_by_publisher_tpl[1].to_markdown(index = False)
         sas_by_publisher_md : str = sas_by_publisher_tpl[0].to_markdown(index = False)
 
@@ -1465,11 +1455,11 @@ class RLMarkdownFactory():
         md_content += ""
 
         return md_content
-    def create_sas_by_rating_md(self, md_paragraph_title : str, last_update : datetime, sas_by_rating_df : DataFrame) -> str:
+    def create_sas_by_rating_md(self, paragraph_title : str, last_update : datetime, sas_by_rating_df : DataFrame) -> str:
 
         '''Creates the expected Markdown content for the provided arguments.'''
 
-        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
         sas_by_rating_md : str = sas_by_rating_df.to_markdown(index = False)
 
         md_content : str = markdown_header
@@ -1478,11 +1468,11 @@ class RLMarkdownFactory():
         md_content += "\n"
 
         return md_content
-    def create_sas_by_topic_md(self, md_paragraph_title : str, last_update : datetime, sas_by_topic_df : DataFrame) -> str:
+    def create_sas_by_topic_md(self, paragraph_title : str, last_update : datetime, sas_by_topic_df : DataFrame) -> str:
 
         '''Creates the expected Markdown content for the provided arguments.'''
 
-        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
         sas_by_topic_md : str = sas_by_topic_df.to_markdown(index = False)
 
         md_content : str = markdown_header
@@ -1491,11 +1481,11 @@ class RLMarkdownFactory():
         md_content += "\n"
 
         return md_content
-    def create_trend_by_year_topic_md(self, md_paragraph_title : str, last_update : datetime, trend_by_year_topic_df : DataFrame) -> str:
+    def create_trend_by_year_topic_md(self, paragraph_title : str, last_update : datetime, trend_by_year_topic_df : DataFrame) -> str:
 
         '''Creates the expected Markdown content for the provided arguments.'''
 
-        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
         trend_by_year_topic_md : str = trend_by_year_topic_df.to_markdown(index = False)
 
         md_content : str = markdown_header
@@ -1550,6 +1540,16 @@ class ReadingListProcessor():
         self.__setting_bag = setting_bag
         self.__rl_summary = None      
 
+    def __extract_file_name_and_paragraph_title(self, id: str, markdown_infos: list[MarkdownInfo]) -> Tuple[str, str]: 
+    
+        '''Returns (file_name, .paragraph_title) for the provided id or raise an Exception.'''
+
+        for markdown_info in markdown_infos: 
+            if markdown_info.id == id: 
+                return (markdown_info.file_name, markdown_info.paragraph_title)
+
+        raise Exception(f"No MarkdownInfo object found for id = '{id}'.") 
+
     def initialize(self) -> None:
 
         ''''''
@@ -1577,17 +1577,35 @@ class ReadingListProcessor():
             read_years = self.__setting_bag.read_years,
             now = self.__setting_bag.now
         )
+        sas_by_year_street_price_df : DataFrame = self.__component_bag.df_factory.create_sas_by_year_street_price(
+            sas_by_month_tpl = sas_by_month_tpl,
+            rl_df = rl_df,
+            read_years = self.__setting_bag.read_years,
+            rounding_digits = self.__setting_bag.rounding_digits
+        )
+        sas_by_topic_df : DataFrame = self.__component_bag.df_factory.create_sas_by_topic(rl_df = rl_df)
+        sas_by_publisher_tpl : Tuple[DataFrame, DataFrame] = self.__component_bag.df_factory.create_sas_by_publisher_tpl(
+            rl_df = rl_df,
+            rounding_digits = self.__setting_bag.rounding_digits,
+            is_worth_min_books = self.__setting_bag.is_worth_min_books,
+            is_worth_min_avgrating = self.__setting_bag.is_worth_min_avgrating,
+            is_worth_criteria = self.__setting_bag.is_worth_criteria
+        )
+        sas_by_rating_df : DataFrame = self.__component_bag.df_factory.create_sas_by_rating(
+            rl_df = rl_df,
+            formatted_rating = self.__setting_bag.formatted_rating
+        )
+        trend_by_year_topic_df : DataFrame = self.__component_bag.df_factory.create_trend_by_year_topic(
+            rl_df = rl_df,
+            read_years = self.__setting_bag.read_years,
+            enable_sparklines_maximum = self.__setting_bag.enable_sparklines_maximum
+        )
 
-        sas_by_year_street_price_df : DataFrame
-        sas_by_topic_df : DataFrame
-        sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]
-        sas_by_rating_df : DataFrame
-        trend_by_year_topic_df : DataFrame
-
-        rl_by_kbsize_box_plot: Callable[[Any], None]
-        rl_by_books_year_box_plot : Callable[[Any], None]
-
-        rl_md : str
+        rl_md : str = self.__component_bag.md_factory.create_rl_md(
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "rl", markdown_infos = self.__setting_bag.markdown_infos)[1],
+            last_update = self.__setting_bag.markdown_last_update,
+            rl_df = rl_df
+        )
         rl_asrt_md : str
         sas_by_month_md : str
         sas_by_topic_md : str

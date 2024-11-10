@@ -74,7 +74,7 @@ class ObjectMother():
             excel_path = "C:/project_dir/data/Reading List.xlsx",
             excel_books_nrows = 275,
             now = datetime(2024, 3, 4),
-            rl_last_update = datetime(2024, 3, 4)
+            markdown_last_update = datetime(2024, 3, 4)
         )
     @staticmethod
     def create_reading_list_manager() -> RLDataFrameFactory:
