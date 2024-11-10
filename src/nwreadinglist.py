@@ -171,6 +171,21 @@ class RLSummary():
     trend_by_year_topic_md : str
 
 # STATIC CLASSES
+class _MessageCollection():
+
+    '''Collects all the messages used for logging and for the exceptions.'''
+
+    @staticmethod
+    def no_markdowninfo_found(id : str) -> str:
+        return f"No MarkdownInfo object found for id = '{id}'."
+    @staticmethod
+    def please_run_initialize_first() -> str:
+        return "Please run the 'initialize' method first."
+
+    @staticmethod
+    def id_successfully_saved_as(id : str, file_path : str) -> str:
+        return f"'{id}*' has been successfully saved as '{file_path}'."
+
 # CLASSES
 class DefaultPathProvider():
 
@@ -1631,13 +1646,13 @@ class ReadingListProcessor():
         return trend_by_year_topic_df
     def __extract_file_name_and_paragraph_title(self, id: str) -> Tuple[str, str]: 
     
-        '''Returns (file_name, .paragraph_title) for the provided id or raise an Exception.'''
+        '''Returns (file_name, paragraph_title) for the provided id or raise an Exception.'''
 
         for markdown_info in self.__setting_bag.markdown_infos:
             if markdown_info.id == id: 
                 return (markdown_info.file_name, markdown_info.paragraph_title)
 
-        raise Exception(f"No MarkdownInfo object found for id = '{id}'.") 
+        raise Exception(_MessageCollection.no_markdowninfo_found(id = id)) 
     def __create_rl_md(self, rl_df : DataFrame) -> str:
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
@@ -1722,10 +1737,10 @@ class ReadingListProcessor():
         '''Raises an exception if __rl_summary is None.'''
 
         if not hasattr(self, '_ReadingListProcessor__rl_summary'):
-            raise Exception("Please run the 'initialize' method first.")
+            raise Exception(_MessageCollection.please_run_initialize_first())
     def __save_rl_md(self, rl_md : str) -> None:
 
-        ''''''
+        '''Creates the provided Markdown content using __setting_bag.'''
 
         id : str = "rl"
 
@@ -1739,7 +1754,8 @@ class ReadingListProcessor():
             file_path = file_path
         )
 
-        self.__component_bag.logging_function(f"Saved as '{file_path}'.")
+        message : str = _MessageCollection.id_successfully_saved_as(id = id, file_path = file_path)
+        self.__component_bag.logging_function(message)
 
     def initialize(self) -> None:
 
