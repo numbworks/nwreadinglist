@@ -20,7 +20,7 @@ from typing import Any, Callable, Literal, Optional, Tuple
 
 # LOCAL MODULES
 from nwshared import Formatter, Converter, FilePathManager, FileManager
-from nwshared import LambdaProvider, MarkdownHelper, Displayer
+from nwshared import LambdaProvider, MarkdownHelper, Displayer, PlotManager
 
 # CONSTANTS
 # DTOs
@@ -39,6 +39,7 @@ class SettingBag():
     options_rl : list[Literal["display", "save"]]
     options_rl_asrt : list[Literal["display", "log"]]
     options_rl_by_kbsize : list[Literal["display"]]
+    options_rl_by_books_year : list[Literal["plot"]]
     options_sas : list[Literal["display", "save"]]
     options_sas_by_topic : list[Literal["display", "save"]]
     options_sas_by_publisher : list[Literal["display", "save"]]
@@ -73,6 +74,7 @@ class SettingBag():
             options_rl : list[Literal["display", "save"]],
             options_rl_asrt : list[Literal["display", "log"]],
             options_rl_by_kbsize : list[Literal["display"]],
+            options_rl_by_books_year : list[Literal["plot"]],
             options_sas : list[Literal["display", "save"]],
             options_sas_by_topic : list[Literal["display", "save"]],
             options_sas_by_publisher : list[Literal["display", "save"]],
@@ -115,6 +117,7 @@ class SettingBag():
         self.options_rl = options_rl
         self.options_rl_asrt = options_rl_asrt
         self.options_rl_by_kbsize = options_rl_by_kbsize
+        self.options_rl_by_books_year = options_rl_by_books_year
         self.options_sas = options_sas
         self.options_sas_by_topic = options_sas_by_topic
         self.options_sas_by_publisher = options_sas_by_publisher
@@ -1501,6 +1504,7 @@ class ComponentBag():
     df_factory : RLDataFrameFactory
     md_factory : RLMarkdownFactory
     displayer : Displayer
+    plot_manager : PlotManager
     logging_function : Callable[[str], None]
 
     def __init__(
@@ -1517,6 +1521,7 @@ class ComponentBag():
                 formatter = Formatter()
             ),
             displayer : Displayer = Displayer(),
+            plot_manager : PlotManager = PlotManager(),
             logging_function : Callable[[str], None] = LambdaProvider().get_default_logging_function()
         ) -> None:
 
@@ -1525,6 +1530,7 @@ class ComponentBag():
         self.df_factory = df_factory
         self.md_factory = md_factory
         self.displayer = displayer
+        self.plot_manager = plot_manager
         self.logging_function = logging_function
 class ReadingListProcessor():
 
@@ -1819,6 +1825,22 @@ class ReadingListProcessor():
 
         if "display" in options:
             self.__component_bag.displayer.display(df = df)
+    def process_rl_by_books_year(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rl_by_books_year.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_rl_by_books_year
+        df : DataFrame = self.__rl_summary.rl_df
+        x_name : str = "Year"
+
+        if "plot" in options:
+            self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)
     def process_sas(self) -> None:
 
         '''
@@ -1911,7 +1933,6 @@ class ReadingListProcessor():
         self.__validate_summary()
 
         return self.__rl_summary
-
 
 # MAIN
 if __name__ == "__main__":
