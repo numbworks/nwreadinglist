@@ -20,7 +20,7 @@ from typing import Any, Callable, Literal, Optional, Tuple
 
 # LOCAL MODULES
 from nwshared import Formatter, Converter, FilePathManager, FileManager
-from nwshared import LambdaProvider, MarkdownHelper
+from nwshared import LambdaProvider, MarkdownHelper, Displayer
 
 # CONSTANTS
 # DTOs
@@ -1494,6 +1494,7 @@ class ComponentBag():
     file_manager : FileManager
     df_factory : RLDataFrameFactory
     md_factory : RLMarkdownFactory
+    displayer : Displayer
     logging_function : Callable[[str], None]
 
     def __init__(
@@ -1509,6 +1510,7 @@ class ComponentBag():
                 markdown_helper = MarkdownHelper(formatter = Formatter()),
                 formatter = Formatter()
             ),
+            displayer : Displayer = Displayer(),
             logging_function : Callable[[str], None] = LambdaProvider().get_default_logging_function()
         ) -> None:
 
@@ -1516,6 +1518,7 @@ class ComponentBag():
         self.file_manager = file_manager
         self.df_factory = df_factory
         self.md_factory = md_factory
+        self.displayer = displayer
         self.logging_function = logging_function
 class ReadingListProcessor():
 
@@ -1523,13 +1526,12 @@ class ReadingListProcessor():
 
     __component_bag : ComponentBag
     __setting_bag : SettingBag
-    __rl_summary : Optional[RLSummary]
+    __rl_summary : RLSummary
 
     def __init__(self, component_bag : ComponentBag, setting_bag : SettingBag) -> None:
 
         self.__component_bag = component_bag
         self.__setting_bag = setting_bag
-        self.__rl_summary = None
 
     def __create_rl_df(self) -> DataFrame:
 
@@ -1771,7 +1773,7 @@ class ReadingListProcessor():
 
         for option in self.__setting_bag.options_rl:
             if option == "show":
-                return None
+                self.__component_bag.displayer.display(df = self.__rl_summary.rl_df)
     def process_rl_asrt(self) -> None:
 
         '''
@@ -1784,7 +1786,7 @@ class ReadingListProcessor():
 
         for option in self.__setting_bag.options_rl_asrt:
             if option == "show":
-                return None
+                self.__component_bag.displayer.display(df = self.__rl_summary.rl_asrt_df)
     def process_rl_by_kbsize(self) -> None:
 
         '''
