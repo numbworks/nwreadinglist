@@ -1368,6 +1368,9 @@ class RLDataFrameFactory():
         cn_a4sheets : str = "A4Sheets"
         sas_by_publisher_df = sas_by_publisher_df[[cn_publisher, cn_books, cn_a4sheets]]
 
+        cn_ab_perc : str = "AB%"
+        sas_by_publisher_df[cn_ab_perc] = round(((sas_by_publisher_df[cn_a4sheets] / sas_by_publisher_df[cn_books]) * 100), rounding_digits)
+
         cn_rating : str = "Rating"   
         cn_avgrating : str = "AvgRating"
         by_avgrating_df : DataFrame = rl_df.groupby([cn_publisher])[cn_rating].mean().sort_values(ascending = [False]).reset_index(name = cn_avgrating)
@@ -1959,7 +1962,7 @@ class ReadingListProcessor():
 
         options : list = self.__setting_bag.options_sas_by_publisher
         df : DataFrame = self.__rl_summary.sas_by_publisher_tpl[1]
-        formatters : dict = { "AvgRating" : "{:.2f}" }
+        formatters : dict = { "AvgRating" : "{:.2f}", "AB%" : "{:.2f}" }
         id : str = "sas_by_publisher"
         content : str = self.__rl_summary.sas_by_publisher_md
 
