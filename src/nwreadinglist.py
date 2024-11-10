@@ -38,7 +38,7 @@ class SettingBag():
 
     options_rl : list[Literal["display", "save"]]
     options_rl_asrt : list[Literal["display", "log"]]
-    options_rl_by_kbsize : list[Literal["display"]]
+    options_rl_by_kbsize : list[Literal["display", "plot"]]
     options_rl_by_books_year : list[Literal["plot"]]
     options_sas : list[Literal["display", "save"]]
     options_sas_by_topic : list[Literal["display", "save"]]
@@ -73,7 +73,7 @@ class SettingBag():
             self,
             options_rl : list[Literal["display", "save"]],
             options_rl_asrt : list[Literal["display", "log"]],
-            options_rl_by_kbsize : list[Literal["display"]],
+            options_rl_by_kbsize : list[Literal["display", "plot"]],
             options_rl_by_books_year : list[Literal["plot"]],
             options_sas : list[Literal["display", "save"]],
             options_sas_by_topic : list[Literal["display", "save"]],
@@ -1822,9 +1822,13 @@ class ReadingListProcessor():
 
         options : list = self.__setting_bag.options_rl_by_kbsize
         df : DataFrame = self.__rl_summary.rl_by_kbsize_df
+        x_name : str = "A4Sheets"
 
         if "display" in options:
             self.__component_bag.displayer.display(df = df)
+
+        if "plot" in options:
+            self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)            
     def process_rl_by_books_year(self) -> None:
 
         '''
