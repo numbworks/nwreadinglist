@@ -62,6 +62,7 @@ class SettingBag():
     md_last_update : datetime
     md_infos : list[MDInfo]
     publisher_n : int
+    publisher_formatters : dict
     trend_sparklines_maximum : bool
     working_folder_path : str    
     now : datetime
@@ -102,7 +103,8 @@ class SettingBag():
                 MDInfo(id = "sas_by_rating", file_name = "STUDYINGACTIVITYBYRATING.md", paragraph_title = "Studying Activity By Rating"),
                 MDInfo(id = "sas_by_topic", file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic")      
             ],            
-            publisher_n : int = 10,            
+            publisher_n : int = 10,
+            publisher_formatters : dict = { "AvgRating" : "{:.2f}", "AB%" : "{:.2f}" },
             trend_sparklines_maximum : bool = False,
             working_folder_path : str = "/home/nwreadinglist/",
             now : datetime  = datetime.now(),
@@ -139,7 +141,8 @@ class SettingBag():
         self.kbsize_ascending = kbsize_ascending
         self.kbsize_remove_if_zero = kbsize_remove_if_zero        
         self.kbsize_n = kbsize_n
-        self.publisher_n = publisher_n        
+        self.publisher_n = publisher_n
+        self.publisher_formatters = publisher_formatters
         self.trend_sparklines_maximum = trend_sparklines_maximum
         self.working_folder_path = working_folder_path        
         self.now = now
@@ -1964,8 +1967,8 @@ class ReadingListProcessor():
         self.__validate_summary()
 
         options : list = self.__setting_bag.options_sas_by_publisher
-        df : DataFrame = self.__rl_summary.sas_by_publisher_tpl[1]
-        formatters : dict = { "AvgRating" : "{:.2f}", "AB%" : "{:.2f}" }
+        df : DataFrame = self.__rl_summary.sas_by_publisher_tpl[0].head(n = self.__setting_bag.publisher_n)
+        formatters : dict = self.__setting_bag.publisher_formatters
         id : str = "sas_by_publisher"
         content : str = self.__rl_summary.sas_by_publisher_md
 
