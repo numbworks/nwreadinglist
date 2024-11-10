@@ -1424,7 +1424,7 @@ class RLMarkdownFactory():
         md_content += "\n"
 
         return md_content
-    def create_sas_by_month_md(self, paragraph_title : str, last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame) -> str:
+    def create_sas_md(self, paragraph_title : str, last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame) -> str:
 
         '''Creates the expected Markdown content for the provided arguments.'''
 
@@ -1663,20 +1663,20 @@ class ReadingListProcessor():
         )
 
         return rl_md
-    def __create_sas_by_month_md(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], sas_by_year_street_price_df : DataFrame) -> str:
+    def __create_sas_md(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], sas_by_year_street_price_df : DataFrame) -> str:
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
         id : str = "sas"
 
-        sas_by_month_md : str = self.__component_bag.md_factory.create_sas_by_month_md(
+        sas_md : str = self.__component_bag.md_factory.create_sas_md(
             paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
             last_update = self.__setting_bag.markdown_last_update,
             sas_by_month_df = sas_by_month_tpl[1],
             sas_by_year_street_price_df = sas_by_year_street_price_df
         )
 
-        return sas_by_month_md
+        return sas_md
     def __create_sas_by_topic_md(self, sas_by_topic_df : DataFrame) -> str:
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
@@ -1770,7 +1770,7 @@ class ReadingListProcessor():
 
         rl_md : str = self.__create_rl_md(rl_df = rl_df)
         rl_asrt_md : str = self.__component_bag.md_factory.create_rl_asrt_md(rl_asrt_df = rl_asrt_df)
-        sas_by_month_md : str = self.__create_sas_by_month_md(sas_by_month_tpl = sas_by_month_tpl, sas_by_year_street_price_df = sas_by_year_street_price_df)
+        sas_by_month_md : str = self.__create_sas_md(sas_by_month_tpl = sas_by_month_tpl, sas_by_year_street_price_df = sas_by_year_street_price_df)
         sas_by_topic_md : str = self.__create_sas_by_topic_md(sas_by_topic_df = sas_by_topic_df)
         sas_by_publisher_md : str = self.__create_sas_by_publisher_md(sas_by_publisher_tpl = sas_by_publisher_tpl)
         sas_by_rating_md : str = self.__create_sas_by_rating_md(sas_by_rating_df = sas_by_rating_df)
