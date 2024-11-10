@@ -14,15 +14,14 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 from numpy import float64
+from nwshared import Formatter, Converter, FilePathManager, FileManager
+from nwshared import LambdaProvider, MarkdownHelper, Displayer, PlotManager
 from pandas import DataFrame
 from pandas import Series
 from sparklines import sparklines
 from typing import Any, Callable, Literal, Optional, Tuple
 
 # LOCAL MODULES
-from nwshared import Formatter, Converter, FilePathManager, FileManager
-from nwshared import LambdaProvider, MarkdownHelper, Displayer, PlotManager
-
 # CONSTANTS
 # DTOs
 @dataclass(frozen = True)
@@ -106,11 +105,7 @@ class SettingBag():
     excel_books_nrows : int
     excel_books_skiprows : int
     excel_books_tabname : str
-    excel_null_value : str
-    is_worth_min_books : int
-    is_worth_min_ab_perc : float
-    is_worth_min_avgrating : float
-    is_worth_criteria : Literal["Yes", "No"]    
+    excel_null_value : str 
     kbsize_ascending : bool
     kbsize_remove_if_zero : bool
     kbsize_n : int  
@@ -119,6 +114,10 @@ class SettingBag():
     md_infos : list[MDInfo]
     publisher_n : int
     publisher_formatters : dict
+    publisher_min_books : int
+    publisher_min_ab_perc : float
+    publisher_min_avgrating : float
+    publisher_criteria : Literal["Yes", "No"]
     trend_sparklines_maximum : bool
     working_folder_path : str    
     now : datetime
@@ -143,10 +142,6 @@ class SettingBag():
             excel_books_skiprows : int = 0,
             excel_books_tabname : str = "Books",
             excel_null_value : str = "-",
-            is_worth_min_books : int = 8,
-            is_worth_min_avgrating : float = 2.50,
-            is_worth_min_ab_perc : float = 100,
-            is_worth_criteria : Literal["Yes", "No"] = "Yes",             
             kbsize_ascending : bool = False,
             kbsize_remove_if_zero : bool = True,  
             kbsize_n : int = 10,
@@ -161,6 +156,10 @@ class SettingBag():
             ],            
             publisher_n : int = 10,
             publisher_formatters : dict = { "AvgRating" : "{:.2f}", "AB%" : "{:.2f}" },
+            publisher_min_books : int = 8,
+            publisher_min_avgrating : float = 2.50,
+            publisher_min_ab_perc : float = 100,
+            publisher_criteria : Literal["Yes", "No"] = "Yes",            
             trend_sparklines_maximum : bool = False,
             working_folder_path : str = "/home/nwreadinglist/",
             now : datetime  = datetime.now(),
@@ -189,16 +188,16 @@ class SettingBag():
         self.excel_books_nrows = excel_books_nrows
         self.excel_books_skiprows = excel_books_skiprows
         self.excel_books_tabname = excel_books_tabname
-        self.excel_null_value = excel_null_value
-        self.is_worth_min_books = is_worth_min_books
-        self.is_worth_min_avgrating = is_worth_min_avgrating
-        self.is_worth_min_ab_perc = is_worth_min_ab_perc
-        self.is_worth_criteria = is_worth_criteria        
+        self.excel_null_value = excel_null_value     
         self.kbsize_ascending = kbsize_ascending
         self.kbsize_remove_if_zero = kbsize_remove_if_zero        
         self.kbsize_n = kbsize_n
         self.publisher_n = publisher_n
         self.publisher_formatters = publisher_formatters
+        self.publisher_min_books = publisher_min_books
+        self.publisher_min_avgrating = publisher_min_avgrating
+        self.publisher_min_ab_perc = publisher_min_ab_perc
+        self.publisher_criteria = publisher_criteria
         self.trend_sparklines_maximum = trend_sparklines_maximum
         self.working_folder_path = working_folder_path        
         self.now = now
@@ -1073,18 +1072,18 @@ class RLDataFrameFactory():
                     amount = float64(x), rounding_digits = rounding_digits))
 
         return sas_by_street_price_df
-    def __create_sas_by_publisher_footer(self, is_worth_min_books : int, is_worth_min_ab_perc : float, is_worth_min_avgrating : float) -> str:
+    def __create_sas_by_publisher_footer(self, publisher_min_books : int, publisher_min_ab_perc : float, publisher_min_avgrating : float) -> str:
         
         '''Creates a footer message for sas_by_publisher.'''
 
         sas_by_publisher_footer : str = str(
             f"'Yes' if "
-            f"'{RLCN.BOOKS}' >= '{is_worth_min_books}' & "
-            f"('{RLCN.AVGRATING}' >= '{is_worth_min_avgrating}' | '{RLCN.ABPERC}' >= '{is_worth_min_ab_perc}')"
+            f"'{RLCN.BOOKS}' >= '{publisher_min_books}' & "
+            f"('{RLCN.AVGRATING}' >= '{publisher_min_avgrating}' | '{RLCN.ABPERC}' >= '{publisher_min_ab_perc}')"
             )
 
         return sas_by_publisher_footer
-    def __filter_by_is_worth(self, sas_by_publisher_df : DataFrame, is_worth_criteria : str) -> DataFrame:
+    def __filter_by_is_worth(self, sas_by_publisher_df : DataFrame, publisher_criteria : str) -> DataFrame:
 
         '''
                 Publisher	Books	AvgRating	IsWorth
@@ -1095,7 +1094,7 @@ class RLDataFrameFactory():
 
         filtered_df : DataFrame = sas_by_publisher_df.copy(deep = True)
 
-        condition : Series = (filtered_df[RLCN.ISWORTH] == is_worth_criteria)
+        condition : Series = (filtered_df[RLCN.ISWORTH] == publisher_criteria)
         filtered_df = filtered_df.loc[condition]
         
         filtered_df.reset_index(drop = True, inplace = True)
@@ -1293,10 +1292,10 @@ class RLDataFrameFactory():
             self, 
             rl_df : DataFrame, 
             rounding_digits : int, 
-            is_worth_min_books : int, 
-            is_worth_min_ab_perc : float, 
-            is_worth_min_avgrating : float, 
-            is_worth_criteria : str) -> Tuple[DataFrame, DataFrame, str]:
+            publisher_min_books : int, 
+            publisher_min_ab_perc : float, 
+            publisher_min_avgrating : float, 
+            publisher_criteria : str) -> Tuple[DataFrame, DataFrame, str]:
         
         """
             The method returns (sas_by_publisher_df, sas_by_publisher_flt_df, sas_by_publisher_footer).
@@ -1376,18 +1375,18 @@ class RLDataFrameFactory():
 
         sas_by_publisher_df[RLCN.ISWORTH] = np.where(
             np.logical_and(
-                sas_by_publisher_df[RLCN.BOOKS] >= is_worth_min_books,
+                sas_by_publisher_df[RLCN.BOOKS] >= publisher_min_books,
                 np.logical_or(
-                    (sas_by_publisher_df[RLCN.AVGRATING] >= is_worth_min_avgrating), 
-                    (sas_by_publisher_df[RLCN.ABPERC] >= is_worth_min_ab_perc))
+                    (sas_by_publisher_df[RLCN.AVGRATING] >= publisher_min_avgrating), 
+                    (sas_by_publisher_df[RLCN.ABPERC] >= publisher_min_ab_perc))
                 ), "Yes", "No")
         
-        sas_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(sas_by_publisher_df = sas_by_publisher_df, is_worth_criteria = is_worth_criteria)
+        sas_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(sas_by_publisher_df = sas_by_publisher_df, publisher_criteria = publisher_criteria)
 
         sas_by_publisher_footer : str = self.__create_sas_by_publisher_footer(
-            is_worth_min_books = is_worth_min_books,
-            is_worth_min_ab_perc = is_worth_min_ab_perc,
-            is_worth_min_avgrating = is_worth_min_avgrating
+            publisher_min_books = publisher_min_books,
+            publisher_min_ab_perc = publisher_min_ab_perc,
+            publisher_min_avgrating = publisher_min_avgrating
         )
 
         return (sas_by_publisher_df, sas_by_publisher_flt_df, sas_by_publisher_footer)       
@@ -1691,10 +1690,10 @@ class ReadingListProcessor():
         sas_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.__component_bag.df_factory.create_sas_by_publisher_tpl(
             rl_df = rl_df,
             rounding_digits = self.__setting_bag.rounding_digits,
-            is_worth_min_books = self.__setting_bag.is_worth_min_books,
-            is_worth_min_ab_perc = self.__setting_bag.is_worth_min_ab_perc,
-            is_worth_min_avgrating = self.__setting_bag.is_worth_min_avgrating,
-            is_worth_criteria = self.__setting_bag.is_worth_criteria
+            publisher_min_books = self.__setting_bag.publisher_min_books,
+            publisher_min_ab_perc = self.__setting_bag.publisher_min_ab_perc,
+            publisher_min_avgrating = self.__setting_bag.publisher_min_avgrating,
+            publisher_criteria = self.__setting_bag.publisher_criteria
         )
 
         return sas_by_publisher_tpl
