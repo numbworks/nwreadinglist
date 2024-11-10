@@ -25,7 +25,7 @@ from nwshared import LambdaProvider, MarkdownHelper, Displayer, PlotManager
 # CONSTANTS
 # DTOs
 @dataclass(frozen = True)
-class MarkdownInfo():
+class MDInfo():
 
     '''Represents a collection of information related to a Markdown file.'''
 
@@ -63,10 +63,10 @@ class SettingBag():
     is_worth_min_books : int
     is_worth_min_avgrating : float
     is_worth_criteria : str
-    formatted_rating : bool
     trend_sparklines_maximum : bool
-    markdown_last_update : datetime
-    markdown_infos : list[MarkdownInfo]
+    md_stars_rating : bool
+    md_last_update : datetime
+    md_infos : list[MDInfo]
     definitions : dict[str, str]
 
     def __init__(
@@ -97,15 +97,15 @@ class SettingBag():
             is_worth_min_books : int = 8,
             is_worth_min_avgrating : float = 2.50,
             is_worth_criteria : str = "Yes",    
-            formatted_rating : bool = True,
             trend_sparklines_maximum : bool = False,
-            markdown_last_update : datetime = datetime.now(),
-            markdown_infos : list[MarkdownInfo] = [
-                MarkdownInfo(id = "rl", file_name = "READINGLIST.md", paragraph_title = "Reading List"),
-                MarkdownInfo(id = "sas", file_name = "STUDYINGACTIVITY.md", paragraph_title = "Studying Activity"),
-                MarkdownInfo(id = "sas_by_publisher", file_name = "STUDYINGACTIVITYBYPUBLISHER.md", paragraph_title = "Studying Activity By Publisher"),
-                MarkdownInfo(id = "sas_by_rating", file_name = "STUDYINGACTIVITYBYRATING.md", paragraph_title = "Studying Activity By Rating"),
-                MarkdownInfo(id = "sas_by_topic", file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic")      
+            md_stars_rating : bool = True,
+            md_last_update : datetime = datetime.now(),
+            md_infos : list[MDInfo] = [
+                MDInfo(id = "rl", file_name = "READINGLIST.md", paragraph_title = "Reading List"),
+                MDInfo(id = "sas", file_name = "STUDYINGACTIVITY.md", paragraph_title = "Studying Activity"),
+                MDInfo(id = "sas_by_publisher", file_name = "STUDYINGACTIVITYBYPUBLISHER.md", paragraph_title = "Studying Activity By Publisher"),
+                MDInfo(id = "sas_by_rating", file_name = "STUDYINGACTIVITYBYRATING.md", paragraph_title = "Studying Activity By Rating"),
+                MDInfo(id = "sas_by_topic", file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic")      
             ],
             definitions : dict[str, str] = {
                 "RL": "Reading List",
@@ -141,10 +141,10 @@ class SettingBag():
         self.is_worth_min_books = is_worth_min_books
         self.is_worth_min_avgrating = is_worth_min_avgrating
         self.is_worth_criteria = is_worth_criteria
-        self.formatted_rating = formatted_rating
         self.trend_sparklines_maximum = trend_sparklines_maximum
-        self.markdown_last_update = markdown_last_update
-        self.markdown_infos = markdown_infos
+        self.md_stars_rating = md_stars_rating
+        self.md_last_update = md_last_update
+        self.md_infos = md_infos
         self.definitions = definitions
 @dataclass(frozen = True)
 class RLSummary():
@@ -174,8 +174,8 @@ class _MessageCollection():
     '''Collects all the messages used for logging and for the exceptions.'''
 
     @staticmethod
-    def no_markdowninfo_found(id : str) -> str:
-        return f"No MarkdownInfo object found for id='{id}'."
+    def no_mdinfo_found(id : str) -> str:
+        return f"No MDInfo object found for id='{id}'."
     @staticmethod
     def please_run_initialize_first() -> str:
         return "Please run the 'initialize' method first."
@@ -1706,7 +1706,7 @@ class ReadingListProcessor():
 
         sas_by_rating_df : DataFrame = self.__component_bag.df_factory.create_sas_by_rating(
             rl_df = rl_df,
-            formatted_rating = self.__setting_bag.formatted_rating
+            formatted_rating = self.__setting_bag.md_stars_rating
         )
 
         return sas_by_rating_df 
@@ -1725,11 +1725,11 @@ class ReadingListProcessor():
     
         '''Returns (file_name, paragraph_title) for the provided id or raise an Exception.'''
 
-        for markdown_info in self.__setting_bag.markdown_infos:
-            if markdown_info.id == id: 
-                return (markdown_info.file_name, markdown_info.paragraph_title)
+        for md_info in self.__setting_bag.md_infos:
+            if md_info.id == id: 
+                return (md_info.file_name, md_info.paragraph_title)
 
-        raise Exception(_MessageCollection.no_markdowninfo_found(id = id)) 
+        raise Exception(_MessageCollection.no_mdinfo_found(id = id)) 
     def __create_rl_md(self, rl_df : DataFrame) -> str:
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
@@ -1738,7 +1738,7 @@ class ReadingListProcessor():
 
         rl_md : str = self.__component_bag.md_factory.create_rl_md(
             paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
-            last_update = self.__setting_bag.markdown_last_update,
+            last_update = self.__setting_bag.md_last_update,
             rl_df = rl_df
         )
 
@@ -1751,7 +1751,7 @@ class ReadingListProcessor():
 
         sas_md : str = self.__component_bag.md_factory.create_sas_md(
             paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
-            last_update = self.__setting_bag.markdown_last_update,
+            last_update = self.__setting_bag.md_last_update,
             sas_by_month_df = sas_by_month_tpl[1],
             sas_by_year_street_price_df = sas_by_year_street_price_df
         )
@@ -1765,7 +1765,7 @@ class ReadingListProcessor():
 
         sas_by_topic_md : str = self.__component_bag.md_factory.create_sas_by_topic_md(
             paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
-            last_update = self.__setting_bag.markdown_last_update,
+            last_update = self.__setting_bag.md_last_update,
             sas_by_topic_df = sas_by_topic_df,
             trend_by_year_topic_df = trend_by_year_topic_df
         )
@@ -1779,7 +1779,7 @@ class ReadingListProcessor():
 
         sas_by_publisher_md : str = self.__component_bag.md_factory.create_sas_by_publisher_md(
             paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
-            last_update = self.__setting_bag.markdown_last_update,
+            last_update = self.__setting_bag.md_last_update,
             sas_by_publisher_tpl = sas_by_publisher_tpl
         )
 
@@ -1792,7 +1792,7 @@ class ReadingListProcessor():
 
         sas_by_rating_md : str = self.__component_bag.md_factory.create_sas_by_rating_md(
             paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
-            last_update = self.__setting_bag.markdown_last_update,
+            last_update = self.__setting_bag.md_last_update,
             sas_by_rating_df = sas_by_rating_df
         )
 
