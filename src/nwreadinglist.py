@@ -1353,7 +1353,7 @@ class RLMarkdownFactory():
         self.__markdown_helper = markdown_helper
         self.__formatter = formatter
 
-    def __get_formatted_rl(self, rl_df : DataFrame) -> DataFrame:
+    def __format(self, rl_df : DataFrame) -> DataFrame:
 
         '''
                 Id	    Title	            Year	Pages	ReadDate	Publisher	    Rating    Topic
@@ -1391,12 +1391,11 @@ class RLMarkdownFactory():
         '''Creates the expected Markdown content for the provided arguments.'''
 
         markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
-        formatted_rl_df : DataFrame = self.__get_formatted_rl(rl_df = rl_df)
-        formatted_rl_md : str = formatted_rl_df.to_markdown(index = False)
+        rl_md : str = self.__format(rl_df = rl_df).to_markdown(index = False)
 
         md_content : str = markdown_header
         md_content += "\n"
-        md_content += formatted_rl_md
+        md_content += rl_md
         md_content += "\n"
 
         return md_content
@@ -1410,20 +1409,13 @@ class RLMarkdownFactory():
         md_content += "\n"
 
         return md_content
-    def create_sas_by_month_md(self, paragraph_title : str, last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, use_smaller_font : bool) -> str:
+    def create_sas_by_month_md(self, paragraph_title : str, last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame) -> str:
 
         '''Creates the expected Markdown content for the provided arguments.'''
 
-        copy_of_sas_by_month_df : DataFrame = sas_by_month_df.copy(deep=True)
-        copy_of_sas_by_year_street_price_df : DataFrame = sas_by_year_street_price_df.copy(deep=True)
-
-        if use_smaller_font:
-            copy_of_sas_by_month_df = self.__markdown_helper.add_subscript_tags_to_dataframe(df = copy_of_sas_by_month_df)
-            copy_of_sas_by_year_street_price_df = self.__markdown_helper.add_subscript_tags_to_dataframe(df = copy_of_sas_by_year_street_price_df)
-
         markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
-        sas_by_month_md : str = copy_of_sas_by_month_df.to_markdown(index = False)
-        sas_by_year_street_price_md  : str = copy_of_sas_by_year_street_price_df.to_markdown(index = False)
+        sas_by_month_md : str = sas_by_month_df.to_markdown(index = False)
+        sas_by_year_street_price_md  : str = sas_by_year_street_price_df.to_markdown(index = False)
 
         md_content : str = markdown_header
         md_content += "\n"
@@ -1538,8 +1530,101 @@ class ReadingListProcessor():
 
         self.__component_bag = component_bag
         self.__setting_bag = setting_bag
-        self.__rl_summary = None      
+        self.__rl_summary = None
 
+    def __create_rl_df(self) -> DataFrame:
+
+        '''Creates the expected dataframe using __setting_bag.'''
+
+        rl_df : DataFrame = self.__component_bag.df_factory.create_rl(
+            excel_path = self.__setting_bag.excel_path,
+            excel_books_skiprows = self.__setting_bag.excel_books_skiprows,
+            excel_books_nrows = self.__setting_bag.excel_books_nrows,
+            excel_books_tabname = self.__setting_bag.excel_books_tabname,
+            excel_null_value = self.__setting_bag.excel_null_value
+            )
+
+        return rl_df
+    def __create_rl_asrt_df(self, rl_df : DataFrame) -> DataFrame:
+
+        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
+
+        rl_asrt_df : DataFrame = self.__component_bag.df_factory.create_rl_asrt(
+            rl_df = rl_df, 
+            rounding_digits = self.__setting_bag.rounding_digits,
+            now = self.__setting_bag.now
+            )
+
+        return rl_asrt_df  
+    def __create_rl_by_kbsize_df(self, rl_df : DataFrame) -> DataFrame:
+
+        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
+
+        rl_by_kbsize_df : DataFrame = self.__component_bag.df_factory.create_rl_by_kbsize(
+            rl_df = rl_df,
+            kbsize_ascending = self.__setting_bag.kbsize_ascending,
+            kbsize_remove_if_zero = self.__setting_bag.kbsize_remove_if_zero,
+            kbsize_n = self.__setting_bag.kbsize_n
+        )
+
+        return rl_by_kbsize_df
+    def __create_sas_by_month_tpl(self, rl_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
+
+        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
+
+        sas_by_month_tpl : Tuple[DataFrame, DataFrame] = self.__component_bag.df_factory.create_sas_by_month_tpl(
+            rl_df = rl_df,
+            read_years = self.__setting_bag.read_years,
+            now = self.__setting_bag.now
+        )
+
+        return sas_by_month_tpl
+    def __create_sas_by_year_street_price_df(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame) -> DataFrame:
+
+        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
+
+        sas_by_year_street_price_df : DataFrame = self.__component_bag.df_factory.create_sas_by_year_street_price(
+            sas_by_month_tpl = sas_by_month_tpl,
+            rl_df = rl_df,
+            read_years = self.__setting_bag.read_years,
+            rounding_digits = self.__setting_bag.rounding_digits
+        )
+
+        return sas_by_year_street_price_df
+    def __create_sas_by_publisher_tpl(self, rl_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
+
+        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
+
+        sas_by_publisher_tpl : Tuple[DataFrame, DataFrame] = self.__component_bag.df_factory.create_sas_by_publisher_tpl(
+            rl_df = rl_df,
+            rounding_digits = self.__setting_bag.rounding_digits,
+            is_worth_min_books = self.__setting_bag.is_worth_min_books,
+            is_worth_min_avgrating = self.__setting_bag.is_worth_min_avgrating,
+            is_worth_criteria = self.__setting_bag.is_worth_criteria
+        )
+
+        return sas_by_publisher_tpl
+    def __create_sas_by_rating_df(self, rl_df : DataFrame) -> DataFrame:
+
+        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
+
+        sas_by_rating_df : DataFrame = self.__component_bag.df_factory.create_sas_by_rating(
+            rl_df = rl_df,
+            formatted_rating = self.__setting_bag.formatted_rating
+        )
+
+        return sas_by_rating_df 
+    def __create_trend_by_year_topic_df(self, rl_df : DataFrame) -> DataFrame:
+
+        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
+
+        trend_by_year_topic_df : DataFrame = self.__component_bag.df_factory.create_trend_by_year_topic(
+            rl_df = rl_df,
+            read_years = self.__setting_bag.read_years,
+            enable_sparklines_maximum = self.__setting_bag.enable_sparklines_maximum
+        )
+
+        return trend_by_year_topic_df
     def __extract_file_name_and_paragraph_title(self, id: str, markdown_infos: list[MarkdownInfo]) -> Tuple[str, str]: 
     
         '''Returns (file_name, .paragraph_title) for the provided id or raise an Exception.'''
@@ -1549,71 +1634,114 @@ class ReadingListProcessor():
                 return (markdown_info.file_name, markdown_info.paragraph_title)
 
         raise Exception(f"No MarkdownInfo object found for id = '{id}'.") 
+    def __create_rl_md(self, rl_df : DataFrame) -> str:
 
-    def initialize(self) -> None:
-
-        ''''''
-
-        rl_df : DataFrame = self.__component_bag.df_factory.create_rl(
-            excel_path = self.__setting_bag.excel_path,
-            excel_books_skiprows = self.__setting_bag.excel_books_skiprows,
-            excel_books_nrows = self.__setting_bag.excel_books_nrows,
-            excel_books_tabname = self.__setting_bag.excel_books_tabname,
-            excel_null_value = self.__setting_bag.excel_null_value
-            )
-        rl_asrt_df : DataFrame = self.__component_bag.df_factory.create_rl_asrt(
-            rl_df = rl_df, 
-            rounding_digits = self.__setting_bag.rounding_digits,
-            now = self.__setting_bag.now
-            )
-        rl_by_kbsize_df : DataFrame = self.__component_bag.df_factory.create_rl_by_kbsize(
-            rl_df = rl_df,
-            kbsize_ascending = self.__setting_bag.kbsize_ascending,
-            kbsize_remove_if_zero = self.__setting_bag.kbsize_remove_if_zero,
-            kbsize_n = self.__setting_bag.kbsize_n
-        )
-        sas_by_month_tpl : Tuple[DataFrame, DataFrame] = self.__component_bag.df_factory.create_sas_by_month_tpl(
-            rl_df = rl_df,
-            read_years = self.__setting_bag.read_years,
-            now = self.__setting_bag.now
-        )
-        sas_by_year_street_price_df : DataFrame = self.__component_bag.df_factory.create_sas_by_year_street_price(
-            sas_by_month_tpl = sas_by_month_tpl,
-            rl_df = rl_df,
-            read_years = self.__setting_bag.read_years,
-            rounding_digits = self.__setting_bag.rounding_digits
-        )
-        sas_by_topic_df : DataFrame = self.__component_bag.df_factory.create_sas_by_topic(rl_df = rl_df)
-        sas_by_publisher_tpl : Tuple[DataFrame, DataFrame] = self.__component_bag.df_factory.create_sas_by_publisher_tpl(
-            rl_df = rl_df,
-            rounding_digits = self.__setting_bag.rounding_digits,
-            is_worth_min_books = self.__setting_bag.is_worth_min_books,
-            is_worth_min_avgrating = self.__setting_bag.is_worth_min_avgrating,
-            is_worth_criteria = self.__setting_bag.is_worth_criteria
-        )
-        sas_by_rating_df : DataFrame = self.__component_bag.df_factory.create_sas_by_rating(
-            rl_df = rl_df,
-            formatted_rating = self.__setting_bag.formatted_rating
-        )
-        trend_by_year_topic_df : DataFrame = self.__component_bag.df_factory.create_trend_by_year_topic(
-            rl_df = rl_df,
-            read_years = self.__setting_bag.read_years,
-            enable_sparklines_maximum = self.__setting_bag.enable_sparklines_maximum
-        )
+        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
         rl_md : str = self.__component_bag.md_factory.create_rl_md(
             paragraph_title = self.__extract_file_name_and_paragraph_title(id = "rl", markdown_infos = self.__setting_bag.markdown_infos)[1],
             last_update = self.__setting_bag.markdown_last_update,
             rl_df = rl_df
         )
-        rl_asrt_md : str
-        sas_by_month_md : str
-        sas_by_topic_md : str
-        sas_by_publisher_md : str
-        sas_by_rating_md : str
-        trend_by_year_topic_md : str
 
+        return rl_md
+    def __create_sas_by_month_md(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], sas_by_year_street_price_df : DataFrame) -> str:
 
+        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
+
+        sas_by_month_md : str = self.__component_bag.md_factory.create_sas_by_month_md(
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "sas_by_month", markdown_infos = self.__setting_bag.markdown_infos)[1],
+            last_update = self.__setting_bag.markdown_last_update,
+            sas_by_month_df = sas_by_month_tpl[1],
+            sas_by_year_street_price_df = sas_by_year_street_price_df
+        )
+
+        return sas_by_month_md
+    def __create_sas_by_topic_md(self, sas_by_topic_df : DataFrame) -> str:
+
+        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
+
+        sas_by_topic_md : str = self.__component_bag.md_factory.create_sas_by_topic_md(
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "sas_by_topic", markdown_infos = self.__setting_bag.markdown_infos)[1],
+            last_update = self.__setting_bag.markdown_last_update,
+            sas_by_topic_df = sas_by_topic_df
+        )
+
+        return sas_by_topic_md
+    def __create_sas_by_publisher_md(self, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> str:
+
+        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
+
+        sas_by_publisher_md : str = self.__component_bag.md_factory.create_sas_by_publisher_md(
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "sas_by_publisher", markdown_infos = self.__setting_bag.markdown_infos)[1],
+            last_update = self.__setting_bag.markdown_last_update,
+            sas_by_publisher_tpl = sas_by_publisher_tpl
+        )
+
+        return sas_by_publisher_md
+    def __create_sas_by_rating_md(self, sas_by_rating_df : DataFrame) -> str:
+
+        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
+
+        sas_by_rating_md : str = self.__component_bag.md_factory.create_sas_by_rating_md(
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "sas_by_rating", markdown_infos = self.__setting_bag.markdown_infos)[1],
+            last_update = self.__setting_bag.markdown_last_update,
+            sas_by_rating_df = sas_by_rating_df
+        )
+
+        return sas_by_rating_md
+    def __create_trend_by_year_topic_md(self, trend_by_year_topic_df : DataFrame) -> str:
+
+        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
+
+        trend_by_year_topic_md : str = self.__component_bag.md_factory.create_trend_by_year_topic_md(
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = "trend_by_year_topic", markdown_infos = self.__setting_bag.markdown_infos)[1],
+            last_update = self.__setting_bag.markdown_last_update,
+            trend_by_year_topic_df = trend_by_year_topic_df
+        )
+
+        return trend_by_year_topic_md
+
+    def initialize(self) -> None:
+
+        '''Creates a RLSummary object and assign it to __rl_summary.'''
+
+        rl_df : DataFrame = self.__create_rl_df()
+        rl_asrt_df : DataFrame = self.__create_rl_asrt_df(rl_df = rl_df)
+        rl_by_kbsize_df : DataFrame = self.__create_rl_by_kbsize_df(rl_df = rl_df)
+        sas_by_month_tpl : Tuple[DataFrame, DataFrame] = self.__create_sas_by_month_tpl(rl_df = rl_df)
+        sas_by_year_street_price_df : DataFrame = self.__create_sas_by_year_street_price_df(sas_by_month_tpl = sas_by_month_tpl, rl_df = rl_df)
+        sas_by_topic_df : DataFrame = self.__component_bag.df_factory.create_sas_by_topic(rl_df = rl_df)
+        sas_by_publisher_tpl : Tuple[DataFrame, DataFrame] = self.__create_sas_by_publisher_tpl(rl_df = rl_df)
+        sas_by_rating_df : DataFrame = self.__create_sas_by_rating_df(rl_df = rl_df)
+        trend_by_year_topic_df : DataFrame = self.__create_trend_by_year_topic_df(rl_df = rl_df)
+
+        rl_md : str = self.__create_rl_md(rl_df = rl_df)
+        rl_asrt_md : str = self.__component_bag.md_factory.create_rl_asrt_md(rl_asrt_df = rl_asrt_df)
+        sas_by_month_md : str = self.__create_sas_by_month_md(sas_by_month_tpl = sas_by_month_tpl, sas_by_year_street_price_df = sas_by_year_street_price_df)
+        sas_by_topic_md : str = self.__create_sas_by_topic_md(sas_by_topic_df = sas_by_topic_df)
+        sas_by_publisher_md : str = self.__create_sas_by_publisher_md(sas_by_publisher_tpl = sas_by_publisher_tpl)
+        sas_by_rating_md : str = self.__create_sas_by_rating_md(sas_by_rating_df = sas_by_rating_df)
+        trend_by_year_topic_md : str = self.__create_trend_by_year_topic_md(trend_by_year_topic_df = trend_by_year_topic_df)
+
+        self.__rl_summary = RLSummary(
+            rl_df = rl_df,
+            rl_asrt_df = rl_asrt_df,
+            rl_by_kbsize_df = rl_by_kbsize_df,
+            sas_by_month_tpl = sas_by_month_tpl,
+            sas_by_year_street_price_df = sas_by_year_street_price_df,
+            sas_by_topic_df = sas_by_topic_df,
+            sas_by_publisher_tpl = sas_by_publisher_tpl,
+            sas_by_rating_df = sas_by_rating_df,
+            trend_by_year_topic_df = trend_by_year_topic_df,
+            rl_md = rl_md,
+            rl_asrt_md = rl_asrt_md,
+            sas_by_month_md = sas_by_month_md,
+            sas_by_topic_md = sas_by_topic_md,
+            sas_by_publisher_md = sas_by_publisher_md,
+            sas_by_rating_md = sas_by_rating_md,
+            trend_by_year_topic_md = trend_by_year_topic_md
+        )
 
 # MAIN
 if __name__ == "__main__":
