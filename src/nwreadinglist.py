@@ -1313,6 +1313,25 @@ class RLDataFrameFactory():
                     1	O'Reilly	34
                     ... ...         ...
 
+                by_kbsize_df:
+
+                        Publisher	KBSize
+                    0	Syncfusion	1254
+                    1	O'Reilly	987
+                    ... ...         ...
+
+                sas_by_publisher_df:
+
+                        Publisher	Books	KBSize	A4Sheets
+                    0	Syncfusion	38	    1254	7
+                    1	O'Reilly	34	    987	    4
+                    ... ...         ...     ...     ...
+
+                        Publisher	Books	A4Sheets
+                    0	Syncfusion	38	    7
+                    1	O'Reilly	34	    4
+                    ... ...         ...     ...
+
                 by_avgrating_df:
 
                         Publisher	        AvgRating
@@ -1322,10 +1341,10 @@ class RLDataFrameFactory():
 
                 sas_by_publisher_df:
 
-                        Publisher	Books	AvgRating	IsWorth
-                    0	Syncfusion	38	    2.55	    Yes
-                    1	O'Reilly	34	    2.18	    No
-                    ... ...         ...     ...         ...
+                        Publisher	Books	A4Sheets    AvgRating	IsWorth
+                    0	Syncfusion	38	    7           2.55	    Yes
+                    1	O'Reilly	34	    4           2.18	    No
+                    ... ...         ...     ...         ...         ...
 
             IsWorth criteria example: "Yes" if AvgRating >= 2.50 && Books >= 8
         """
@@ -1335,14 +1354,28 @@ class RLDataFrameFactory():
         cn_books : str = "Books"
         by_books_df : DataFrame = rl_df.groupby([cn_publisher])[cn_title].size().sort_values(ascending = [False]).reset_index(name = cn_books)
         
+        cn_kbsize = "KBSize"
+        by_kbsize_df : DataFrame = rl_df.groupby([cn_publisher])[cn_kbsize].sum().sort_values(ascending = False).reset_index(name = cn_kbsize)
+
+        sas_by_publisher_df : DataFrame = pd.merge(
+            left = by_books_df, 
+            right = by_kbsize_df, 
+            how = "inner", 
+            left_on = cn_publisher, 
+            right_on = cn_publisher)
+        sas_by_publisher_df = self.__add_a4sheets_column(df = sas_by_publisher_df)
+        
+        cn_a4sheets : str = "A4Sheets"
+        sas_by_publisher_df = sas_by_publisher_df[[cn_publisher, cn_books, cn_a4sheets]]
+
         cn_rating : str = "Rating"   
         cn_avgrating : str = "AvgRating"
         by_avgrating_df : DataFrame = rl_df.groupby([cn_publisher])[cn_rating].mean().sort_values(ascending = [False]).reset_index(name = cn_avgrating)
         by_avgrating_df[cn_avgrating] = by_avgrating_df[cn_avgrating].apply(
             lambda x : round(number = x, ndigits = rounding_digits)) # 2.5671 => 2.57
 
-        sas_by_publisher_df : DataFrame = pd.merge(
-            left = by_books_df, 
+        sas_by_publisher_df = pd.merge(
+            left = sas_by_publisher_df, 
             right = by_avgrating_df, 
             how = "inner", 
             left_on = cn_publisher, 
