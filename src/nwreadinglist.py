@@ -246,8 +246,6 @@ class RLManager():
         self.__converter = converter
         self.__formatter = formatter
 
-
-
     def __enforce_dataframe_definition_for_rl_df(self, rl_df : DataFrame, excel_null_value : str) -> DataFrame:
 
         '''Enforces definition for the provided dataframe.'''
@@ -1267,8 +1265,7 @@ class RLManager():
             right_on = cn_topic)
 
         return sas_by_topic_df
-    
-    def get_sas_by_publisher_tpl(self, rl_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
+    def get_sas_by_publisher_tpl(self, rl_df : DataFrame, rounding_digits : int, is_worth_min_books : int, is_worth_min_avgrating : float, is_worth_criteria : str) -> Tuple[DataFrame, DataFrame]:
         
         """
             The method returns a tuple of dataframes (sas_by_publisher_df, sas_by_publisher_flt_df), 
@@ -1310,7 +1307,7 @@ class RLManager():
         cn_avgrating : str = "AvgRating"
         by_avgrating_df : DataFrame = rl_df.groupby([cn_publisher])[cn_rating].mean().sort_values(ascending = [False]).reset_index(name = cn_avgrating)
         by_avgrating_df[cn_avgrating] = by_avgrating_df[cn_avgrating].apply(
-            lambda x : round(number = x, ndigits = self.__setting_bag.rounding_digits)) # 2.5671 => 2.57
+            lambda x : round(number = x, ndigits = rounding_digits)) # 2.5671 => 2.57
 
         sas_by_publisher_df : DataFrame = pd.merge(
             left = by_books_df, 
@@ -1321,14 +1318,14 @@ class RLManager():
 
         cn_isworth : str = "IsWorth"
         sas_by_publisher_df[cn_isworth] = np.where(
-            (sas_by_publisher_df[cn_books] >= self.__setting_bag.is_worth_min_books) & 
-            (sas_by_publisher_df[cn_avgrating] >= self.__setting_bag.is_worth_min_avgrating), 
+            (sas_by_publisher_df[cn_books] >= is_worth_min_books) & 
+            (sas_by_publisher_df[cn_avgrating] >= is_worth_min_avgrating), 
             "Yes", "No")
 
-        sas_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(sas_by_publisher_df = sas_by_publisher_df)
+        sas_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(sas_by_publisher_df = sas_by_publisher_df, is_worth_criteria = is_worth_criteria)
 
         return (sas_by_publisher_df, sas_by_publisher_flt_df)       
-    def get_sas_by_rating(self, rl_df : DataFrame) -> DataFrame:
+    def get_sas_by_rating(self, rl_df : DataFrame, formatted_rating : bool) -> DataFrame:
 
         '''
                 Rating  Books
@@ -1343,12 +1340,12 @@ class RLManager():
         sas_by_rating_df.sort_values(by = cn_rating, ascending = False, inplace = True)
         sas_by_rating_df.reset_index(drop = True, inplace = True)
 
-        if self.__setting_bag.formatted_rating:
+        if formatted_rating:
             sas_by_rating_df[cn_rating] = sas_by_rating_df[cn_rating].apply(
-                lambda x : self.__component_bag.formatter.format_rating(rating = x))
+                lambda x : self.__formatter.format_rating(rating = x))
 
         return sas_by_rating_df    
-    def get_trend_by_year_topic(self, rl_df : DataFrame) -> DataFrame:
+    def get_trend_by_year_topic(self, rl_df : DataFrame, read_years : list[int], enable_sparklines_maximum : bool) -> DataFrame:
 
         '''
             Get trend by year and topic as numbers and sparklines.
@@ -1363,16 +1360,14 @@ class RLManager():
         cn_books : str = "Books"
         cn_trend : str = "Trend"
 
-        by_topic_read_year_df : DataFrame = self.__get_books_by_topic_read_year(
-            rl_df = rl_df, 
-            read_years = self.__setting_bag.read_years)
+        by_topic_read_year_df : DataFrame = self.__get_books_by_topic_read_year(rl_df = rl_df, read_years = read_years)
         
         pivoted_df : DataFrame = self.__pivot_column_values_to_cell(
             df = by_topic_read_year_df, 
             cn_index = cn_topic, 
             cn_values = cn_books)
 
-        if self.__setting_bag.enable_sparklines_maximum:
+        if enable_sparklines_maximum:
             maximum : int = by_topic_read_year_df[cn_books].max()
             return self.__add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend, maximum = maximum)
         else: 
