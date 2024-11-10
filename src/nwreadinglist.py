@@ -755,6 +755,27 @@ class RLDataFrameFactory():
         grouped_df = grouped_df.sort_values(by = column_names, ascending = [True, True])
 
         return grouped_df
+    def __add_a4sheets_column(self, df : DataFrame) -> DataFrame:
+
+        '''
+            ... KBSize
+            ... 3732
+            ... ...           
+
+            ... KBSize  A4Sheets
+            ... 3732    8
+            ... ...     ...
+        '''
+
+        copied_df : DataFrame = df.copy(deep = True)
+
+        cn_kbsize : str = "KBSize"
+        cn_a4sheets : str = "A4Sheets"
+
+        copied_df[cn_a4sheets] = copied_df[cn_kbsize].apply(
+            lambda x : self.__converter.convert_word_count_to_A4_sheets(word_count = x))
+
+        return copied_df
     def __slice_by_kbsize(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool) -> DataFrame:
 
         '''
@@ -773,7 +794,6 @@ class RLDataFrameFactory():
         cn_publisher : str = "Publisher"
         cn_rating : str = "Rating"
         cn_kbsize : str = "KBSize"
-        cn_a4sheets : str = "A4Sheets"
 
         sliced_df = sliced_df[[cn_title, cn_readyear, cn_topic, cn_publisher, cn_rating, cn_kbsize]]
 
@@ -782,8 +802,7 @@ class RLDataFrameFactory():
             sliced_df = sliced_df.loc[condition]
 
         sliced_df = sliced_df.sort_values(by = cn_kbsize, ascending = ascending).reset_index(drop = True)   
-        sliced_df[cn_a4sheets] = sliced_df[cn_kbsize].apply(
-            lambda x : self.__converter.convert_word_count_to_A4_sheets(word_count = x))
+        sliced_df = self.__add_a4sheets_column(df = sliced_df)
 
         return sliced_df    
     def __create_topics_dataframe(self, df : DataFrame) -> DataFrame:
@@ -1227,12 +1246,24 @@ class RLDataFrameFactory():
                 1	C#	                    15772
                 ... ...                     ...
 
+            by_kbsize_df:
+
+                    Topic	                KBSize
+                0	Software Engineering	32169
+                1	C#	                    23141
+                ... ...                     ...  
+
             sas_by_topic_df:
             
-                    Topic	                Books	Pages
-                0	Software Engineering	61	    16776
-                1	C#	                    50	    15772
-                ... ...                     ...     ...     
+                    Topic	                Books	Pages   KBSize  A4Sheets
+                0	Software Engineering	61	    16776   32169   65
+                1	C#	                    50	    15772   23141   47
+                ... ...                     ...     ...     ...     ...
+
+                    Topic	                Books	Pages   A4Sheets
+                0	Software Engineering	61	    16776   65
+                1	C#	                    50	    15772   47
+                ... ...                     ...     ...     ...
         """
 
         cn_title : str = "Title"
@@ -1249,6 +1280,21 @@ class RLDataFrameFactory():
             how = "inner", 
             left_on = cn_topic, 
             right_on = cn_topic)
+
+        cn_kbsize = "KBSize"
+        by_kbsize_df : DataFrame = rl_df.groupby([cn_topic])[cn_kbsize].sum().sort_values(ascending = False).reset_index(name = cn_kbsize)
+
+        sas_by_topic_df = pd.merge(
+            left = sas_by_topic_df, 
+            right = by_kbsize_df, 
+            how = "inner", 
+            left_on = cn_topic, 
+            right_on = cn_topic)
+        
+        sas_by_topic_df = self.__add_a4sheets_column(df = sas_by_topic_df)
+
+        cn_a4sheets : str = "A4Sheets"
+        sas_by_topic_df = sas_by_topic_df[[cn_topic, cn_books, cn_pages, cn_a4sheets]]
 
         return sas_by_topic_df
     def create_sas_by_publisher_tpl(self, rl_df : DataFrame, rounding_digits : int, is_worth_min_books : int, is_worth_min_avgrating : float, is_worth_criteria : str) -> Tuple[DataFrame, DataFrame]:
