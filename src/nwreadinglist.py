@@ -1799,7 +1799,7 @@ class ReadingListProcessor():
 
         for option in self.__setting_bag.options_rl_by_kbsize:
             if option == "show":
-                return None
+                self.__component_bag.displayer.display(df = self.__rl_summary.rl_by_kbsize_df)
     def process_sas_by_month(self) -> None:
 
         '''
