@@ -64,7 +64,7 @@ class SettingBag():
     is_worth_min_avgrating : float
     is_worth_criteria : str
     formatted_rating : bool
-    enable_sparklines_maximum : bool
+    trend_sparklines_maximum : bool
     markdown_last_update : datetime
     markdown_infos : list[MarkdownInfo]
     definitions : dict[str, str]
@@ -98,7 +98,7 @@ class SettingBag():
             is_worth_min_avgrating : float = 2.50,
             is_worth_criteria : str = "Yes",    
             formatted_rating : bool = True,
-            enable_sparklines_maximum : bool = True,
+            trend_sparklines_maximum : bool = False,
             markdown_last_update : datetime = datetime.now(),
             markdown_infos : list[MarkdownInfo] = [
                 MarkdownInfo(id = "rl", file_name = "READINGLIST.md", paragraph_title = "Reading List"),
@@ -142,7 +142,7 @@ class SettingBag():
         self.is_worth_min_avgrating = is_worth_min_avgrating
         self.is_worth_criteria = is_worth_criteria
         self.formatted_rating = formatted_rating
-        self.enable_sparklines_maximum = enable_sparklines_maximum
+        self.trend_sparklines_maximum = trend_sparklines_maximum
         self.markdown_last_update = markdown_last_update
         self.markdown_infos = markdown_infos
         self.definitions = definitions
@@ -1413,7 +1413,7 @@ class RLDataFrameFactory():
                 lambda x : self.__formatter.format_rating(rating = x))
 
         return sas_by_rating_df    
-    def create_trend_by_year_topic(self, rl_df : DataFrame, read_years : list[int], enable_sparklines_maximum : bool) -> DataFrame:
+    def create_trend_by_year_topic(self, rl_df : DataFrame, read_years : list[int], trend_sparklines_maximum : bool) -> DataFrame:
 
         '''
             Get trend by year and topic as numbers and sparklines.
@@ -1435,7 +1435,7 @@ class RLDataFrameFactory():
             cn_index = cn_topic, 
             cn_values = cn_books)
 
-        if enable_sparklines_maximum:
+        if trend_sparklines_maximum:
             maximum : int = by_topic_read_year_df[cn_books].max()
             return self.__add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend, maximum = maximum)
         else: 
@@ -1717,7 +1717,7 @@ class ReadingListProcessor():
         trend_by_year_topic_df : DataFrame = self.__component_bag.df_factory.create_trend_by_year_topic(
             rl_df = rl_df,
             read_years = self.__setting_bag.read_years,
-            enable_sparklines_maximum = self.__setting_bag.enable_sparklines_maximum
+            trend_sparklines_maximum = self.__setting_bag.trend_sparklines_maximum
         )
 
         return trend_by_year_topic_df
