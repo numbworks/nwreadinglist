@@ -1303,14 +1303,21 @@ class RLDataFrameFactory():
         sas_by_topic_df = sas_by_topic_df[[cn_topic, cn_books, cn_pages, cn_a4sheets]]
 
         return sas_by_topic_df
-    def create_sas_by_publisher_tpl(self, rl_df : DataFrame, rounding_digits : int, is_worth_min_books : int, is_worth_min_avgrating : float, is_worth_criteria : str) -> Tuple[DataFrame, DataFrame]:
+    def create_sas_by_publisher_tpl(
+            self, 
+            rl_df : DataFrame, 
+            rounding_digits : int, 
+            is_worth_min_books : int, 
+            is_worth_min_ab_perc : float, 
+            is_worth_min_avgrating : float, 
+            is_worth_criteria : str) -> Tuple[DataFrame, DataFrame]:
         
         """
             The method returns a tuple of dataframes (sas_by_publisher_df, sas_by_publisher_flt_df), 
             where the first item contains the full dataset while the second one only the rows filtered 
             by setting_bag.is_worth_criteria.
 
-            Example:
+            Data Pipeline:
 
                 by_books_df:
 
@@ -1338,6 +1345,11 @@ class RLDataFrameFactory():
                     1	O'Reilly	34	    4
                     ... ...         ...     ...
 
+                        Publisher	Books	A4Sheets    AB%
+                    0	Syncfusion	38	    7           34.00
+                    1	O'Reilly	34	    4           9.43
+                    ... ...         ...     ...         ...
+
                 by_avgrating_df:
 
                         Publisher	        AvgRating
@@ -1347,12 +1359,10 @@ class RLDataFrameFactory():
 
                 sas_by_publisher_df:
 
-                        Publisher	Books	A4Sheets    AvgRating	IsWorth
-                    0	Syncfusion	38	    7           2.55	    Yes
-                    1	O'Reilly	34	    4           2.18	    No
-                    ... ...         ...     ...         ...         ...
-
-            IsWorth criteria example: "Yes" if AvgRating >= 2.50 && Books >= 8
+                        Publisher	Books	A4Sheets    AB%     AvgRating	IsWorth
+                    0	Syncfusion	38	    7           34.00   2.55	    Yes
+                    1	O'Reilly	34	    4           9.43    2.18	    No
+                    ... ...         ...     ...         ...     ...         ...
         """
 
         cn_publisher : str = "Publisher"
@@ -1391,10 +1401,8 @@ class RLDataFrameFactory():
             right_on = cn_publisher)
 
         cn_isworth : str = "IsWorth"
-        sas_by_publisher_df[cn_isworth] = np.where(
-            (sas_by_publisher_df[cn_books] >= is_worth_min_books) & 
-            (sas_by_publisher_df[cn_avgrating] >= is_worth_min_avgrating), 
-            "Yes", "No")
+        condition : Series = (sas_by_publisher_df[cn_books] >= is_worth_min_books) & ((sas_by_publisher_df[cn_avgrating] >= is_worth_min_avgrating) | (sas_by_publisher_df[cn_ab_perc] >= is_worth_min_ab_perc))
+        sas_by_publisher_df[cn_isworth] = np.where(condition, "Yes", "No")
 
         sas_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(sas_by_publisher_df = sas_by_publisher_df, is_worth_criteria = is_worth_criteria)
 
@@ -1701,6 +1709,7 @@ class ReadingListProcessor():
             rl_df = rl_df,
             rounding_digits = self.__setting_bag.rounding_digits,
             is_worth_min_books = self.__setting_bag.is_worth_min_books,
+            is_worth_min_ab_perc = self.__setting_bag.is_worth_min_ab_perc,
             is_worth_min_avgrating = self.__setting_bag.is_worth_min_avgrating,
             is_worth_criteria = self.__setting_bag.is_worth_criteria
         )
