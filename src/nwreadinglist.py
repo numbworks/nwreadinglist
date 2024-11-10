@@ -48,25 +48,25 @@ class SettingBag():
     read_years : list[int]
     excel_path : str
     excel_books_nrows : int
-
     excel_books_skiprows : int
     excel_books_tabname : str
     excel_null_value : str
-    working_folder_path : str    
-    now : datetime
+    is_worth_min_books : int
+    is_worth_min_ab_perc : float
+    is_worth_min_avgrating : float
+    is_worth_criteria : Literal["Yes", "No"]    
     kbsize_ascending : bool
     kbsize_remove_if_zero : bool
-    kbsize_n : int    
-    n_generic : int
-    n_by_month : int
-    rounding_digits : int
-    is_worth_min_books : int
-    is_worth_min_avgrating : float
-    is_worth_criteria : str
-    trend_sparklines_maximum : bool
+    kbsize_n : int  
     md_stars_rating : bool
     md_last_update : datetime
     md_infos : list[MDInfo]
+    publisher_n : int
+    trend_sparklines_maximum : bool
+    working_folder_path : str    
+    now : datetime
+    n : int
+    rounding_digits : int
     definitions : dict[str, str]
 
     def __init__(
@@ -86,18 +86,13 @@ class SettingBag():
             excel_books_skiprows : int = 0,
             excel_books_tabname : str = "Books",
             excel_null_value : str = "-",
-            working_folder_path : str = "/home/nwreadinglist/",
-            now : datetime  = datetime.now(),
+            is_worth_min_books : int = 8,
+            is_worth_min_avgrating : float = 2.50,
+            is_worth_min_ab_perc : float = 100,
+            is_worth_criteria : Literal["Yes", "No"] = "Yes",             
             kbsize_ascending : bool = False,
             kbsize_remove_if_zero : bool = True,  
             kbsize_n : int = 10,
-            n_generic : int = 5,
-            n_by_month : int = 12,
-            rounding_digits : int = 2,
-            is_worth_min_books : int = 8,
-            is_worth_min_avgrating : float = 2.50,
-            is_worth_criteria : str = "Yes",    
-            trend_sparklines_maximum : bool = False,
             md_stars_rating : bool = True,
             md_last_update : datetime = datetime.now(),
             md_infos : list[MDInfo] = [
@@ -106,11 +101,19 @@ class SettingBag():
                 MDInfo(id = "sas_by_publisher", file_name = "STUDYINGACTIVITYBYPUBLISHER.md", paragraph_title = "Studying Activity By Publisher"),
                 MDInfo(id = "sas_by_rating", file_name = "STUDYINGACTIVITYBYRATING.md", paragraph_title = "Studying Activity By Rating"),
                 MDInfo(id = "sas_by_topic", file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic")      
-            ],
+            ],            
+            publisher_n : int = 10,            
+            trend_sparklines_maximum : bool = False,
+            working_folder_path : str = "/home/nwreadinglist/",
+            now : datetime  = datetime.now(),
+            n : int = 5,
+            rounding_digits : int = 2,  
             definitions : dict[str, str] = {
                 "RL": "Reading List",
+                "SAS": "Studying Activity Summary.",
                 "KBSize": "This metric is the word count of the notes I took about a given book.",
-                "SAS": "Studying Activity Summary."
+                "A4Sheets": "'KBSize' converted into amount of A4 sheets.",
+                "AB%": "Calculated with the following formula: '(A4Sheets / Books) * 100'."
                 }
             ) -> None:
 
@@ -126,22 +129,22 @@ class SettingBag():
         self.read_years = read_years
         self.excel_path = excel_path
         self.excel_books_nrows = excel_books_nrows
-
         self.excel_books_skiprows = excel_books_skiprows
         self.excel_books_tabname = excel_books_tabname
         self.excel_null_value = excel_null_value
-        self.working_folder_path = working_folder_path        
-        self.now = now
-        self.n_generic = n_generic
-        self.n_by_month = n_by_month
+        self.is_worth_min_books = is_worth_min_books
+        self.is_worth_min_avgrating = is_worth_min_avgrating
+        self.is_worth_min_ab_perc = is_worth_min_ab_perc
+        self.is_worth_criteria = is_worth_criteria        
         self.kbsize_ascending = kbsize_ascending
         self.kbsize_remove_if_zero = kbsize_remove_if_zero        
         self.kbsize_n = kbsize_n
-        self.rounding_digits = rounding_digits
-        self.is_worth_min_books = is_worth_min_books
-        self.is_worth_min_avgrating = is_worth_min_avgrating
-        self.is_worth_criteria = is_worth_criteria
+        self.publisher_n = publisher_n        
         self.trend_sparklines_maximum = trend_sparklines_maximum
+        self.working_folder_path = working_folder_path        
+        self.now = now
+        self.n = n
+        self.rounding_digits = rounding_digits
         self.md_stars_rating = md_stars_rating
         self.md_last_update = md_last_update
         self.md_infos = md_infos
