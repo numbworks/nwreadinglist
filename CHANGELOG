@@ -1,6 +1,6 @@
 v4.0.0 - BREAKING CHANGES
 - Application:
-	- Feature: architecture re-structured to simplify future expansions.
+	- Feature: re-structured the whole architecture to simplify usage and future expansions.
 	- Maintenance: dependency update (nwshared v1.6.0 => v1.7.0).
 - Documentation:
 	- Feature: updated to v4.0.0.
