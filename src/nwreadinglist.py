@@ -23,37 +23,6 @@ from typing import Any, Callable, Literal, Optional, Tuple
 
 # LOCAL MODULES
 # CONSTANTS
-# DTOs
-@dataclass(frozen = True)
-class MDInfo():
-
-    '''Represents a collection of information related to a Markdown file.'''
-
-    id : str
-    file_name : str
-    paragraph_title : str
-@dataclass(frozen = True)
-class RLSummary():
-
-    '''Collects all the dataframes and markdowns.'''
-
-    rl_df : DataFrame
-    rl_asrt_df : DataFrame
-    rl_by_kbsize_df : DataFrame
-    sas_by_month_tpl : Tuple[DataFrame, DataFrame]
-    sas_by_year_street_price_df : DataFrame
-    sas_by_topic_df : DataFrame
-    sas_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]
-    sas_by_rating_df : DataFrame
-    trend_by_year_topic_df : DataFrame
-    definitions_df : DataFrame
-
-    rl_md : str
-    rl_asrt_md : str
-    sas_md : str
-    sas_by_topic_md : str
-    sas_by_publisher_md : str
-    sas_by_rating_md : str
 class RLCN(StrEnum):
     
     '''Collects all the column names used by RLDataFrameFactory.'''
@@ -88,6 +57,47 @@ class RLCN(StrEnum):
     YEARS = "Years"
     TOTALSPEND = "TotalSpend"
     LASTUPDATE = "LastUpdate"
+class RLID(StrEnum):
+    
+    '''Collects all the ids that identify the dataframes created by RLDataFrameFactory.'''
+
+    RL = "rl"
+    SAS = "sas"
+    SASBYPUBLISHER = "sas_by_publisher"
+    SASBYRATING = "sas_by_rating"
+    SASBYTOPIC = "sas_by_topic"
+
+# DTOs
+@dataclass(frozen = True)
+class MDInfo():
+
+    '''Represents a collection of information related to a Markdown file.'''
+
+    id : RLID
+    file_name : str
+    paragraph_title : str
+@dataclass(frozen = True)
+class RLSummary():
+
+    '''Collects all the dataframes and markdowns.'''
+
+    rl_df : DataFrame
+    rl_asrt_df : DataFrame
+    rl_by_kbsize_df : DataFrame
+    sas_by_month_tpl : Tuple[DataFrame, DataFrame]
+    sas_by_year_street_price_df : DataFrame
+    sas_by_topic_df : DataFrame
+    sas_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]
+    sas_by_rating_df : DataFrame
+    trend_by_year_topic_df : DataFrame
+    definitions_df : DataFrame
+
+    rl_md : str
+    rl_asrt_md : str
+    sas_md : str
+    sas_by_topic_md : str
+    sas_by_publisher_md : str
+    sas_by_rating_md : str
 class SettingBag():
 
     '''Represents a collection of settings.'''
@@ -150,11 +160,11 @@ class SettingBag():
             md_stars_rating : bool = True,
             md_last_update : datetime = datetime.now(),
             md_infos : list[MDInfo] = [
-                MDInfo(id = "rl", file_name = "READINGLIST.md", paragraph_title = "Reading List"),
-                MDInfo(id = "sas", file_name = "STUDYINGACTIVITY.md", paragraph_title = "Studying Activity"),
-                MDInfo(id = "sas_by_publisher", file_name = "STUDYINGACTIVITYBYPUBLISHER.md", paragraph_title = "Studying Activity By Publisher"),
-                MDInfo(id = "sas_by_rating", file_name = "STUDYINGACTIVITYBYRATING.md", paragraph_title = "Studying Activity By Rating"),
-                MDInfo(id = "sas_by_topic", file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic")
+                MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List"),
+                MDInfo(id = RLID.SAS, file_name = "STUDYINGACTIVITY.md", paragraph_title = "Studying Activity"),
+                MDInfo(id = RLID.SASBYPUBLISHER, file_name = "STUDYINGACTIVITYBYPUBLISHER.md", paragraph_title = "Studying Activity By Publisher"),
+                MDInfo(id = RLID.SASBYRATING, file_name = "STUDYINGACTIVITYBYRATING.md", paragraph_title = "Studying Activity By Rating"),
+                MDInfo(id = RLID.SASBYTOPIC, file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic")
             ],            
             publisher_n : int = 10,
             publisher_formatters : dict = { "AvgRating" : "{:.2f}", "AB%" : "{:.2f}" },
@@ -216,7 +226,7 @@ class _MessageCollection():
         return "Please run the 'initialize' method first."
 
     @staticmethod
-    def this_content_successfully_saved_as(id : str, file_path : str) -> str:
+    def this_content_successfully_saved_as(id : RLID, file_path : str) -> str:
         return f"This content (id: '{id}') has been successfully saved as '{file_path}'."
 
 # CLASSES
@@ -1733,7 +1743,7 @@ class ReadingListProcessor():
         )
 
         return trend_by_year_topic_df
-    def __extract_file_name_and_paragraph_title(self, id: str) -> Tuple[str, str]: 
+    def __extract_file_name_and_paragraph_title(self, id : RLID) -> Tuple[str, str]: 
     
         '''Returns (file_name, paragraph_title) for the provided id or raise an Exception.'''
 
@@ -1815,7 +1825,7 @@ class ReadingListProcessor():
 
         if not hasattr(self, '_ReadingListProcessor__rl_summary'):
             raise Exception(_MessageCollection.please_run_initialize_first())
-    def __save_and_log(self, id : str, content : str) -> None:
+    def __save_and_log(self, id : RLID, content : str) -> None:
 
         '''Creates the provided Markdown content using __setting_bag.'''
 
@@ -1881,13 +1891,14 @@ class ReadingListProcessor():
 
         options : list = self.__setting_bag.options_rl
         df : DataFrame = self.__rl_summary.rl_df
-        content : str = self.__rl_summary.rl_md       
+        content : str = self.__rl_summary.rl_md
+        id : RLID = RLID.RL
 
         if "display" in options:
             self.__component_bag.displayer.display(df = df)
 
         if "save" in options:
-            self.__save_and_log(id = "rl", content = content)
+            self.__save_and_log(id = id, content = content)
     def process_rl_asrt(self) -> None:
 
         '''
@@ -1955,8 +1966,8 @@ class ReadingListProcessor():
         options : list = self.__setting_bag.options_sas
         df_1 : DataFrame = self.__rl_summary.sas_by_month_tpl[1]
         df_2 : DataFrame = self.__rl_summary.sas_by_year_street_price_df
-        id : str = "sas"
         content : str = self.__rl_summary.sas_md     
+        id : RLID = RLID.SAS
 
         if "display" in options:
             self.__component_bag.displayer.display(df = df_1)
@@ -1977,9 +1988,9 @@ class ReadingListProcessor():
         options : list = self.__setting_bag.options_sas_by_publisher
         df : DataFrame = self.__rl_summary.sas_by_publisher_tpl[0].head(n = self.__setting_bag.publisher_n)
         formatters : dict = self.__setting_bag.publisher_formatters
-        id : str = "sas_by_publisher"
-        content : str = self.__rl_summary.sas_by_publisher_md
         footer : str = self.__rl_summary.sas_by_publisher_tpl[2] + "\n"
+        content : str = self.__rl_summary.sas_by_publisher_md
+        id : RLID = RLID.SASBYPUBLISHER
 
         if "display" in options:
             self.__component_bag.displayer.display(df = df, formatters = formatters)
@@ -2001,8 +2012,8 @@ class ReadingListProcessor():
 
         options : list = self.__setting_bag.options_sas_by_rating
         df : DataFrame = self.__rl_summary.sas_by_rating_df
-        id : str = "sas_by_rating"
         content : str = self.__rl_summary.sas_by_rating_md
+        id : RLID = RLID.SASBYRATING      
 
         if "display" in options:
             self.__component_bag.displayer.display(df = df)
@@ -2022,8 +2033,8 @@ class ReadingListProcessor():
         options : list = self.__setting_bag.options_sas_by_topic
         df_1 : DataFrame = self.__rl_summary.sas_by_topic_df
         df_2 : DataFrame = self.__rl_summary.trend_by_year_topic_df
-        id : str = "sas_by_topic"
         content : str = self.__rl_summary.sas_by_topic_md
+        id : RLID = RLID.SASBYTOPIC
 
         if "display" in options:
             self.__component_bag.displayer.display(df = df_1)
