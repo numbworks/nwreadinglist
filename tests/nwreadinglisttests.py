@@ -145,6 +145,13 @@ class ObjectMother():
             "Pages": np.array([4609, 535, 429], dtype = int32),
             "A4Sheets": np.array([0, 0, 0], dtype = np.int64)
         }, index=pd.RangeIndex(start=0, stop=3, step=1))
+    @staticmethod
+    def create_sas_by_rating_df() -> DataFrame:
+
+        return pd.DataFrame({
+            "Rating": np.array(["★★★★☆", "★★★☆☆", "★★☆☆☆", "★☆☆☆☆"], dtype = object),
+            "Books": np.array([1, 3, 4, 6], dtype = np.int64),
+        }, index=pd.RangeIndex(start = 0, stop = 4, step = 1))
 
 # TEST CLASSES
 class MDInfoTestCase(unittest.TestCase):
@@ -567,6 +574,8 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         self.excel_books_tabname : str = "Books"
         self.excel_null_value : str = "-"
 
+        self.md_stars_rating : bool = True
+
     def test_createrl_shouldreturnexpecteddataframe_wheninvoked(self):
 
         # Arrange
@@ -596,6 +605,17 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Act
         actual : DataFrame = self.df_factory.create_sas_by_topic(rl_df = rl_df)
+
+        # Assert
+        assert_frame_equal(expected, actual)
+    def test_createsasbyrating_shouldreturnexpecteddataframe_whenformattedratingequalstotrue(self):
+        
+        # Arrange
+        rl_df : DataFrame = ObjectMother().create_rl_df()
+        expected : DataFrame = ObjectMother().create_sas_by_rating_df()
+
+        # Act
+        actual : DataFrame = self.df_factory.create_sas_by_rating(rl_df = rl_df, md_stars_rating = self.md_stars_rating)
 
         # Assert
         assert_frame_equal(expected, actual)

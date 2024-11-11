@@ -1395,7 +1395,7 @@ class RLDataFrameFactory():
         )
 
         return (sas_by_publisher_df, sas_by_publisher_flt_df, sas_by_publisher_footer)       
-    def create_sas_by_rating(self, rl_df : DataFrame, formatted_rating : bool) -> DataFrame:
+    def create_sas_by_rating(self, rl_df : DataFrame, md_stars_rating : bool) -> DataFrame:
 
         '''
                 Rating  Books
@@ -1408,7 +1408,7 @@ class RLDataFrameFactory():
         sas_by_rating_df.sort_values(by = RLCN.RATING, ascending = False, inplace = True)
         sas_by_rating_df.reset_index(drop = True, inplace = True)
 
-        if formatted_rating:
+        if md_stars_rating:
             sas_by_rating_df[RLCN.RATING] = sas_by_rating_df[RLCN.RATING].apply(
                 lambda x : self.__formatter.format_rating(rating = x))
 
@@ -1728,7 +1728,7 @@ class ReadingListProcessor():
 
         sas_by_rating_df : DataFrame = self.__component_bag.df_factory.create_sas_by_rating(
             rl_df = rl_df,
-            formatted_rating = self.__setting_bag.md_stars_rating
+            md_stars_rating = self.__setting_bag.md_stars_rating
         )
 
         return sas_by_rating_df 
