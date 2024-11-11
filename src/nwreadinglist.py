@@ -1051,6 +1051,8 @@ class RLDataFrameFactory():
 
                 2016	    ↕	2017	    ↕	2018	    ↕	2019	↕	2020	↕	2021	↕	2022	↕	2023
             0	$1447.14	↑	$2123.36	↓	$1249.15	↓	$748.70	↓	$538.75	↓	$169.92	↓	$49.99	↓	$5.00
+
+            In the case there is a mismatch bewtween the actual and expected column, we create the missing ones with "0" as value.
         '''
 
         sas_by_street_price_df : DataFrame = rl_df.copy(deep=True)
@@ -1068,14 +1070,23 @@ class RLDataFrameFactory():
         sas_by_street_price_df.rename_axis(None, axis = 1, inplace = True)
         sas_by_street_price_df.columns = sas_by_street_price_df.columns.astype(str)
         
-        sas_by_street_price_df = self.__add_trend_to_sas_by_street_price(sas_by_street_price_df = sas_by_street_price_df, yeatrend = read_years)
-        sas_by_street_price_df.rename(columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)), inplace = True)
-
         new_column_names : list = [str(x) for x in read_years]
+
+        if sas_by_street_price_df.shape[1] != len(read_years):
+            for column_name in new_column_names:
+                if column_name not in sas_by_street_price_df.columns:
+                    sas_by_street_price_df[column_name] = 0
+            sas_by_street_price_df = sas_by_street_price_df[new_column_names]
+
+        if sas_by_street_price_df.shape[1] > 1:
+            sas_by_street_price_df = self.__add_trend_to_sas_by_street_price(sas_by_street_price_df = sas_by_street_price_df, yeatrend = read_years)
+            sas_by_street_price_df.rename(columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)), inplace = True)
+
         for column_name in new_column_names:
-            sas_by_street_price_df[column_name] = sas_by_street_price_df[column_name].apply(
-                lambda x : self.__formatter.format_usd_amount(
-                    amount = float64(x), rounding_digits = rounding_digits))
+            if column_name in sas_by_street_price_df.columns:
+                sas_by_street_price_df[column_name] = sas_by_street_price_df[column_name].apply(
+                    lambda x : self.__formatter.format_usd_amount(
+                        amount = float64(x), rounding_digits = rounding_digits))
 
         return sas_by_street_price_df
     def __create_sas_by_publisher_footer(self, publisher_min_books : int, publisher_min_ab_perc : float, publisher_min_avgrating : float) -> str:

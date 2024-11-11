@@ -186,6 +186,14 @@ class ObjectMother():
 
         return (sas_by_month_df, sas_by_month_upd_df)
     @staticmethod
+    def create_sas_by_year_street_price_df() -> DataFrame:
+
+        return DataFrame({
+            "2023": np.array(["0 (0)", "$0.00"], dtype = object),
+            "↕": np.array(["↑", "↑"], dtype = object),
+            "2024": np.array(["14 (5573)", "$587.57"], dtype = object)
+        }, index=pd.Index([0, 1], dtype="int64")) 
+    @staticmethod
     def create_sas_by_topic_df() -> DataFrame:
 
         return pd.DataFrame({
@@ -694,18 +702,37 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         # Arrange
         rl_df : DataFrame = ObjectMother().create_rl_tpl()[0]
         now : datetime = datetime(2024, 2, 19)
+        read_years : list[int] = [ 2023, 2024 ]
         (expected_1, expected_2) = ObjectMother().create_sas_by_month_tpl()
 
         # Act
         (actual_1, actual_2) = self.df_factory.create_sas_by_month_tpl(
             rl_df = rl_df,
-            read_years = [ 2023, 2024 ],
+            read_years = read_years,
             now = now
         )
 
         # Assert
         assert_frame_equal(expected_1, actual_1)    
-        assert_frame_equal(expected_2, actual_2)  
+        assert_frame_equal(expected_2, actual_2)     
+    def test_createsasbyyearstreetprice_shouldreturnexpecteddataframe_wheninvoked(self):
+        
+        # Arrange
+        rl_df : DataFrame = ObjectMother().create_rl_tpl()[0]
+        sas_by_month_tpl : Tuple[DataFrame, DataFrame] = ObjectMother().create_sas_by_month_tpl()
+        read_years : list[int] = [ 2023, 2024 ]
+        expected : DataFrame = ObjectMother().create_sas_by_year_street_price_df()
+
+        # Act
+        actual : DataFrame = self.df_factory.create_sas_by_year_street_price(
+            sas_by_month_tpl = sas_by_month_tpl,
+            rl_df = rl_df,
+            read_years = read_years,
+            rounding_digits = self.rounding_digits
+        )
+
+        # Assert
+        assert_frame_equal(expected, actual)       
     def test_createsasbytopic_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
