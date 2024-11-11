@@ -137,6 +137,21 @@ class ObjectMother():
 
         return expected_dtype_names
     @staticmethod
+    def create_rl_asrt_tpl() -> Tuple[DataFrame, datetime]:
+
+        rl_asrt_df : DataFrame = pd.DataFrame({
+            "Years": np.array(["1"], dtype = object),
+            "Books": np.array(["14"], dtype = object),
+            "Pages": np.array(["5573"], dtype = object),
+            "TotalSpend": np.array(["$587.57"], dtype = object),
+            "LastUpdate": np.array(["2024-03-04"], dtype = object),
+        }, index = pd.Index([0], dtype = "int64")) 
+
+        now : datetime = datetime(2024, 3, 4)
+
+        return (rl_asrt_df, now)
+    
+    @staticmethod
     def create_sas_by_topic_df() -> DataFrame:
 
         return pd.DataFrame({
@@ -573,7 +588,7 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         self.excel_books_skiprows : int = 0
         self.excel_books_tabname : str = "Books"
         self.excel_null_value : str = "-"
-
+        self.rounding_digits : int = 2
         self.md_stars_rating : bool = True
 
     def test_createrl_shouldreturnexpecteddataframe_wheninvoked(self):
@@ -597,6 +612,21 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(expected_column_names, actual.columns.tolist())
         self.assertEqual(expected_dtype_names, SupportMethodProvider().get_dtype_names(df = actual))    
+    def test_createrlasrt_shouldreturnexpecteddataframe_wheninvoked(self):
+        
+        # Arrange
+        rl_df : DataFrame = ObjectMother().create_rl_df()
+        (expected, now) = ObjectMother().create_rl_asrt_tpl()
+
+        # Act
+        actual : DataFrame = self.df_factory.create_rl_asrt(
+            rl_df = rl_df,
+            rounding_digits = self.rounding_digits,
+            now = now
+        )
+
+        # Assert
+        assert_frame_equal(expected, actual)        
     def test_createsasbytopic_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
