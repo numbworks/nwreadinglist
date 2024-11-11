@@ -16,7 +16,7 @@ from unittest.mock import Mock, call, patch
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
 from nwreadinglist import RLCN, RLID, _MessageCollection, DefaultPathProvider, MDInfo, RLDataFrameHelper, RLSummary, YearProvider, SettingBag, ComponentBag
 from nwreadinglist import RLDataFrameFactory, RLMarkdownFactory
-from nwshared import MarkdownHelper, Formatter, FilePathManager
+from nwshared import Converter, Formatter
 
 # SUPPORT METHODS
 class SupportMethodProvider():
@@ -55,6 +55,87 @@ class ObjectMother():
         default_df = default_df.astype({"2024": str})
 
         return default_df
+
+    @staticmethod
+    def create_read_excel_output_df() -> DataFrame:
+
+        return pd.DataFrame({
+            'Title': np.array(['ProxMox VE Administration Guide - Release 7.2', 'Clean Architecture', 'Python How-To', 'Python Foundation', 'Python Unit Test Automation (2nd Edition)', 'Testing in Python', 'Python Object-Oriented Programming (4th Edition)', 'Intermediate Python [MLI]', 'Learning Advanced Python By Studying Open-Source Projects', 'Python in a Nutshell (4th Edition)', 'Python 3 And Feature Engineering', 'Python Testing Cookbook (2nd Edition)', 'Python Testing with pytest (2nd Edition)', 'Python Packages'], dtype=object),
+            'Year': np.array([2022, 2018, 2023, 2022, 2022, 2020, 2021, 2023, 2024, 2023, 2024, 2018, 2022, 2022], dtype=int32),
+            'Type': np.array(['Book', 'Book', 'Book', 'Book', 'Book', 'Book', 'Book', 'Book', 'Book', 'Book', 'Book', 'Book', 'Book', 'Book'], dtype=object),
+            'Format': np.array(['Digital', 'Digital', 'Digital', 'Digital', 'Digital', 'Digital', 'Digital', 'Digital', 'Digital', 'Digital', 'Digital', 'Digital', 'Digital', 'Digital'], dtype=object),
+            'Language': np.array(['EN', 'EN', 'EN', 'EN', 'EN', 'EN', 'EN', 'EN', 'EN', 'EN', 'EN', 'EN', 'EN', 'EN'], dtype=object),
+            'Pages': np.array([535, 429, 455, 205, 94, 132, 715, 192, 139, 963, 229, 978, 264, 243], dtype=int32),
+            'ReadDate': np.array([date(2024, 2, 19), date(2024, 2, 19), date(2024, 2, 20), date(2024, 2, 20), date(2024, 2, 20), date(2024, 2, 20), date(2024, 2, 25), date(2024, 2, 25), date(2024, 2, 25), date(2024, 2, 25), date(2024, 2, 25), date(2024, 2, 26), date(2024, 2, 26), date(2024, 2, 26)], dtype=object),
+            'ReadYear': np.array([2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024], dtype=int32),
+            'ReadMonth': np.array([2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], dtype=int32),
+            'WorthBuying': np.array(['No', 'No', 'No', 'No', 'No', 'No', 'No', 'No', 'No', 'No', 'No', 'No', 'No', 'Yes'], dtype=object),
+            'WorthReadingAgain': np.array(['No', 'No', 'No', 'No', 'No', 'No', 'No', 'No', 'No', 'No', 'Yes', 'No', 'No', 'No'], dtype=object),
+            'Publisher': np.array(['Self-Published', 'Pearson Education', 'Manning', 'Self-Published', 'Apress', 'Self-Published', 'Packt', 'MLI', 'CRC Press', "O'Reilly", 'MLI', 'Packt', 'Pragmatic Bookshelf', 'CRC Press'], dtype=object),
+            'Rating': np.array([2, 3, 1, 1, 1, 1, 2, 1, 1, 3, 2, 2, 3, 4], dtype=int32),
+            'StreetPrice': np.array([0.0, 30.39, 49.99, 22.49, 38.88, 49.99, 38.24, 54.99, 59.95, 65.23, 54.99, 33.99, 39.49, 48.95], dtype= np.float64),
+            'Currency': np.array(['USD', 'USD', 'USD', 'USD', 'USD', 'USD', 'USD', 'USD', 'USD', 'USD', 'USD', 'USD', 'USD', 'USD'], dtype=object),
+            'Comment': np.array(['Useful. It shows how well ProxMox has been designed.', 'Useful. A good book for beginners, well-written and clear. The last part about the history of computers could be easily removed.', 'Useless. Well-written, but it contains no original nor well-structured knowledge. In addition, the second half of the book is not about Python but about Flask. Totally useless book.', 'Useless. Very basic overview about multiple Python-related topics. The layout of the book is horrible (dense, lack of bold face, ...).', 'Useless. Just a walkthrough of Python unit test frameworks. No original content.', 'Useless. Too much opinionated towards pytest, not able to explain why pytest is better than unittest in a convincing way.', 'Useful. An ok getting started guide for whom wants to learn OOP and Python from scratch at the same time.', 'Useless. Well-written (organized like a recipe book and without ramblings), but contains no different knowledge than hundreds of Python books.', "Useless. The book title is misleading: the author doesn't study any open-source project. It's just a Python cookbook like hundreds others.", "Useful. Well-written and comprehensive, it contains few bits of information I didn't know.", 'Useful. No-frills introduction to feature engineering in a cookbook format.', "Useful. It's a long list of testing techniques and Python tools to perform them. Good to have all collected in the same book.", 'Useful. A well-written and comprehensive book about pytest.', "Useful. Excellent book about the topic. It's well-written, comprehensive and pragmatic. It would become perfect by removing the repetitions."], dtype=object),
+            'Topic': np.array(['Development Tools', 'Software Engineering', 'Python', 'Python', 'Python', 'Python', 'Python', 'Python', 'Python', 'Python', 'Python', 'Python', 'Python', 'Python'], dtype=object),
+            'OnGoodreads': np.array(['No', 'No', 'No', 'No', 'No', 'No', 'No', 'No', 'No', 'No', 'No', 'No', 'No', 'No'], dtype=object),
+            'CommentLenght': np.array([52, 128, 181, 134, 80, 121, 105, 142, 138, 90, 75, 125, 59, 140], dtype=int32),
+            'KBSize': np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=int32),
+        }, index=pd.RangeIndex(start=260, stop=274, step=1))
+    @staticmethod
+    def create_rl_df_column_names() -> list[str]:
+
+        column_names : list[str] = []
+        column_names.append("Title")                # [0], str
+        column_names.append("Year")                 # [1], int
+        column_names.append("Type")                 # [2], str
+        column_names.append("Format")               # [3], str
+        column_names.append("Language")             # [4], str
+        column_names.append("Pages")                # [5], int
+        column_names.append("ReadDate")             # [6], date
+        column_names.append("ReadYear")             # [7], int
+        column_names.append("ReadMonth")            # [8], int    
+        column_names.append("WorthBuying")          # [9], str
+        column_names.append("WorthReadingAgain")    # [10], str
+        column_names.append("Publisher")            # [11], str
+        column_names.append("Rating")               # [12], int
+        column_names.append("StreetPrice")          # [13], float
+        column_names.append("Currency")             # [14], str
+        column_names.append("Comment")              # [15], str
+        column_names.append("Topic")                # [16], str
+        column_names.append("OnGoodreads")          # [17], str
+        column_names.append("CommentLenght")        # [18], int
+        column_names.append("KBSize")               # [19], int
+
+        return column_names
+    @staticmethod
+    def create_rl_df_dtype_names() -> list[str]:
+
+        '''Note: the 7th should be "date", but it's rendered by Pandas as "object".'''
+
+        expected_dtype_names : list[str] = [
+            "string",
+            "Int64",
+            "string",
+            "string",
+            "string",
+            "Int64",
+            "object",
+            "Int64",
+            "Int64",
+            "string",
+            "string",
+            "string",
+            "Int64",
+            "Float64",
+            "string",
+            "string",
+            "string",
+            "string",
+            "Int64",
+            "Int64"
+        ]
+
+        return expected_dtype_names
 
 # TEST CLASSES
 class MDInfoTestCase(unittest.TestCase):
@@ -461,7 +542,43 @@ class RLDataFrameHelperTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(actual, expected)
+class RLDataFrameFactoryTestCase(unittest.TestCase):
 
+    def setUp(self) -> None:
+
+        self.df_factory : RLDataFrameFactory = RLDataFrameFactory(
+                converter = Converter(),
+                formatter = Formatter(),
+                df_helper = RLDataFrameHelper()
+            )
+        
+        self.excel_path : str = "Reading List.xlsx"
+        self.excel_books_nrows : int = 100
+        self.excel_books_skiprows : int = 0
+        self.excel_books_tabname : str = "Books"
+        self.excel_null_value : str = "-"
+
+    def test_createrl_shouldreturnexpecteddataframe_wheninvoked(self):
+
+        # Arrange
+        read_excel_output_df : DataFrame = ObjectMother().create_read_excel_output_df()
+        expected_column_names : list[str] = ObjectMother().create_rl_df_column_names()
+        expected_dtype_names : list[str] = ObjectMother().create_rl_df_dtype_names()
+        
+        # Act
+        actual_df : DataFrame = pd.DataFrame()
+        with patch.object(pd, 'read_excel', return_value = read_excel_output_df) as mocked_context:
+            actual_df = self.df_factory.create_rl(
+                excel_path = self.excel_path,
+                excel_books_skiprows = self.excel_books_skiprows,
+                excel_books_nrows = self.excel_books_nrows,
+                excel_books_tabname = self.excel_books_tabname,
+                excel_null_value = self.excel_null_value
+            )
+
+        # Assert
+        self.assertEqual(expected_column_names, actual_df.columns.tolist())
+        self.assertEqual(expected_dtype_names, SupportMethodProvider().get_dtype_names(df = actual_df))    
 
 # MAIN
 if __name__ == "__main__":
