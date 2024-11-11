@@ -165,7 +165,26 @@ class ObjectMother():
             "Rating": np.array(["2"], dtype = int32),
             "KBSize": np.array(["8"], dtype = int32),
             "A4Sheets": np.array(["1"], dtype = np.int64),
-        }, index = pd.Index([1], dtype = "int64"))
+        }, index = pd.Index([1], dtype = "int64"))   
+    @staticmethod
+    def create_sas_by_month_tpl() -> Tuple[DataFrame, DataFrame]:
+
+        sas_by_month_df : DataFrame = DataFrame({
+            "Month": np.array([str(i) for i in range(1, 13)], dtype=np.int64),
+            "2023": np.array(["0 (0)"] * 12, dtype=object),
+            "↕": np.array(["=", "↑", "=", "=", "=", "=", "=", "=", "=", "=", "=", "="], dtype=object),
+            "2024": np.array(["0 (0)", "14 (5573)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", 
+                            "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)"], dtype=object)
+        }, index=pd.Index(range(12), dtype="int64"))
+
+        sas_by_month_upd_df : DataFrame = DataFrame({
+            "Month": np.array([str(i) for i in range(1, 13)], dtype=np.int64),
+            "2023": np.array(["0 (0)"] * 12, dtype=object),
+            "↕": np.array(["=", "↑", "", "", "", "", "", "", "", "", "", ""], dtype=object),
+            "2024": np.array(["0 (0)", "14 (5573)", "", "", "", "", "", "", "", "", "", ""], dtype=object)
+        }, index=pd.Index(range(12), dtype="int64"))
+
+        return (sas_by_month_df, sas_by_month_upd_df)
     @staticmethod
     def create_sas_by_topic_df() -> DataFrame:
 
@@ -670,6 +689,23 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected, actual)
+    def test_createsasbymonthtpl_shouldreturnexpecteddataframes_wheninvoked(self):
+        
+        # Arrange
+        rl_df : DataFrame = ObjectMother().create_rl_tpl()[0]
+        now : datetime = datetime(2024, 2, 19)
+        (expected_1, expected_2) = ObjectMother().create_sas_by_month_tpl()
+
+        # Act
+        (actual_1, actual_2) = self.df_factory.create_sas_by_month_tpl(
+            rl_df = rl_df,
+            read_years = [ 2023, 2024 ],
+            now = now
+        )
+
+        # Assert
+        assert_frame_equal(expected_1, actual_1)    
+        assert_frame_equal(expected_2, actual_2)  
     def test_createsasbytopic_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
