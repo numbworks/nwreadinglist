@@ -46,6 +46,7 @@ class RLSummary():
     sas_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]
     sas_by_rating_df : DataFrame
     trend_by_year_topic_df : DataFrame
+    definitions_df : DataFrame
 
     rl_md : str
     rl_asrt_md : str
@@ -100,6 +101,7 @@ class SettingBag():
     options_sas_by_publisher : list[Literal["display", "log", "save"]]
     options_sas_by_rating : list[Literal["display", "save"]]
     options_trend_by_year_topic : list[Literal["display", "save"]]
+    options_definitions : list[Literal["display"]]
     read_years : list[int]
     excel_path : str
     excel_books_nrows : int
@@ -123,7 +125,6 @@ class SettingBag():
     now : datetime
     n : int
     rounding_digits : int
-    definitions : dict[str, str]
 
     def __init__(
             self,
@@ -136,6 +137,7 @@ class SettingBag():
             options_sas_by_publisher : list[Literal["display", "log", "save"]],
             options_sas_by_rating : list[Literal["display", "save"]],
             options_trend_by_year_topic : list[Literal["display", "save"]],
+            options_definitions : list[Literal["display"]],
             read_years : list[int],
             excel_path : str,
             excel_books_nrows : int,
@@ -152,7 +154,7 @@ class SettingBag():
                 MDInfo(id = "sas", file_name = "STUDYINGACTIVITY.md", paragraph_title = "Studying Activity"),
                 MDInfo(id = "sas_by_publisher", file_name = "STUDYINGACTIVITYBYPUBLISHER.md", paragraph_title = "Studying Activity By Publisher"),
                 MDInfo(id = "sas_by_rating", file_name = "STUDYINGACTIVITYBYRATING.md", paragraph_title = "Studying Activity By Rating"),
-                MDInfo(id = "sas_by_topic", file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic")      
+                MDInfo(id = "sas_by_topic", file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic")
             ],            
             publisher_n : int = 10,
             publisher_formatters : dict = { "AvgRating" : "{:.2f}", "AB%" : "{:.2f}" },
@@ -164,14 +166,7 @@ class SettingBag():
             working_folder_path : str = "/home/nwreadinglist/",
             now : datetime  = datetime.now(),
             n : int = 5,
-            rounding_digits : int = 2,  
-            definitions : dict[str, str] = {
-                "RL": "Reading List",
-                "SAS": "Studying Activity Summary.",
-                "KBSize": "This metric is the word count of the notes I took about a given book.",
-                "A4Sheets": "'KBSize' converted into amount of A4 sheets.",
-                "AB%": "Calculated with the following formula: '(A4Sheets / Books) * 100'."
-                }
+            rounding_digits : int = 2
             ) -> None:
 
         self.options_rl = options_rl
@@ -183,6 +178,7 @@ class SettingBag():
         self.options_sas_by_publisher = options_sas_by_publisher
         self.options_sas_by_rating = options_sas_by_rating
         self.options_trend_by_year_topic = options_trend_by_year_topic
+        self.options_definitions = options_definitions
         self.read_years = read_years
         self.excel_path = excel_path
         self.excel_books_nrows = excel_books_nrows
@@ -206,7 +202,6 @@ class SettingBag():
         self.md_stars_rating = md_stars_rating
         self.md_last_update = md_last_update
         self.md_infos = md_infos
-        self.definitions = definitions
 
 # STATIC CLASSES
 class _MessageCollection():
@@ -1431,6 +1426,26 @@ class RLDataFrameFactory():
             return self.__add_sparklines(df = pivoted_df, cn_values = RLCN.BOOKS, cn_sparklines = RLCN.TREND, maximum = maximum)
         else: 
             return self.__add_sparklines(df = pivoted_df, cn_values = RLCN.BOOKS, cn_sparklines = RLCN.TREND)
+    def create_definitions(self) -> DataFrame:
+
+        '''Creates a dataframe containing all the definitions in use in this application.'''
+
+        columns : list[str] = ["Term", "Definition"]
+
+        definitions : dict[str, str] = {
+            "RL": "Reading List",
+            "SAS": "Studying Activity Summary.",
+            "KBSize": "This metric is the word count of the notes I took about a given book.",
+            "A4Sheets": "'KBSize' converted into amount of A4 sheets.",
+            "AB%": "Calculated with the following formula: '(A4Sheets / Books) * 100'."
+            }
+        
+        definitions_df : DataFrame = DataFrame(
+            data = definitions.items(), 
+            columns = columns
+        )
+
+        return definitions_df
 class RLMarkdownFactory():
 
     '''Collects all the logic related to Markdown creation out of Reading List dataframes.'''
@@ -1827,6 +1842,7 @@ class ReadingListProcessor():
         sas_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.__create_sas_by_publisher_tpl(rl_df = rl_df)
         sas_by_rating_df : DataFrame = self.__create_sas_by_rating_df(rl_df = rl_df)
         trend_by_year_topic_df : DataFrame = self.__create_trend_by_year_topic_df(rl_df = rl_df)
+        definitions_df : DataFrame = self.__component_bag.df_factory.create_definitions()
 
         rl_md : str = self.__create_rl_md(rl_df = rl_df)
         rl_asrt_md : str = self.__component_bag.md_factory.create_rl_asrt_md(rl_asrt_df = rl_asrt_df)
@@ -1845,6 +1861,7 @@ class ReadingListProcessor():
             sas_by_publisher_tpl = sas_by_publisher_tpl,
             sas_by_rating_df = sas_by_rating_df,
             trend_by_year_topic_df = trend_by_year_topic_df,
+            definitions_df = definitions_df,
             rl_md = rl_md,
             rl_asrt_md = rl_asrt_md,
             sas_md = sas_by_month_md,
@@ -2014,6 +2031,21 @@ class ReadingListProcessor():
 
         if "save" in options:
             self.__save_and_log(id = id, content = content)
+    def process_definitions(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_definitions.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_definitions
+        df : DataFrame = self.__rl_summary.definitions_df
+
+        if "display" in options:
+            self.__component_bag.displayer.display(df = df)
     def get_summary(self) -> RLSummary:
 
         '''Returns __rl_summary.'''
