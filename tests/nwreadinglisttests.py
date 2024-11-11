@@ -57,7 +57,7 @@ class ObjectMother():
         return default_df
 
     @staticmethod
-    def create_read_excel_output_df() -> DataFrame:
+    def create_rl_df() -> DataFrame:
 
         return pd.DataFrame({
             'Title': np.array(['ProxMox VE Administration Guide - Release 7.2', 'Clean Architecture', 'Python How-To', 'Python Foundation', 'Python Unit Test Automation (2nd Edition)', 'Testing in Python', 'Python Object-Oriented Programming (4th Edition)', 'Intermediate Python [MLI]', 'Learning Advanced Python By Studying Open-Source Projects', 'Python in a Nutshell (4th Edition)', 'Python 3 And Feature Engineering', 'Python Testing Cookbook (2nd Edition)', 'Python Testing with pytest (2nd Edition)', 'Python Packages'], dtype=object),
@@ -136,6 +136,15 @@ class ObjectMother():
         ]
 
         return expected_dtype_names
+    @staticmethod
+    def create_sas_by_topic_df() -> DataFrame:
+
+        return pd.DataFrame({
+            "Topic": np.array(["Python", "Development Tools", "Software Engineering"], dtype=object),
+            "Books": np.array([12, 1, 1], dtype = np.int64),
+            "Pages": np.array([4609, 535, 429], dtype = int32),
+            "A4Sheets": np.array([0, 0, 0], dtype = np.int64)
+        }, index=pd.RangeIndex(start=0, stop=3, step=1))
 
 # TEST CLASSES
 class MDInfoTestCase(unittest.TestCase):
@@ -561,14 +570,14 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
     def test_createrl_shouldreturnexpecteddataframe_wheninvoked(self):
 
         # Arrange
-        read_excel_output_df : DataFrame = ObjectMother().create_read_excel_output_df()
+        rl_df : DataFrame = ObjectMother().create_rl_df()
         expected_column_names : list[str] = ObjectMother().create_rl_df_column_names()
         expected_dtype_names : list[str] = ObjectMother().create_rl_df_dtype_names()
         
         # Act
-        actual_df : DataFrame = pd.DataFrame()
-        with patch.object(pd, 'read_excel', return_value = read_excel_output_df) as mocked_context:
-            actual_df = self.df_factory.create_rl(
+        actual : DataFrame = pd.DataFrame()
+        with patch.object(pd, 'read_excel', return_value = rl_df) as mocked_context:
+            actual = self.df_factory.create_rl(
                 excel_path = self.excel_path,
                 excel_books_skiprows = self.excel_books_skiprows,
                 excel_books_nrows = self.excel_books_nrows,
@@ -577,8 +586,19 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
             )
 
         # Assert
-        self.assertEqual(expected_column_names, actual_df.columns.tolist())
-        self.assertEqual(expected_dtype_names, SupportMethodProvider().get_dtype_names(df = actual_df))    
+        self.assertEqual(expected_column_names, actual.columns.tolist())
+        self.assertEqual(expected_dtype_names, SupportMethodProvider().get_dtype_names(df = actual))    
+    def test_createsasbytopic_shouldreturnexpecteddataframe_wheninvoked(self):
+        
+        # Arrange
+        rl_df : DataFrame = ObjectMother().create_rl_df()
+        expected : DataFrame = ObjectMother().create_sas_by_topic_df()
+
+        # Act
+        actual : DataFrame = self.df_factory.create_sas_by_topic(rl_df = rl_df)
+
+        # Assert
+        assert_frame_equal(expected, actual)
 
 # MAIN
 if __name__ == "__main__":
