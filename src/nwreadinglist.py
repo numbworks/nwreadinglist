@@ -14,14 +14,15 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 from numpy import float64
-from nwshared import Formatter, Converter, FilePathManager, FileManager
-from nwshared import LambdaProvider, MarkdownHelper, Displayer, PlotManager
 from pandas import DataFrame
 from pandas import Series
 from sparklines import sparklines
 from typing import Any, Callable, Literal, Optional, Tuple
 
-# LOCAL MODULES
+# LOCAL/NW MODULES
+from nwshared import Formatter, Converter, FilePathManager, FileManager
+from nwshared import LambdaProvider, MarkdownHelper, Displayer, PlotManager
+
 # CONSTANTS
 class RLCN(StrEnum):
     

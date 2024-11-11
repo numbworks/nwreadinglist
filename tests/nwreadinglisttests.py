@@ -12,10 +12,10 @@ from parameterized import parameterized
 from typing import Literal, Tuple
 from unittest.mock import Mock, call, patch
 
-# LOCAL MODULES
+# LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import RLCN, RLID, _MessageCollection, DefaultPathProvider, MDInfo, RLDataFrameHelper, RLSummary, YearProvider, SettingBag, ComponentBag
-from nwreadinglist import RLDataFrameFactory, RLMarkdownFactory
+from nwreadinglist import RLCN, RLID, _MessageCollection, DefaultPathProvider, MDInfo, YearProvider, SettingBag, ComponentBag
+from nwreadinglist import RLDataFrameFactory, RLMarkdownFactory, RLDataFrameHelper, RLSummary
 from nwshared import Converter, Formatter, FilePathManager, FileManager, Displayer, PlotManager
 
 # SUPPORT METHODS
