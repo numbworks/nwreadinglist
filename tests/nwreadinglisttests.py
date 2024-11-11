@@ -675,6 +675,21 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         self.trend_sparklines_maximum : bool = True
         self.rounding_digits : int = 2
 
+    def test_trycompletesabyyear_shouldreturnoriginaldataframe_whenmonthcountis12(self):
+        
+        # Arrange
+        sa_by_year_dict: dict[str, list] = {
+            RLCN.MONTH: [str(i) for i in range(1, 13)], 
+            RLCN.READYEAR: [2023] * 12
+        }
+        sa_by_year_df : DataFrame = pd.DataFrame(sa_by_year_dict)
+        read_year: int = 2023
+
+        # Act
+        actual : DataFrame = self.df_factory._RLDataFrameFactory__try_complete_sa_by_year(sa_by_year_df = sa_by_year_df, read_year = read_year) # type: ignore
+
+        # Assert
+        assert_frame_equal(sa_by_year_df, actual)
     def test_createrl_shouldreturnexpecteddataframe_wheninvoked(self):
 
         # Arrange
