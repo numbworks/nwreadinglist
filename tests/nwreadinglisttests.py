@@ -16,7 +16,7 @@ from unittest.mock import Mock, call, patch
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
 from nwreadinglist import RLCN, RLID, _MessageCollection, DefaultPathProvider, MDInfo, RLDataFrameHelper, RLSummary, YearProvider, SettingBag, ComponentBag
 from nwreadinglist import RLDataFrameFactory, RLMarkdownFactory
-from nwshared import Converter, Formatter
+from nwshared import Converter, Formatter, FilePathManager, FileManager, Displayer, PlotManager
 
 # SUPPORT METHODS
 class SupportMethodProvider():
@@ -676,7 +676,22 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected, actual)
+class ComponentBagTestCase(unittest.TestCase):
+    
+    def test_componentbag_shouldinitializeasexpected_wheninvoked(self):
+        
+        # Arrange, Act
+        component_bag = ComponentBag()
 
+        # Assert
+        self.assertIsInstance(component_bag, ComponentBag)
+        self.assertIsInstance(component_bag.file_path_manager, FilePathManager)
+        self.assertIsInstance(component_bag.file_manager, FileManager)
+        self.assertIsInstance(component_bag.df_factory, RLDataFrameFactory)
+        self.assertIsInstance(component_bag.md_factory, RLMarkdownFactory)
+        self.assertIsInstance(component_bag.displayer, Displayer)
+        self.assertIsInstance(component_bag.plot_manager, PlotManager)
+        self.assertTrue(callable(component_bag.logging_function))
 
 
 # MAIN
