@@ -14,7 +14,7 @@ from unittest.mock import Mock, call, patch
 
 # LOCAL MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import RLID, DefaultPathProvider, MDInfo, YearProvider, SettingBag, ComponentBag
+from nwreadinglist import RLID, DefaultPathProvider, MDInfo, RLSummary, YearProvider, SettingBag, ComponentBag
 from nwreadinglist import RLDataFrameFactory, RLMarkdownFactory
 from nwshared import MarkdownHelper, Formatter, FilePathManager
 
@@ -81,7 +81,57 @@ class MDInfoTestCase(unittest.TestCase):
         self.assertEqual(md_info.id, RLID.RL)
         self.assertEqual(md_info.file_name, "READINGLIST.md")
         self.assertEqual(md_info.paragraph_title, "Reading List")
+class RLSummaryTestCase(unittest.TestCase):
 
+    def test_rlsummary_shouldinitializeasexpected_wheninvoked(self):
+        
+        # Arrange
+        df : DataFrame = DataFrame({"col1": [1, 2], "col2": [3, 4]})
+        tpl : Tuple[DataFrame, DataFrame] = (df, df)
+        footer : str = "Some Markdown footer."
+        tpl_footer: Tuple[DataFrame, DataFrame, str] = (df, df, footer)
+        content : str = "Some Markdown content."
+
+        # Act
+        rl_summary : RLSummary = RLSummary(
+            rl_df = df,
+            rl_asrt_df = df,
+            rl_by_kbsize_df = df,
+            sas_by_month_tpl = tpl,
+            sas_by_year_street_price_df = df,
+            sas_by_topic_df = df,
+            sas_by_publisher_tpl = tpl_footer,
+            sas_by_rating_df = df,
+            trend_by_year_topic_df = df,
+            definitions_df = df,
+            rl_md = content,
+            rl_asrt_md = content,
+            sas_md = content,
+            sas_by_topic_md = content,
+            sas_by_publisher_md = content,
+            sas_by_rating_md = content
+        )
+
+        # Assert
+        assert_frame_equal(rl_summary.rl_df, df)
+        assert_frame_equal(rl_summary.rl_asrt_df, df)
+        assert_frame_equal(rl_summary.rl_by_kbsize_df, df)
+        assert_frame_equal(rl_summary.sas_by_month_tpl[0], df)
+        assert_frame_equal(rl_summary.sas_by_month_tpl[1], df)
+        assert_frame_equal(rl_summary.sas_by_year_street_price_df, df)
+        assert_frame_equal(rl_summary.sas_by_topic_df, df)
+        assert_frame_equal(rl_summary.sas_by_publisher_tpl[0], df)
+        assert_frame_equal(rl_summary.sas_by_publisher_tpl[1], df)
+        self.assertEqual(rl_summary.sas_by_publisher_tpl[2], footer)
+        assert_frame_equal(rl_summary.sas_by_rating_df, df)
+        assert_frame_equal(rl_summary.trend_by_year_topic_df, df)
+        assert_frame_equal(rl_summary.definitions_df, df)
+        self.assertEqual(rl_summary.rl_md, content)
+        self.assertEqual(rl_summary.rl_asrt_md, content)
+        self.assertEqual(rl_summary.sas_md, content)
+        self.assertEqual(rl_summary.sas_by_topic_md, content)
+        self.assertEqual(rl_summary.sas_by_publisher_md, content)
+        self.assertEqual(rl_summary.sas_by_rating_md, content)
 
 # MAIN
 if __name__ == "__main__":
