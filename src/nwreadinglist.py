@@ -10,222 +10,227 @@ import numpy as np
 import openpyxl
 import os
 import pandas as pd
+from dataclasses import dataclass
 from datetime import datetime
+from enum import StrEnum
 from numpy import float64
 from pandas import DataFrame
 from pandas import Series
 from sparklines import sparklines
-from typing import Callable, Optional, Tuple
+from typing import Any, Callable, Literal, Optional, Tuple
 
-# LOCAL MODULES
+# LOCAL/NW MODULES
 from nwshared import Formatter, Converter, FilePathManager, FileManager
-from nwshared import LambdaProvider, MarkdownHelper
+from nwshared import LambdaProvider, MarkdownHelper, Displayer, PlotManager
 
 # CONSTANTS
+class RLCN(StrEnum):
+    
+    '''Collects all the column names used by RLDataFrameFactory.'''
+    
+    TITLE = "Title"
+    YEAR = "Year"
+    TYPE = "Type"
+    FORMAT = "Format"
+    LANGUAGE = "Language"
+    PAGES = "Pages"
+    READDATE = "ReadDate"
+    READYEAR = "ReadYear"
+    READMONTH = "ReadMonth"
+    WORTHBUYING = "WorthBuying"
+    WORTHREADINGAGAIN = "WorthReadingAgain"
+    PUBLISHER = "Publisher"
+    RATING = "Rating"
+    STREETPRICE = "StreetPrice"
+    CURRENCY = "Currency"
+    COMMENT = "Comment"
+    TOPIC = "Topic"
+    ONGOODREADS = "OnGoodreads"
+    COMMENTLENGHT = "CommentLenght"
+    KBSIZE = "KBSize"
+    BOOKS = "Books"
+    A4SHEETS = "A4Sheets"
+    ABPERC = "AB%"
+    AVGRATING = "AvgRating"
+    ISWORTH = "IsWorth"
+    YEARS = "Years"
+    TOTALSPEND = "TotalSpend"
+    LASTUPDATE = "LastUpdate"
+    MONTH = "Month"
+    TREND = "Trend"
+    TRENDSYMBOL = "↕"    
+class RLID(StrEnum):
+    
+    '''Collects all the ids that identify the dataframes created by RLDataFrameFactory.'''
+
+    RL = "rl"
+    SAS = "sas"
+    SASBYPUBLISHER = "sas_by_publisher"
+    SASBYRATING = "sas_by_rating"
+    SASBYTOPIC = "sas_by_topic"
+
 # DTOs
+@dataclass(frozen = True)
+class MDInfo():
+
+    '''Represents a collection of information related to a Markdown file.'''
+
+    id : RLID
+    file_name : str
+    paragraph_title : str
+@dataclass(frozen = True)
+class RLSummary():
+
+    '''Collects all the dataframes and markdowns.'''
+
+    rl_df : DataFrame
+    rl_asrt_df : DataFrame
+    rl_by_kbsize_df : DataFrame
+    sas_by_month_tpl : Tuple[DataFrame, DataFrame]
+    sas_by_year_street_price_df : DataFrame
+    sas_by_topic_df : DataFrame
+    sas_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]
+    sas_by_rating_df : DataFrame
+    trend_by_year_topic_df : DataFrame
+    definitions_df : DataFrame
+
+    rl_md : str
+    rl_asrt_md : str
+    sas_md : str
+    sas_by_topic_md : str
+    sas_by_publisher_md : str
+    sas_by_rating_md : str
 class SettingBag():
 
     '''Represents a collection of settings.'''
 
-    save_rl_by_month_md : bool
-    save_rl_by_publisher_md : bool
-    save_rl_by_rating_md : bool
-    save_rl_by_topic_md : bool
-    save_rl_topic_trend_md : bool
-    save_rl_md : bool
+    options_rl : list[Literal["display", "save"]]
+    options_rl_asrt : list[Literal["display", "log"]]
+    options_rl_by_kbsize : list[Literal["display", "plot"]]
+    options_rl_by_books_year : list[Literal["plot"]]
+    options_sas : list[Literal["display", "save"]]
+    options_sas_by_topic : list[Literal["display", "save"]]
+    options_sas_by_publisher : list[Literal["display", "log", "save"]]
+    options_sas_by_rating : list[Literal["display", "save"]]
+    options_trend_by_year_topic : list[Literal["display", "save"]]
+    options_definitions : list[Literal["display"]]
     read_years : list[int]
     excel_path : str
     excel_books_nrows : int
-
-    show_books_df : bool
-    show_sas_by_month_df : bool
-    show_sas_by_year_street_price_df : bool
-    show_rolling_total_df : bool
-    show_sas_by_topic_df : bool
-    show_sas_by_publisher_df : bool
-    show_sas_by_rating_df : bool
-    show_rl_by_kbsize_df : bool
-    show_yearly_trend_by_topic_df : bool
-    show_books_by_year_box_plot : bool
-    show_rl_by_kbsize_box_plot : bool
-    show_readme_md : bool
-    show_rl_by_month_md : bool
-    show_rl_by_publisher_md : bool
-    show_rl_by_rating_md : bool
-    show_rl_by_topic_md : bool
-    show_rl_topic_trend_md : bool
-    show_rl_md : bool
-    working_folder_path : str    
     excel_books_skiprows : int
     excel_books_tabname : str
-    excel_null_value : str
-    now : datetime
-    n_generic : int
-    n_by_month : int
-    n_by_kbsize : int
-    rounding_digits : int
-    is_worth_min_books : int
-    is_worth_min_avgrating : float
-    is_worth_criteria : str
+    excel_null_value : str 
     kbsize_ascending : bool
     kbsize_remove_if_zero : bool
-    formatted_rating : bool
-    enable_sparklines_maximum : bool
-    rl_by_month_file_name : str
-    rl_by_publisher_file_name : str
-    rl_by_rating_file_name : str
-    rl_by_topic_file_name : str
-    rl_topic_trend_file_name : str
-    rl_file_name : str
-    rl_last_update : datetime
-    rl_smaller_font : bool
-    rl_by_month_smaller_font : bool
-    definitions : dict
+    kbsize_n : int  
+    md_stars_rating : bool
+    md_last_update : datetime
+    md_infos : list[MDInfo]
+    publisher_n : int
+    publisher_formatters : dict
+    publisher_min_books : int
+    publisher_min_ab_perc : float
+    publisher_min_avgrating : float
+    publisher_criteria : Literal["Yes", "No"]
+    trend_sparklines_maximum : bool
+    working_folder_path : str    
+    now : datetime
+    n : int
+    rounding_digits : int
 
     def __init__(
-        self,
-        save_rl_by_month_md : bool,
-        save_rl_by_publisher_md : bool,
-        save_rl_by_rating_md : bool,
-        save_rl_by_topic_md : bool,
-        save_rl_topic_trend_md : bool,
-        save_rl_md : bool,
-        read_years : list[int],
-        excel_path : str,
-        excel_books_nrows : int,
+            self,
+            options_rl : list[Literal["display", "save"]],
+            options_rl_asrt : list[Literal["display", "log"]],
+            options_rl_by_kbsize : list[Literal["display", "plot"]],
+            options_rl_by_books_year : list[Literal["plot"]],
+            options_sas : list[Literal["display", "save"]],
+            options_sas_by_topic : list[Literal["display", "save"]],
+            options_sas_by_publisher : list[Literal["display", "log", "save"]],
+            options_sas_by_rating : list[Literal["display", "save"]],
+            options_trend_by_year_topic : list[Literal["display", "save"]],
+            options_definitions : list[Literal["display"]],
+            read_years : list[int],
+            excel_path : str,
+            excel_books_nrows : int,
+            excel_books_skiprows : int = 0,
+            excel_books_tabname : str = "Books",
+            excel_null_value : str = "-",
+            kbsize_ascending : bool = False,
+            kbsize_remove_if_zero : bool = True,  
+            kbsize_n : int = 10,
+            md_stars_rating : bool = True,
+            md_last_update : datetime = datetime.now(),
+            md_infos : list[MDInfo] = [
+                MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List"),
+                MDInfo(id = RLID.SAS, file_name = "STUDYINGACTIVITY.md", paragraph_title = "Studying Activity"),
+                MDInfo(id = RLID.SASBYPUBLISHER, file_name = "STUDYINGACTIVITYBYPUBLISHER.md", paragraph_title = "Studying Activity By Publisher"),
+                MDInfo(id = RLID.SASBYRATING, file_name = "STUDYINGACTIVITYBYRATING.md", paragraph_title = "Studying Activity By Rating"),
+                MDInfo(id = RLID.SASBYTOPIC, file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic")
+            ],            
+            publisher_n : int = 10,
+            publisher_formatters : dict = { "AvgRating" : "{:.2f}", "AB%" : "{:.2f}" },
+            publisher_min_books : int = 8,
+            publisher_min_avgrating : float = 2.50,
+            publisher_min_ab_perc : float = 100,
+            publisher_criteria : Literal["Yes", "No"] = "Yes",            
+            trend_sparklines_maximum : bool = False,
+            working_folder_path : str = "/home/nwreadinglist/",
+            now : datetime  = datetime.now(),
+            n : int = 5,
+            rounding_digits : int = 2
+            ) -> None:
 
-        show_books_df : bool = False,
-        show_sas_by_month_df : bool = True,
-        show_sas_by_year_street_price_df : bool = True,
-        show_rolling_total_df : bool = True,
-        show_sas_by_topic_df : bool = True,
-        show_sas_by_publisher_df : bool = True,
-        show_sas_by_rating_df : bool = True,
-        show_rl_by_kbsize_df : bool = True,
-        show_yearly_trend_by_topic_df : bool = True,
-        show_books_by_year_box_plot : bool = True,
-        show_rl_by_kbsize_box_plot : bool = True,
-        show_readme_md : bool = True,
-        show_rl_by_month_md : bool = False,
-        show_rl_by_publisher_md : bool = False,
-        show_rl_by_rating_md : bool = False,
-        show_rl_by_topic_md : bool = False,
-        show_rl_topic_trend_md : bool = False,
-        show_rl_md : bool = False,
-        working_folder_path : str = "/home/nwreadinglist/",        
-        excel_books_skiprows : int = 0,
-        excel_books_tabname : str = "Books",
-        excel_null_value : str = "-",
-        now : datetime  = datetime.now(),
-        n_generic : int = 5,
-        n_by_month : int = 12,
-        n_by_kbsize : int = 10,
-        rounding_digits : int = 2,
-        is_worth_min_books : int = 8,
-        is_worth_min_avgrating : float = 2.50,
-        is_worth_criteria : str = "Yes",
-        kbsize_ascending : bool = False,
-        kbsize_remove_if_zero : bool = True,      
-        formatted_rating : bool = True,
-        enable_sparklines_maximum : bool = True,
-        rl_by_month_file_name : str = "READINGLISTBYMONTH.md",
-        rl_by_publisher_file_name : str = "READINGLISTBYPUBLISHER.md",
-        rl_by_rating_file_name : str = "READINGLISTBYRATING.md",
-        rl_by_topic_file_name : str = "READINGLISTBYTOPIC.md",
-        rl_topic_trend_file_name : str = "READINGLISTTOPICTREND.md",
-        rl_file_name : str = "READINGLIST.md",
-        rl_last_update : datetime = datetime.now(),
-        rl_smaller_font : bool = False,
-        rl_by_month_smaller_font : bool = False,
-        definitions : dict = {
-            "RL": "Reading List",
-            "KBSize": "This metric is the word count of the notes I took about a given book.",
-            "SAS": "Studying Activity Summary."
-            }
-        ) -> None:
-
-        self.show_books_df = show_books_df
-        self.show_sas_by_month_df = show_sas_by_month_df
-        self.show_sas_by_year_street_price_df = show_sas_by_year_street_price_df
-        self.show_rolling_total_df = show_rolling_total_df
-        self.show_sas_by_topic_df = show_sas_by_topic_df
-        self.show_sas_by_publisher_df = show_sas_by_publisher_df
-        self.show_sas_by_rating_df = show_sas_by_rating_df
-        self.show_rl_by_kbsize_df = show_rl_by_kbsize_df
-        self.show_yearly_trend_by_topic_df = show_yearly_trend_by_topic_df
-        self.show_books_by_year_box_plot = show_books_by_year_box_plot
-        self.show_rl_by_kbsize_box_plot = show_rl_by_kbsize_box_plot
-        self.show_readme_md = show_readme_md
-        self.show_rl_by_month_md = show_rl_by_month_md
-        self.show_rl_by_publisher_md = show_rl_by_publisher_md
-        self.show_rl_by_rating_md = show_rl_by_rating_md
-        self.show_rl_by_topic_md = show_rl_by_topic_md
-        self.show_rl_topic_trend_md = show_rl_topic_trend_md
-        self.show_rl_md = show_rl_md
-        self.save_rl_by_month_md = save_rl_by_month_md
-        self.save_rl_by_publisher_md = save_rl_by_publisher_md
-        self.save_rl_by_rating_md = save_rl_by_rating_md
-        self.save_rl_by_topic_md = save_rl_by_topic_md
-        self.save_rl_topic_trend_md = save_rl_topic_trend_md
-        self.save_rl_md = save_rl_md
-        self.working_folder_path = working_folder_path
+        self.options_rl = options_rl
+        self.options_rl_asrt = options_rl_asrt
+        self.options_rl_by_kbsize = options_rl_by_kbsize
+        self.options_rl_by_books_year = options_rl_by_books_year
+        self.options_sas = options_sas
+        self.options_sas_by_topic = options_sas_by_topic
+        self.options_sas_by_publisher = options_sas_by_publisher
+        self.options_sas_by_rating = options_sas_by_rating
+        self.options_trend_by_year_topic = options_trend_by_year_topic
+        self.options_definitions = options_definitions
         self.read_years = read_years
         self.excel_path = excel_path
         self.excel_books_nrows = excel_books_nrows
-
         self.excel_books_skiprows = excel_books_skiprows
-        self.excel_books_tabname = excel_books_tabname 
-        self.excel_null_value = excel_null_value
-        self.now = now
-        self.n_generic = n_generic 
-        self.n_by_month = n_by_month
-        self.n_by_kbsize = n_by_kbsize
-        self.rounding_digits = rounding_digits
-        self.is_worth_min_books = is_worth_min_books
-        self.is_worth_min_avgrating = is_worth_min_avgrating
-        self.is_worth_criteria = is_worth_criteria
+        self.excel_books_tabname = excel_books_tabname
+        self.excel_null_value = excel_null_value     
         self.kbsize_ascending = kbsize_ascending
-        self.kbsize_remove_if_zero = kbsize_remove_if_zero
-        self.formatted_rating = formatted_rating
-        self.enable_sparklines_maximum = enable_sparklines_maximum
-        self.rl_by_month_file_name = rl_by_month_file_name
-        self.rl_by_publisher_file_name = rl_by_publisher_file_name 
-        self.rl_by_rating_file_name = rl_by_rating_file_name
-        self.rl_by_topic_file_name = rl_by_topic_file_name
-        self.rl_topic_trend_file_name = rl_topic_trend_file_name 
-        self.rl_file_name = rl_file_name
-        self.rl_last_update = rl_last_update
-        self.rl_smaller_font = rl_smaller_font
-        self.rl_by_month_smaller_font = rl_by_month_smaller_font
-        self.definitions = definitions
-class ComponentBag():
-
-    '''Represents a collection of components.'''
-
-    formatter : Formatter
-    converter : Converter
-    file_path_manager : FilePathManager
-    file_manager : FileManager
-    logging_function : Callable[[str], None]
-    markdown_helper : MarkdownHelper
-
-    def __init__(
-            self, 
-            formatter : Formatter = Formatter(), 
-            converter : Converter = Converter(), 
-            file_path_manager : FilePathManager = FilePathManager(),
-            file_manager : FileManager = FileManager(file_path_manager = FilePathManager()),
-            logging_function : Callable[[str], None] = LambdaProvider().get_default_logging_function(),
-            markdown_helper : MarkdownHelper = MarkdownHelper(formatter = Formatter())) -> None:
-
-        self.formatter = formatter
-        self.converter = converter
-        self.file_path_manager = file_path_manager
-        self.file_manager = file_manager
-        self.logging_function = logging_function
-        self.markdown_helper = markdown_helper
+        self.kbsize_remove_if_zero = kbsize_remove_if_zero        
+        self.kbsize_n = kbsize_n
+        self.publisher_n = publisher_n
+        self.publisher_formatters = publisher_formatters
+        self.publisher_min_books = publisher_min_books
+        self.publisher_min_avgrating = publisher_min_avgrating
+        self.publisher_min_ab_perc = publisher_min_ab_perc
+        self.publisher_criteria = publisher_criteria
+        self.trend_sparklines_maximum = trend_sparklines_maximum
+        self.working_folder_path = working_folder_path        
+        self.now = now
+        self.n = n
+        self.rounding_digits = rounding_digits
+        self.md_stars_rating = md_stars_rating
+        self.md_last_update = md_last_update
+        self.md_infos = md_infos
 
 # STATIC CLASSES
+class _MessageCollection():
+
+    '''Collects all the messages used for logging and for the exceptions.'''
+
+    @staticmethod
+    def no_mdinfo_found(id : RLID) -> str:
+        return f"No MDInfo object found for id='{id}'."
+    @staticmethod
+    def please_run_initialize_first() -> str:
+        return "Please run the 'initialize' method first."
+
+    @staticmethod
+    def this_content_successfully_saved_as(id : RLID, file_path : str) -> str:
+        return f"This content (id: '{id}') has been successfully saved as '{file_path}'."
+
 # CLASSES
 class DefaultPathProvider():
 
@@ -252,73 +257,11 @@ class YearProvider():
         years : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
 
         return years
-class ReadingListManager():
+class RLDataFrameHelper():
 
-    '''Collects all the logic related to the management of "Reading List.xlsx".'''
+    '''Collects helper functions for RLDataFrameFactory.'''
 
-    __component_bag : ComponentBag
-    __setting_bag : SettingBag
-
-    def __init__(self, component_bag : ComponentBag, setting_bag : SettingBag) -> None:
-
-        self.__component_bag = component_bag
-        self.__setting_bag = setting_bag
-
-    def __enforce_dataframe_definition_for_books_df(self, books_df : DataFrame, excel_null_value : str) -> DataFrame:
-
-        '''Enforces definition for the provided dataframe.'''
-
-        column_names : list[str] = []
-        column_names.append("Title")                # [0], str
-        column_names.append("Year")                 # [1], int
-        column_names.append("Type")                 # [2], str
-        column_names.append("Format")               # [3], str
-        column_names.append("Language")             # [4], str
-        column_names.append("Pages")                # [5], int
-        column_names.append("ReadDate")             # [6], date
-        column_names.append("ReadYear")             # [7], int
-        column_names.append("ReadMonth")            # [8], int    
-        column_names.append("WorthBuying")          # [9], str
-        column_names.append("WorthReadingAgain")    # [10], str
-        column_names.append("Publisher")            # [11], str
-        column_names.append("Rating")               # [12], int
-        column_names.append("StreetPrice")          # [13], float
-        column_names.append("Currency")             # [14], str
-        column_names.append("Comment")              # [15], str
-        column_names.append("Topic")                # [16], str
-        column_names.append("OnGoodreads")          # [17], str
-        column_names.append("CommentLenght")        # [18], int
-        column_names.append("KBSize")               # [19], int
-
-        books_df = books_df[column_names]
-        books_df = books_df.replace(to_replace = excel_null_value, value = np.nan)
-    
-        books_df = books_df.astype({column_names[0]: str})  
-        books_df = books_df.astype({column_names[1]: int})
-        books_df = books_df.astype({column_names[2]: str})
-        books_df = books_df.astype({column_names[3]: str})
-        books_df = books_df.astype({column_names[4]: str})
-        books_df = books_df.astype({column_names[5]: int})
-
-        books_df[column_names[6]] = pd.to_datetime(books_df[column_names[6]], format="%Y-%m-%d") 
-        books_df[column_names[6]] = books_df[column_names[6]].apply(lambda x: x.date())
-
-        books_df = books_df.astype({column_names[7]: int})
-        books_df = books_df.astype({column_names[8]: int})
-        books_df = books_df.astype({column_names[9]: str})
-        books_df = books_df.astype({column_names[10]: str})
-        books_df = books_df.astype({column_names[11]: str})
-        books_df = books_df.astype({column_names[12]: int})
-        books_df = books_df.astype({column_names[13]: float})    
-        books_df = books_df.astype({column_names[14]: str})
-        books_df = books_df.astype({column_names[15]: str})
-        books_df = books_df.astype({column_names[16]: str})
-        books_df = books_df.astype({column_names[17]: str})
-        books_df = books_df.astype({column_names[18]: int})
-        books_df = books_df.astype({column_names[19]: int})
-
-        return books_df
-    def __format_reading_status(self, books : int, pages : int) -> str:
+    def format_reading_status(self, books : int, pages : int) -> str:
 
         '''
             13, 5157 => "13 (5157)"
@@ -327,36 +270,219 @@ class ReadingListManager():
         reading_status : str = f"{books} ({pages})"
         
         return reading_status
-    def __get_default_sa_by_year(self, read_year : int) -> DataFrame:
+    def get_default_sa_by_year(self, read_year : int) -> DataFrame:
 
         '''
-
             default_df:
 
                     Month	2017
                 0	1	    0 (0)
                 1	2	    0 (0)
                 ... ...     ...    
-        
         '''
-
-        cn_month : str = "Month"    
+  
         default_df : DataFrame = pd.DataFrame(
             {
-                f"{cn_month}": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                f"{RLCN.MONTH}": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
                 f"{str(read_year)}": ["0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)"]
             },
             index=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
         )
 
-        default_df = default_df.astype({cn_month: int})
+        default_df = default_df.astype({RLCN.MONTH: int})
         default_df = default_df.astype({str(read_year): str})
 
         return default_df
+    def extract_books_from_trend(self, trend : str) -> int:
+
+        '''
+            "13 (5157)" => ["13", "(5157)"] => "13" => 13
+        '''
+
+        tokens : list = trend.split(" ")
+
+        return int(tokens[0])
+    def get_trend(self, value_1 : int, value_2 : int) -> str:
+
+        '''
+            13, 16 => "↑"
+            16, 13 => "↓"
+            0, 0 => "="
+        '''
+        trend : str = ""
+
+        if value_1 < value_2:
+            trend = "↑"
+        elif value_1 > value_2:
+            trend = "↓"
+        else:
+            trend = "="
+
+        return trend
+    def get_trend_by_books(self, trend_1 : str, trend_2 : str) -> str:
+
+        '''
+            "13 (5157)", "16 (3816)" => "↑"
+            "16 (3816)", "13 (5157)" => "↓"
+            "0 (0)", "0 (0)" => "="   
+        '''
+
+        books_1 : int = self.extract_books_from_trend(trend = trend_1)
+        books_2 : int = self.extract_books_from_trend(trend = trend_2)
+
+        trend : str = self.get_trend(value_1 = books_1, value_2 = books_2)
+
+        return trend
+    def try_consolidate_trend_column_name(self, column_name : str) -> str:
+
+        '''
+            "2016"  => "2016"
+            "↕1"    => "↕"
+        '''
+
+        if column_name.startswith(RLCN.TRENDSYMBOL):
+            return RLCN.TRENDSYMBOL
+        
+        return column_name
+    def extract_pages_from_trend(self, trend : str) -> int:
+
+        '''
+            "13 (5157)" => ["13", "(5157)"] => "5157" => 5157
+        '''
+
+        tokens : list = trend.split(" ")
+        token : str = tokens[1].replace("(", "").replace(")", "")
+
+        return int(token)
+    def format_year_books_column_name(self, year_cn : str) -> str:
+
+        '''
+            "2016" => "2016_Books"
+        '''
+
+        column_name : str = f"{year_cn}_Books"
+
+        return column_name
+    def format_year_pages_column_name(self, year_cn : str) -> str:
+
+        '''
+            "2016" => "2016_Pages"
+        '''
+
+        column_name : str = f"{year_cn}_Pages"
+
+        return column_name
+    def extract_year_from_column_name(self, column_name : str) -> str:
+
+        '''
+            "2016_Books" => "2016"
+            "2016_Pages" => "2016"        
+        '''
+
+        tokens : list = column_name.split("_")
+
+        return tokens[0]
+    def get_trend_when_float64(self, value_1 : float64, value_2 : float64) -> str:
+
+        '''
+            1447.14, 2123.36 => "↑"
+            2123.36, 1447.14 => "↓"
+            0, 0 => "="
+        '''
+
+        trend : str = ""
+
+        if value_1 < value_2:
+            trend = "↑"
+        elif value_1 > value_2:
+            trend = "↓"
+        else:
+            trend = "="
+
+        return trend
+    def create_read_years_dataframe(self, read_years : list[int]) -> DataFrame:
+
+        '''Create a dataframe out of the provided list of Read Years.'''
+
+        read_years_df : DataFrame = pd.DataFrame(data = read_years, columns = [RLCN.READYEAR])
+
+        return read_years_df
+class RLDataFrameFactory():
+
+    '''Collects all the logic related to dataframe creation out of "Reading List.xlsx".'''
+
+    __converter : Converter
+    __formatter : Formatter
+    __df_helper : RLDataFrameHelper
+
+    def __init__(
+            self,
+            converter : Converter,
+            formatter : Formatter,
+            df_helper : RLDataFrameHelper
+        ) -> None:
+        
+        self.__converter = converter
+        self.__formatter = formatter
+        self.__df_helper = df_helper
+
+    def __enforce_dataframe_definition_for_rl_df(self, rl_df : DataFrame, excel_null_value : str) -> DataFrame:
+
+        '''Enforces definition for the provided dataframe.'''
+
+        column_names : list[str] = []
+        column_names.append(RLCN.TITLE)             # [0], str
+        column_names.append(RLCN.YEAR)              # [1], int
+        column_names.append(RLCN.TYPE)              # [2], str
+        column_names.append(RLCN.FORMAT)            # [3], str
+        column_names.append(RLCN.LANGUAGE)          # [4], str
+        column_names.append(RLCN.PAGES)             # [5], int
+        column_names.append(RLCN.READDATE)          # [6], date
+        column_names.append(RLCN.READYEAR)          # [7], int
+        column_names.append(RLCN.READMONTH)         # [8], int    
+        column_names.append(RLCN.WORTHBUYING)       # [9], str
+        column_names.append(RLCN.WORTHREADINGAGAIN) # [10], str
+        column_names.append(RLCN.PUBLISHER)         # [11], str
+        column_names.append(RLCN.RATING)            # [12], int
+        column_names.append(RLCN.STREETPRICE)       # [13], float
+        column_names.append(RLCN.CURRENCY)          # [14], str
+        column_names.append(RLCN.COMMENT)           # [15], str
+        column_names.append(RLCN.TOPIC)             # [16], str
+        column_names.append(RLCN.ONGOODREADS)       # [17], str
+        column_names.append(RLCN.COMMENTLENGHT)     # [18], int
+        column_names.append(RLCN.KBSIZE)            # [19], int
+
+        rl_df = rl_df[column_names]
+        rl_df = rl_df.replace(to_replace = excel_null_value, value = np.nan)
+    
+        rl_df = rl_df.astype({column_names[0]: str})  
+        rl_df = rl_df.astype({column_names[1]: int})
+        rl_df = rl_df.astype({column_names[2]: str})
+        rl_df = rl_df.astype({column_names[3]: str})
+        rl_df = rl_df.astype({column_names[4]: str})
+        rl_df = rl_df.astype({column_names[5]: int})
+
+        rl_df[column_names[6]] = pd.to_datetime(rl_df[column_names[6]], format="%Y-%m-%d") 
+        rl_df[column_names[6]] = rl_df[column_names[6]].apply(lambda x: x.date())
+
+        rl_df = rl_df.astype({column_names[7]: int})
+        rl_df = rl_df.astype({column_names[8]: int})
+        rl_df = rl_df.astype({column_names[9]: str})
+        rl_df = rl_df.astype({column_names[10]: str})
+        rl_df = rl_df.astype({column_names[11]: str})
+        rl_df = rl_df.astype({column_names[12]: int})
+        rl_df = rl_df.astype({column_names[13]: float})    
+        rl_df = rl_df.astype({column_names[14]: str})
+        rl_df = rl_df.astype({column_names[15]: str})
+        rl_df = rl_df.astype({column_names[16]: str})
+        rl_df = rl_df.astype({column_names[17]: str})
+        rl_df = rl_df.astype({column_names[18]: int})
+        rl_df = rl_df.astype({column_names[19]: int})
+
+        return rl_df
     def __try_complete_sa_by_year(self, sa_by_year_df : DataFrame, read_year : int) -> DataFrame:
 
         '''
-
             We expect sa_by_year_df to have 12 months: 
             
                 - if that's the case, we are done with it and we return it;
@@ -402,27 +528,23 @@ class ReadingListManager():
                     4	5	    1 (288)
                     ... ...     ...
                     11	12	    11 (3019)
-        
         '''
 
-        cn_month : str = "Month"
+        if sa_by_year_df[RLCN.MONTH].count() != 12:
 
-        if sa_by_year_df[cn_month].count() != 12:
-
-            default_df : DataFrame = self.__get_default_sa_by_year(read_year = read_year)
-            missing_df : DataFrame = default_df.loc[~default_df[cn_month].astype(str).isin(sa_by_year_df[cn_month].astype(str))]
+            default_df : DataFrame = self.__df_helper.get_default_sa_by_year(read_year = read_year)
+            missing_df : DataFrame = default_df.loc[~default_df[RLCN.MONTH].astype(str).isin(sa_by_year_df[RLCN.MONTH].astype(str))]
 
             completed_df : DataFrame = pd.concat([sa_by_year_df, missing_df], ignore_index = True)
-            completed_df = completed_df.sort_values(by = cn_month, ascending = [True])
+            completed_df = completed_df.sort_values(by = RLCN.MONTH, ascending = [True])
             completed_df = completed_df.reset_index(drop = True)
 
             return completed_df
 
         return sa_by_year_df
-    def __get_sa_by_year(self, books_df : DataFrame, read_year : int) -> DataFrame:
+    def __create_sa_by_year(self, rl_df : DataFrame, read_year : int) -> DataFrame:
         
         '''
-
             filtered_df:
                 
                 Filter book_df by read_year
@@ -457,82 +579,35 @@ class ReadingListManager():
                 0	1	    13 (5157)
                 1	2	    1 (106)
                 ... ...     ...
-
         '''
 
-        cn_readyear : str = "ReadYear"
-        condition : Series = (books_df[cn_readyear] == read_year)
-        filtered_df : DataFrame = books_df.loc[condition]
+        condition : Series = (rl_df[RLCN.READYEAR] == read_year)
+        filtered_df : DataFrame = rl_df.loc[condition]
 
-        cn_readmonth : str = "ReadMonth" 
-        cn_title : str = "Title"
-        cn_books : str = "Books"
-        by_books_df : DataFrame = filtered_df.groupby([cn_readmonth])[cn_title].size().sort_values(ascending = [False]).reset_index(name = cn_books)
-        by_books_df = by_books_df.sort_values(by = cn_readmonth).reset_index(drop = True)   
+        by_books_df : DataFrame = filtered_df.groupby([RLCN.READMONTH])[RLCN.TITLE].size().sort_values(ascending = [False]).reset_index(name = RLCN.BOOKS)
+        by_books_df = by_books_df.sort_values(by = RLCN.READMONTH).reset_index(drop = True)   
     
-        cn_pages : str = "Pages"
-        by_pages_df : DataFrame = filtered_df.groupby([cn_readmonth])[cn_pages].sum().sort_values(ascending = [False]).reset_index(name = cn_pages)
-        by_pages_df = by_pages_df.sort_values(by = cn_readmonth).reset_index(drop = True)
+        by_pages_df : DataFrame = filtered_df.groupby([RLCN.READMONTH])[RLCN.PAGES].sum().sort_values(ascending = [False]).reset_index(name = RLCN.PAGES)
+        by_pages_df = by_pages_df.sort_values(by = RLCN.READMONTH).reset_index(drop = True)
 
         sa_by_year_df : DataFrame = pd.merge(
             left = by_books_df, 
             right = by_pages_df, 
             how = "inner", 
-            left_on = cn_readmonth, 
-            right_on = cn_readmonth)
-        sa_by_year_df[read_year] = sa_by_year_df.apply(lambda x : self.__format_reading_status(books = x[cn_books], pages = x[cn_pages]), axis = 1) 
+            left_on = RLCN.READMONTH, 
+            right_on = RLCN.READMONTH)
+        sa_by_year_df[read_year] = sa_by_year_df.apply(lambda x : self.__df_helper.format_reading_status(books = x[RLCN.BOOKS], pages = x[RLCN.PAGES]), axis = 1) 
 
-        cn_month : str = "Month"
-        sa_by_year_df[cn_month] = sa_by_year_df[cn_readmonth]
-        sa_by_year_df = sa_by_year_df[[cn_month, read_year]]
-        sa_by_year_df = sa_by_year_df.astype({cn_month: int})
+        sa_by_year_df[RLCN.MONTH] = sa_by_year_df[RLCN.READMONTH]
+        sa_by_year_df = sa_by_year_df[[RLCN.MONTH, read_year]]
+        sa_by_year_df = sa_by_year_df.astype({RLCN.MONTH: int})
         sa_by_year_df = sa_by_year_df.astype({read_year: str})    
         sa_by_year_df.columns = sa_by_year_df.columns.astype(str) # 2016 => "2016"
 
         sa_by_year_df = self.__try_complete_sa_by_year(sa_by_year_df = sa_by_year_df, read_year = read_year)
 
         return sa_by_year_df
-    def __extract_books_from_trend(self, trend : str) -> int:
-
-        '''
-            "13 (5157)" => ["13", "(5157)"] => "13" => 13
-        '''
-
-        tokens : list = trend.split(" ")
-
-        return int(tokens[0])
-    def __get_trend(self, value_1 : int, value_2 : int) -> str:
-
-        '''
-            13, 16 => "↑"
-            16, 13 => "↓"
-            0, 0 => "="
-        '''
-        trend : str = ""
-
-        if value_1 < value_2:
-            trend = "↑"
-        elif value_1 > value_2:
-            trend = "↓"
-        else:
-            trend = "="
-
-        return trend
-    def __get_trend_by_books(self, trend_1 : str, trend_2 : str) -> str:
-
-        '''
-            "13 (5157)", "16 (3816)" => "↑"
-            "16 (3816)", "13 (5157)" => "↓"
-            "0 (0)", "0 (0)" => "="   
-        '''
-
-        books_1 : int = self.__extract_books_from_trend(trend = trend_1)
-        books_2 : int = self.__extract_books_from_trend(trend = trend_2)
-
-        trend : str = self.__get_trend(value_1 = books_1, value_2 = books_2)
-
-        return trend
-    def __expand_sa_by_year(self, books_df : DataFrame, read_years : list, sas_by_month_df : DataFrame, i : int, add_trend : bool) -> DataFrame:
+    def __expand_sa_by_year(self, rl_df : DataFrame, read_years : list, sas_by_month_df : DataFrame, i : int, add_trend : bool) -> DataFrame:
 
         '''    
             sa_summary_df:
@@ -581,15 +656,14 @@ class ReadingListManager():
         '''
         
         actual_df : DataFrame = sas_by_month_df.copy(deep = True)
-        sa_by_year_df : DataFrame = self.__get_sa_by_year(books_df = books_df, read_year = read_years[i])
-
-        cn_month : str = "Month"      
+        sa_by_year_df : DataFrame = self.__create_sa_by_year(rl_df = rl_df, read_year = read_years[i])
+    
         expansion_df = pd.merge(
             left = actual_df, 
             right = sa_by_year_df, 
             how = "inner", 
-            left_on = cn_month, 
-            right_on = cn_month)
+            left_on = RLCN.MONTH, 
+            right_on = RLCN.MONTH)
 
         if add_trend == True:
 
@@ -597,12 +671,12 @@ class ReadingListManager():
             cn_trend_1 : str = str(read_years[i-1])   # for ex. "2016"
             cn_trend_2 : str = str(read_years[i])     # for ex. "2017"
             
-            expansion_df[cn_trend] = expansion_df.apply(lambda x : self.__get_trend_by_books(trend_1 = x[cn_trend_1], trend_2 = x[cn_trend_2]), axis = 1) 
+            expansion_df[cn_trend] = expansion_df.apply(lambda x : self.__df_helper.get_trend_by_books(trend_1 = x[cn_trend_1], trend_2 = x[cn_trend_2]), axis = 1) 
 
-            new_column_names : list = [cn_month, cn_trend_1, cn_trend, cn_trend_2]   # for ex. ["Month", "2016", "↕", "2017"]
+            new_column_names : list = [RLCN.MONTH, cn_trend_1, cn_trend, cn_trend_2]   # for ex. ["Month", "2016", "↕", "2017"]
             expansion_df = expansion_df.reindex(columns = new_column_names)
 
-            shared_columns : list = [cn_month, str(read_years[i-1])] # ["Month", "2016"]
+            shared_columns : list = [RLCN.MONTH, str(read_years[i-1])] # ["Month", "2016"]
             actual_df = pd.merge(
                 left = actual_df, 
                 right = expansion_df, 
@@ -614,57 +688,6 @@ class ReadingListManager():
             actual_df = expansion_df
 
         return actual_df
-    def __try_consolidate_trend_column_name(self, column_name : str) -> str:
-
-        '''
-            "2016"  => "2016"
-            "↕1"    => "↕"
-        '''
-
-        cn_trend : str = "↕"
-
-        if column_name.startswith(cn_trend):
-            return cn_trend
-        
-        return column_name
-    def __extract_pages_from_trend(self, trend : str) -> int:
-
-        '''
-            "13 (5157)" => ["13", "(5157)"] => "5157" => 5157
-        '''
-
-        tokens : list = trend.split(" ")
-        token : str = tokens[1].replace("(", "").replace(")", "")
-
-        return int(token)
-    def __format_year_books_column_name(self, year_cn : str) -> str:
-
-        '''
-            "2016" => "2016_Books"
-        '''
-
-        column_name : str = f"{year_cn}_Books"
-
-        return column_name
-    def __format_year_pages_column_name(self, year_cn : str) -> str:
-
-        '''
-            "2016" => "2016_Pages"
-        '''
-
-        column_name : str = f"{year_cn}_Pages"
-
-        return column_name
-    def __extract_year_from_column_name(self, column_name : str) -> str:
-
-        '''
-            "2016_Books" => "2016"
-            "2016_Pages" => "2016"        
-        '''
-
-        tokens : list = column_name.split("_")
-
-        return tokens[0]
     def __add_trend_to_sas_by_year(self, sas_by_year_df : DataFrame, yeatrend : list) -> DataFrame:
 
         '''
@@ -706,7 +729,7 @@ class ReadingListManager():
                 cn_trend_1 : str = str(yeatrend[i])       # 2016 => "2016"
                 cn_trend_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
                 
-                expanded_df[cn_trend] = expanded_df.apply(lambda x : self.__get_trend_by_books(trend_1 = x[cn_trend_1], trend_2 = x[cn_trend_2]), axis = 1) 
+                expanded_df[cn_trend] = expanded_df.apply(lambda x : self.__df_helper.get_trend_by_books(trend_1 = x[cn_trend_1], trend_2 = x[cn_trend_2]), axis = 1) 
                 
                 new_item_position : int = (new_column_names.index(cn_trend_1) + 1)
                 new_column_names.insert(new_item_position, cn_trend)
@@ -714,24 +737,6 @@ class ReadingListManager():
                 expanded_df = expanded_df.reindex(columns = new_column_names)
                 
         return expanded_df
-    def __get_trend_when_float64(self, value_1 : float64, value_2 : float64) -> str:
-
-        '''
-            1447.14, 2123.36 => "↑"
-            2123.36, 1447.14 => "↓"
-            0, 0 => "="
-        '''
-
-        trend : str = ""
-
-        if value_1 < value_2:
-            trend = "↑"
-        elif value_1 > value_2:
-            trend = "↓"
-        else:
-            trend = "="
-
-        return trend
     def __add_trend_to_sas_by_street_price(self, sas_by_street_price_df : DataFrame, yeatrend : list) -> DataFrame:
 
         '''
@@ -755,7 +760,7 @@ class ReadingListManager():
                 cn_value_1 : str = str(yeatrend[i])       # 2016 => "2016"
                 cn_value_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
                 
-                expanded_df[cn_trend] = expanded_df.apply(lambda x : self.__get_trend_when_float64(value_1 = x[cn_value_1], value_2 = x[cn_value_2]), axis = 1) 
+                expanded_df[cn_trend] = expanded_df.apply(lambda x : self.__df_helper.get_trend_when_float64(value_1 = x[cn_value_1], value_2 = x[cn_value_2]), axis = 1) 
                 
                 new_item_position : int = (new_column_names.index(cn_value_1) + 1)
                 new_column_names.insert(new_item_position, cn_trend)
@@ -763,28 +768,40 @@ class ReadingListManager():
                 expanded_df = expanded_df.reindex(columns = new_column_names)
                 
         return expanded_df
-    def __group_books_by_single_column(self, books_df : DataFrame, column_name : str) -> DataFrame:
+    def __group_books_by_single_column(self, rl_df : DataFrame, column_name : str) -> DataFrame:
 
         '''Groups books according to the provided column name. The book titles act as unique identifiers.'''
 
-        cn_uniqueitemidentifier : str = "Title"
-        cn_items : str = "Books"
-
-        grouped_df : DataFrame = books_df.groupby([column_name])[cn_uniqueitemidentifier].size().sort_values(ascending = [False]).reset_index(name = cn_items)
+        grouped_df : DataFrame = rl_df.groupby([column_name])[RLCN.TITLE].size().sort_values(ascending = [False]).reset_index(name = RLCN.BOOKS)
         
         return grouped_df
-    def __group_books_by_multiple_columns(self, books_df : DataFrame, column_names : list[str]) -> DataFrame:
+    def __group_books_by_multiple_columns(self, rl_df : DataFrame, column_names : list[str]) -> DataFrame:
 
         '''Groups books according to the provided column names (note: order matters). The book titles act as unique identifiers.'''
 
-        cn_uniqueitemidentifier : str = "Title"
-        cn_items : str = "Books"
-
-        grouped_df : DataFrame = books_df.groupby(by = column_names)[cn_uniqueitemidentifier].count().reset_index(name = cn_items)
+        grouped_df : DataFrame = rl_df.groupby(by = column_names)[RLCN.TITLE].count().reset_index(name = RLCN.BOOKS)
         grouped_df = grouped_df.sort_values(by = column_names, ascending = [True, True])
 
         return grouped_df
-    def __slice_by_kbsize(self, books_df : DataFrame, ascending : bool, remove_if_zero : bool) -> DataFrame:
+    def __add_a4sheets_column(self, df : DataFrame) -> DataFrame:
+
+        '''
+            ... KBSize
+            ... 3732
+            ... ...           
+
+            ... KBSize  A4Sheets
+            ... 3732    8
+            ... ...     ...
+        '''
+
+        copied_df : DataFrame = df.copy(deep = True)
+
+        copied_df[RLCN.A4SHEETS] = copied_df[RLCN.KBSIZE].apply(
+            lambda x : self.__converter.convert_word_count_to_A4_sheets(word_count = x))
+
+        return copied_df
+    def __slice_by_kbsize(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool) -> DataFrame:
 
         '''
                 Title	                                        ReadYear	Topic	                        Publisher	Rating	KBSize  A4Sheets
@@ -794,44 +811,25 @@ class ReadingListManager():
             ...
         '''
 
-        sliced_df : DataFrame = books_df.copy(deep=True)
-
-        cn_title : str = "Title"
-        cn_readyear : str = "ReadYear"
-        cn_topic : str = "Topic"
-        cn_publisher : str = "Publisher"
-        cn_rating : str = "Rating"
-        cn_kbsize : str = "KBSize"
-        cn_a4sheets : str = "A4Sheets"
-
-        sliced_df = sliced_df[[cn_title, cn_readyear, cn_topic, cn_publisher, cn_rating, cn_kbsize]]
+        sliced_df : DataFrame = rl_df.copy(deep=True)
+        sliced_df = sliced_df[[RLCN.TITLE, RLCN.READYEAR, RLCN.TOPIC, RLCN.PUBLISHER, RLCN.RATING, RLCN.KBSIZE]]
 
         if remove_if_zero:
-            condition : Series = (sliced_df[cn_kbsize] != 0)
+            condition : Series = (sliced_df[RLCN.KBSIZE] != 0)
             sliced_df = sliced_df.loc[condition]
 
-        sliced_df = sliced_df.sort_values(by = cn_kbsize, ascending = ascending).reset_index(drop = True)   
-        sliced_df[cn_a4sheets] = sliced_df[cn_kbsize].apply(
-            lambda x : self.__component_bag.converter.convert_word_count_to_A4_sheets(word_count = x))
+        sliced_df = sliced_df.sort_values(by = RLCN.KBSIZE, ascending = ascending).reset_index(drop = True)   
+        sliced_df = self.__add_a4sheets_column(df = sliced_df)
 
         return sliced_df    
-    def __create_read_years_dataframe(self, read_years : list[int]) -> DataFrame:
-
-        '''Create a dataframe out of the provided list of Read Years.'''
-
-        cn_read_year : str = "ReadYear"
-        read_years_df : DataFrame = pd.DataFrame(data = read_years, columns = [cn_read_year])
-
-        return read_years_df
-    def __get_topics_dataframe(self, df : DataFrame) -> DataFrame:
+    def __create_topics_dataframe(self, df : DataFrame) -> DataFrame:
 
         '''Creates a dataframe of unique topics out of the provided dataframe.'''
 
-        cn_topic : str = "Topic"
-        topics_df : DataFrame = pd.DataFrame(data = df[cn_topic].unique(), columns = [cn_topic])
+        topics_df : DataFrame = pd.DataFrame(data = df[RLCN.TOPIC].unique(), columns = [RLCN.TOPIC])
         
         return topics_df
-    def __get_default_topic_read_year_dataframe(self, topics_df : DataFrame, read_years_df : DataFrame) -> DataFrame:
+    def __create_default_topic_read_year_dataframe(self, topics_df : DataFrame, read_years_df : DataFrame) -> DataFrame:
 
         '''
                 Topic	                ReadYear
@@ -843,10 +841,10 @@ class ReadingListManager():
         default_df : DataFrame = pd.merge(left = topics_df, right = read_years_df, how='cross')
 
         return default_df
-    def __get_books_by_topic_read_year(self, books_df : DataFrame, read_years : list[int]) -> DataFrame:
+    def __create_books_by_topic_read_year(self, rl_df : DataFrame, read_years : list[int]) -> DataFrame:
 
         '''
-            [0] - Groups by books_df by Topic_ReadYear:
+            [0] - Groups rl_df by Topic_ReadYear:
 
                 Topic	                        ReadYear	Books
             0	BI, Data Warehousing, PowerBI	2017	    1
@@ -868,25 +866,21 @@ class ReadingListManager():
             from "int" to "float" in order to host it. Casting it back to "int" is therefore necessary.
         '''
 
-        cn_topic : str = "Topic"
-        cn_read_year : str = "ReadYear"
-        cn_books : str = "Books"    
+        books_by_topic_read_year_df : DataFrame = self.__group_books_by_multiple_columns(rl_df = rl_df, column_names = [RLCN.TOPIC, RLCN.READYEAR])
 
-        books_by_topic_read_year_df : DataFrame = self.__group_books_by_multiple_columns(books_df = books_df, column_names = [cn_topic, cn_read_year])
-
-        topics_df : DataFrame = self.__get_topics_dataframe(df = books_df)
-        read_years_df : DataFrame = self.__create_read_years_dataframe(read_years = read_years)
-        default_df : DataFrame = self.__get_default_topic_read_year_dataframe(topics_df = topics_df, read_years_df = read_years_df)
+        topics_df : DataFrame = self.__create_topics_dataframe(df = rl_df)
+        read_years_df : DataFrame = self.__df_helper.create_read_years_dataframe(read_years = read_years)
+        default_df : DataFrame = self.__create_default_topic_read_year_dataframe(topics_df = topics_df, read_years_df = read_years_df)
 
         completed_df : DataFrame = pd.merge(
             left = books_by_topic_read_year_df, 
             right = default_df,
             how = "outer")
 
-        completed_df.sort_values(by = [cn_topic, cn_read_year], ascending = [True, True], inplace = True)
+        completed_df.sort_values(by = [RLCN.TOPIC, RLCN.READYEAR], ascending = [True, True], inplace = True)
         completed_df.reset_index(inplace = True, drop = True)
         completed_df.fillna(value = 0, inplace = True)
-        completed_df = completed_df.astype({cn_books: int})
+        completed_df = completed_df.astype({RLCN.BOOKS: int})
 
         return completed_df
     def __pivot_column_values_to_cell(self, df : DataFrame, cn_index : str, cn_values : str) -> DataFrame:
@@ -953,18 +947,17 @@ class ReadingListManager():
         now_year : int = now.year
         now_month : int = now.month	
         cn_year : str = str(now_year)
-        cn_month : str = "Month"
         new_value : str = ""
 
-        condition : Series = (sas_by_month_upd_df[cn_month] > now_month)
+        condition : Series = (sas_by_month_upd_df[RLCN.MONTH] > now_month)
         sas_by_month_upd_df[cn_year] = np.where(condition, new_value, sas_by_month_upd_df[cn_year])
             
-        idx_year : int = sas_by_month_upd_df.columns.get_loc(cn_year)
+        idx_year : Any = sas_by_month_upd_df.columns.get_loc(cn_year)
         idx_trend : int = (idx_year - 1)
         sas_by_month_upd_df.iloc[:, idx_trend] = np.where(condition, new_value, sas_by_month_upd_df.iloc[:, idx_trend])
 
         return sas_by_month_upd_df       
-    def __get_sas_by_year(self, sas_by_month_df : DataFrame) -> DataFrame:
+    def __create_sas_by_year(self, sas_by_month_df : DataFrame) -> DataFrame:
 
         '''
             sas_by_year_df:
@@ -1010,11 +1003,11 @@ class ReadingListManager():
         yeatrend : list = sas_by_year_df.columns.to_list()
         for year in yeatrend:
 
-            cn_year_books : str = self.__format_year_books_column_name(year_cn = year)
-            cn_year_pages : str = self.__format_year_pages_column_name(year_cn = year)
+            cn_year_books : str = self.__df_helper.format_year_books_column_name(year_cn = year)
+            cn_year_pages : str = self.__df_helper.format_year_pages_column_name(year_cn = year)
 
-            sas_by_year_df[cn_year_books] = sas_by_year_df[year].apply(lambda x : self.__extract_books_from_trend(trend = x))
-            sas_by_year_df[cn_year_pages] = sas_by_year_df[year].apply(lambda x : self.__extract_pages_from_trend(trend = x))
+            sas_by_year_df[cn_year_books] = sas_by_year_df[year].apply(lambda x : self.__df_helper.extract_books_from_trend(trend = x))
+            sas_by_year_df[cn_year_pages] = sas_by_year_df[year].apply(lambda x : self.__df_helper.extract_pages_from_trend(trend = x))
 
             sas_by_year_df.drop(labels = year, inplace = True, axis = 1)
 
@@ -1022,18 +1015,18 @@ class ReadingListManager():
 
         for year in yeatrend:
 
-            cn_year_books = self.__format_year_books_column_name(year_cn = year)
-            cn_year_pages = self.__format_year_pages_column_name(year_cn = year)
+            cn_year_books = self.__df_helper.format_year_books_column_name(year_cn = year)
+            cn_year_pages = self.__df_helper.format_year_pages_column_name(year_cn = year)
 
-            sas_by_year_df[year] = sas_by_year_df.apply(lambda x : self.__format_reading_status(books = x[cn_year_books], pages = x[cn_year_pages]), axis = 1) 
+            sas_by_year_df[year] = sas_by_year_df.apply(lambda x : self.__df_helper.format_reading_status(books = x[cn_year_books], pages = x[cn_year_pages]), axis = 1) 
 
             sas_by_year_df.drop(labels = [cn_year_books, cn_year_pages], inplace = True, axis = 1)
 
         sas_by_year_df = self.__add_trend_to_sas_by_year(sas_by_year_df = sas_by_year_df, yeatrend = yeatrend)
-        sas_by_year_df.rename(columns = (lambda x : self.__try_consolidate_trend_column_name(column_name = x)), inplace = True)
+        sas_by_year_df.rename(columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)), inplace = True)
 
         return sas_by_year_df
-    def __get_sas_by_street_price(self, books_df : DataFrame, read_years : list, rounding_digits : int) -> DataFrame:
+    def __create_sas_by_street_price(self, rl_df : DataFrame, read_years : list, rounding_digits : int) -> DataFrame:
 
         '''
             [...]
@@ -1059,37 +1052,56 @@ class ReadingListManager():
 
                 2016	    ↕	2017	    ↕	2018	    ↕	2019	↕	2020	↕	2021	↕	2022	↕	2023
             0	$1447.14	↑	$2123.36	↓	$1249.15	↓	$748.70	↓	$538.75	↓	$169.92	↓	$49.99	↓	$5.00
+
+            In the case there is a mismatch bewtween the actual and expected column, we create the missing ones with "0" as value.
         '''
 
-        sas_by_street_price_df : DataFrame = books_df.copy(deep=True)
+        sas_by_street_price_df : DataFrame = rl_df.copy(deep=True)
 
-        cn_readyear : str = "ReadYear"
-        cn_streetprice : str = "StreetPrice"
-
-        condition : Series = (sas_by_street_price_df[cn_readyear].isin(read_years))
+        condition : Series = (sas_by_street_price_df[RLCN.READYEAR].isin(read_years))
         sas_by_street_price_df = sas_by_street_price_df.loc[condition]
-        sas_by_street_price_df = sas_by_street_price_df[[cn_readyear, cn_streetprice]]
+        sas_by_street_price_df = sas_by_street_price_df[[RLCN.READYEAR, RLCN.STREETPRICE]]
 
-        sas_by_street_price_df = sas_by_street_price_df.groupby([cn_readyear])[cn_streetprice].sum().sort_values(ascending = [False]).reset_index(name = cn_streetprice)
-        sas_by_street_price_df = sas_by_street_price_df.sort_values(by = cn_readyear, ascending = [True])
+        sas_by_street_price_df = sas_by_street_price_df.groupby([RLCN.READYEAR])[RLCN.STREETPRICE].sum().sort_values(ascending = [False]).reset_index(name = RLCN.STREETPRICE)
+        sas_by_street_price_df = sas_by_street_price_df.sort_values(by = RLCN.READYEAR, ascending = [True])
         sas_by_street_price_df = sas_by_street_price_df.reset_index(drop = True)
 
-        sas_by_street_price_df = sas_by_street_price_df.set_index(cn_readyear).transpose()
+        sas_by_street_price_df = sas_by_street_price_df.set_index(RLCN.READYEAR).transpose()
         sas_by_street_price_df.reset_index(drop = True, inplace = True)
         sas_by_street_price_df.rename_axis(None, axis = 1, inplace = True)
         sas_by_street_price_df.columns = sas_by_street_price_df.columns.astype(str)
         
-        sas_by_street_price_df = self.__add_trend_to_sas_by_street_price(sas_by_street_price_df = sas_by_street_price_df, yeatrend = read_years)
-        sas_by_street_price_df.rename(columns = (lambda x : self.__try_consolidate_trend_column_name(column_name = x)), inplace = True)
-
         new_column_names : list = [str(x) for x in read_years]
+
+        if sas_by_street_price_df.shape[1] != len(read_years):
+            for column_name in new_column_names:
+                if column_name not in sas_by_street_price_df.columns:
+                    sas_by_street_price_df[column_name] = 0
+            sas_by_street_price_df = sas_by_street_price_df[new_column_names]
+
+        if sas_by_street_price_df.shape[1] > 1:
+            sas_by_street_price_df = self.__add_trend_to_sas_by_street_price(sas_by_street_price_df = sas_by_street_price_df, yeatrend = read_years)
+            sas_by_street_price_df.rename(columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)), inplace = True)
+
         for column_name in new_column_names:
-            sas_by_street_price_df[column_name] = sas_by_street_price_df[column_name].apply(
-                lambda x : self.__component_bag.formatter.format_usd_amount(
-                    amount = float64(x), rounding_digits = rounding_digits))
+            if column_name in sas_by_street_price_df.columns:
+                sas_by_street_price_df[column_name] = sas_by_street_price_df[column_name].apply(
+                    lambda x : self.__formatter.format_usd_amount(
+                        amount = float64(x), rounding_digits = rounding_digits))
 
         return sas_by_street_price_df
-    def __filter_by_is_worth(self, sas_by_publisher_df : DataFrame) -> DataFrame:
+    def __create_sas_by_publisher_footer(self, publisher_min_books : int, publisher_min_ab_perc : float, publisher_min_avgrating : float) -> str:
+        
+        '''Creates a footer message for sas_by_publisher.'''
+
+        sas_by_publisher_footer : str = str(
+            f"'Yes' if "
+            f"'{RLCN.BOOKS}' >= '{publisher_min_books}' & "
+            f"('{RLCN.AVGRATING}' >= '{publisher_min_avgrating}' | '{RLCN.ABPERC}' >= '{publisher_min_ab_perc}')"
+            )
+
+        return sas_by_publisher_footer
+    def __filter_by_is_worth(self, sas_by_publisher_df : DataFrame, publisher_criteria : str) -> DataFrame:
 
         '''
                 Publisher	Books	AvgRating	IsWorth
@@ -1100,73 +1112,78 @@ class ReadingListManager():
 
         filtered_df : DataFrame = sas_by_publisher_df.copy(deep = True)
 
-        cn_isworth : str = "IsWorth"
-        condition : Series = (filtered_df[cn_isworth] == self.__setting_bag.is_worth_criteria)
+        condition : Series = (filtered_df[RLCN.ISWORTH] == publisher_criteria)
         filtered_df = filtered_df.loc[condition]
         
         filtered_df.reset_index(drop = True, inplace = True)
 
         return filtered_df
 
-    def get_books_dataset(self) -> DataFrame:
+    def create_rl(self, excel_path : str, excel_books_skiprows : int, excel_books_nrows : int, excel_books_tabname : str, excel_null_value : str) -> DataFrame:
         
         '''Retrieves the content of the "Books" tab and returns it as a Dataframe.'''
 
-        books_df = pd.read_excel(
-            io = self.__setting_bag.excel_path, 	
-            skiprows = self.__setting_bag.excel_books_skiprows,
-            nrows = self.__setting_bag.excel_books_nrows,
-            sheet_name = self.__setting_bag.excel_books_tabname, 
+        rl_df = pd.read_excel(
+            io = excel_path, 	
+            skiprows = excel_books_skiprows,
+            nrows = excel_books_nrows,
+            sheet_name = excel_books_tabname, 
             engine = 'openpyxl'
             )
         
-        books_df = self.__enforce_dataframe_definition_for_books_df(
-            books_df = books_df, 
-            excel_null_value = self.__setting_bag.excel_null_value)
+        rl_df = self.__enforce_dataframe_definition_for_rl_df(
+            rl_df = rl_df, 
+            excel_null_value = excel_null_value)
 
-        return books_df
-    def get_rolling_total(self, books_df : DataFrame) -> DataFrame:
+        return rl_df
+    def create_rl_asrt(self, rl_df : DataFrame, rounding_digits : int, now : datetime) -> DataFrame:
 
         '''
                 Years	Books	Pages	TotalSpend  LastUpdate
             0	8	    234	    62648	$6332.01    2023-09-23
         '''
 
-        cn_read_year : str = "ReadYear"
-        count_years : int = books_df[cn_read_year].unique().size
+        count_years : int = rl_df[RLCN.READYEAR].unique().size
+        count_books : int = rl_df[RLCN.TITLE].size
+        sum_pages : int = rl_df[RLCN.PAGES].sum()
+        sum_street_price : float64 = rl_df[RLCN.STREETPRICE].sum()
 
-        cn_title : str = "Title"
-        count_books : int = books_df[cn_title].size
-
-        cn_pages : str = "Pages"
-        sum_pages : int = books_df[cn_pages].sum()
-
-        cn_street_price : str = "StreetPrice"
-        sum_street_price : float64 = books_df[cn_street_price].sum()
-
-        cn_years : str = "Years"
-        cn_books : str = "Books"
-        cn_total_spend : str = "TotalSpend"
-        cn_last_update : str = "LastUpdate"
-
-        total_spend_str : str = self.__component_bag.formatter.format_usd_amount(
+        total_spend_str : str = self.__formatter.format_usd_amount(
             amount = sum_street_price, 
-            rounding_digits = self.__setting_bag.rounding_digits)
+            rounding_digits = rounding_digits)
         
-        last_update_str : str = self.__component_bag.formatter.format_to_iso_8601(dt = self.__setting_bag.now)
+        last_update_str : str = self.__formatter.format_to_iso_8601(dt = now)
 
-        rolling_total_dict : dict = {
-            f"{cn_years}": f"{str(count_years)}",
-            f"{cn_books}": f"{str(count_books)}",
-            f"{cn_pages}": f"{str(sum_pages)}",
-            f"{cn_total_spend}": f"{total_spend_str}",
-            f"{cn_last_update}": f"{last_update_str}"
+        rl_asrt_dict : dict = {
+            f"{RLCN.YEARS}": f"{str(count_years)}",
+            f"{RLCN.BOOKS}": f"{str(count_books)}",
+            f"{RLCN.PAGES}": f"{str(sum_pages)}",
+            f"{RLCN.TOTALSPEND}": f"{total_spend_str}",
+            f"{RLCN.LASTUPDATE}": f"{last_update_str}"
             }
 
-        rolling_total_df : DataFrame = pd.DataFrame(rolling_total_dict, index=[0])
+        rl_asrt_df : DataFrame = pd.DataFrame(rl_asrt_dict, index=[0])
         
-        return rolling_total_df        
-    def get_sas_by_month_tpl(self, books_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
+        return rl_asrt_df        
+    def create_rl_by_kbsize(self, rl_df : DataFrame, kbsize_ascending : bool, kbsize_remove_if_zero : bool, kbsize_n : int) -> DataFrame:
+        
+        '''
+            Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
+            1	    Machine Learning For Dummies	                2017	Data Analysis, Data Science, ML	Wiley	4	    3732	8
+            2	    Machine Learning Projects for .NET Developers	2017	Data Analysis, Data Science, ML	Apress	4	    3272	7        
+            ...
+        '''
+
+        rl_by_kbsize_df : DataFrame = self.__slice_by_kbsize(
+            rl_df = rl_df, 
+            ascending = kbsize_ascending, 
+            remove_if_zero = kbsize_remove_if_zero)
+        
+        rl_by_kbsize_df = self.__converter.convert_index_to_one_based(df = rl_by_kbsize_df)
+        rl_by_kbsize_df = rl_by_kbsize_df.head(n = kbsize_n)
+
+        return rl_by_kbsize_df   
+    def create_sas_by_month(self, rl_df : DataFrame, read_years : list[int], now : datetime) -> Tuple[DataFrame, DataFrame]:
 
         '''
             The method returns a tuple of dataframes (sas_by_month_df, sas_by_month_upd_df), 
@@ -1188,31 +1205,30 @@ class ReadingListManager():
         '''
 
         sas_by_month_df : DataFrame = pd.DataFrame()
-        read_years : list[int] = self.__setting_bag.read_years
         add_trend : bool = True
 
         for i in range(len(read_years)):
 
             if i == 0:
-                sas_by_month_df = self.__get_sa_by_year(books_df = books_df, read_year = read_years[i])
+                sas_by_month_df = self.__create_sa_by_year(rl_df = rl_df, read_year = read_years[i])
             else:
                 sas_by_month_df = self.__expand_sa_by_year(
-                    books_df = books_df, 
+                    rl_df = rl_df, 
                     read_years = read_years, 
                     sas_by_month_df = sas_by_month_df, 
                     i = i, 
                     add_trend = add_trend)
 
         sas_by_month_df.rename(
-            columns = (lambda x : self.__try_consolidate_trend_column_name(column_name = x)), 
+            columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)), 
             inplace = True)
         
         sas_by_month_upd_df : DataFrame = self.__update_future_rs_to_empty(
             sas_by_month_df = sas_by_month_df, 
-            now = self.__setting_bag.now)
+            now = now)
 
         return (sas_by_month_df, sas_by_month_upd_df)
-    def get_sas_by_year_street_price(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], books_df : DataFrame) -> DataFrame:
+    def create_sas_by_year_street_price(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame, read_years : list[int], rounding_digits : int) -> DataFrame:
 
         '''
                 2016	    ↕	2017	    ↕	2018	    ↕	2019	    ↕	2020	    ↕	2021	    ↕	2022	↕	2023
@@ -1220,17 +1236,17 @@ class ReadingListManager():
             1	$1447.14	↑	$2123.36	↓	$1249.15	↓	$748.70	    ↓	$538.75	    ↓	$169.92	    ↓	$49.99	↓	$5.00
         '''
 
-        sas_by_year_df : DataFrame = self.__get_sas_by_year(sas_by_month_df = sas_by_month_tpl[0])
-        sas_by_street_price_df : DataFrame = self.__get_sas_by_street_price(
-            books_df = books_df, 
-            read_years = self.__setting_bag.read_years,
-            rounding_digits = self.__setting_bag.rounding_digits)
+        sas_by_year_df : DataFrame = self.__create_sas_by_year(sas_by_month_df = sas_by_month_tpl[0])
+        sas_by_street_price_df : DataFrame = self.__create_sas_by_street_price(
+            rl_df = rl_df, 
+            read_years = read_years,
+            rounding_digits = rounding_digits)
 
         sas_by_year_street_price_df : DataFrame = pd.concat(objs = [sas_by_year_df, sas_by_street_price_df])
         sas_by_year_street_price_df.reset_index(drop = True, inplace = True)
 
         return sas_by_year_street_price_df      
-    def get_sas_by_topic(self, books_df : DataFrame) -> DataFrame:
+    def create_sas_by_topic(self, rl_df : DataFrame) -> DataFrame:
 
         """
             by_books_df:
@@ -1247,37 +1263,62 @@ class ReadingListManager():
                 1	C#	                    15772
                 ... ...                     ...
 
+            by_kbsize_df:
+
+                    Topic	                KBSize
+                0	Software Engineering	32169
+                1	C#	                    23141
+                ... ...                     ...  
+
             sas_by_topic_df:
             
-                    Topic	                Books	Pages
-                0	Software Engineering	61	    16776
-                1	C#	                    50	    15772
-                ... ...                     ...     ...     
+                    Topic	                Books	Pages   KBSize  A4Sheets
+                0	Software Engineering	61	    16776   32169   65
+                1	C#	                    50	    15772   23141   47
+                ... ...                     ...     ...     ...     ...
+
+                    Topic	                Books	Pages   A4Sheets
+                0	Software Engineering	61	    16776   65
+                1	C#	                    50	    15772   47
+                ... ...                     ...     ...     ...
         """
 
-        cn_topic : str = "Topic"  
-        cn_books : str = "Books"
-        by_books_df : DataFrame = books_df.groupby([cn_topic]).size().sort_values(ascending = False).reset_index(name = cn_books)
-
-        cn_pages = "Pages"
-        by_pages_df : DataFrame = books_df.groupby([cn_topic])[cn_pages].sum().sort_values(ascending = False).reset_index(name = cn_pages)
+        by_books_df : DataFrame = rl_df.groupby([RLCN.TOPIC])[RLCN.TITLE].size().sort_values(ascending = False).reset_index(name = RLCN.BOOKS)
+        by_pages_df : DataFrame = rl_df.groupby([RLCN.TOPIC])[RLCN.PAGES].sum().sort_values(ascending = False).reset_index(name = RLCN.PAGES)
 
         sas_by_topic_df : DataFrame = pd.merge(
             left = by_books_df, 
             right = by_pages_df, 
             how = "inner", 
-            left_on = cn_topic, 
-            right_on = cn_topic)
+            left_on = RLCN.TOPIC, 
+            right_on = RLCN.TOPIC)
+
+        by_kbsize_df : DataFrame = rl_df.groupby([RLCN.TOPIC])[RLCN.KBSIZE].sum().sort_values(ascending = False).reset_index(name = RLCN.KBSIZE)
+
+        sas_by_topic_df = pd.merge(
+            left = sas_by_topic_df, 
+            right = by_kbsize_df, 
+            how = "inner", 
+            left_on = RLCN.TOPIC, 
+            right_on = RLCN.TOPIC)
+        
+        sas_by_topic_df = self.__add_a4sheets_column(df = sas_by_topic_df)
+        sas_by_topic_df = sas_by_topic_df[[RLCN.TOPIC, RLCN.BOOKS, RLCN.PAGES, RLCN.A4SHEETS]]
 
         return sas_by_topic_df
-    def get_sas_by_publisher_tpl(self, books_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
+    def create_sas_by_publisher(
+            self, 
+            rl_df : DataFrame, 
+            rounding_digits : int, 
+            publisher_min_books : int, 
+            publisher_min_ab_perc : float, 
+            publisher_min_avgrating : float, 
+            publisher_criteria : str) -> Tuple[DataFrame, DataFrame, str]:
         
         """
-            The method returns a tuple of dataframes (sas_by_publisher_df, sas_by_publisher_flt_df), 
-            where the first item contains the full dataset while the second one only the rows filtered 
-            by setting_bag.is_worth_criteria.
+            The method returns (sas_by_publisher_df, sas_by_publisher_flt_df, sas_by_publisher_footer).
 
-            Example:
+            Data Pipeline:
 
                 by_books_df:
 
@@ -1285,6 +1326,30 @@ class ReadingListManager():
                     0	Syncfusion	38
                     1	O'Reilly	34
                     ... ...         ...
+
+                by_kbsize_df:
+
+                        Publisher	KBSize
+                    0	Syncfusion	1254
+                    1	O'Reilly	987
+                    ... ...         ...
+
+                sas_by_publisher_df:
+
+                        Publisher	Books	KBSize	A4Sheets
+                    0	Syncfusion	38	    1254	7
+                    1	O'Reilly	34	    987	    4
+                    ... ...         ...     ...     ...
+
+                        Publisher	Books	A4Sheets
+                    0	Syncfusion	38	    7
+                    1	O'Reilly	34	    4
+                    ... ...         ...     ...
+
+                        Publisher	Books	A4Sheets    AB%
+                    0	Syncfusion	38	    7           34.00
+                    1	O'Reilly	34	    4           9.43
+                    ... ...         ...     ...         ...
 
                 by_avgrating_df:
 
@@ -1295,42 +1360,55 @@ class ReadingListManager():
 
                 sas_by_publisher_df:
 
-                        Publisher	Books	AvgRating	IsWorth
-                    0	Syncfusion	38	    2.55	    Yes
-                    1	O'Reilly	34	    2.18	    No
-                    ... ...         ...     ...         ...
-
-            IsWorth criteria example: "Yes" if AvgRating >= 2.50 && Books >= 8
+                        Publisher	Books	A4Sheets    AB%     AvgRating	IsWorth
+                    0	Syncfusion	38	    7           34.00   2.55	    Yes
+                    1	O'Reilly	34	    4           9.43    2.18	    No
+                    ... ...         ...     ...         ...     ...         ...
         """
-
-        cn_publisher : str = "Publisher"
-        cn_title : str = "Title"    
-        cn_books : str = "Books"
-        by_books_df : DataFrame = books_df.groupby([cn_publisher])[cn_title].size().sort_values(ascending = [False]).reset_index(name = cn_books)
-        
-        cn_rating : str = "Rating"   
-        cn_avgrating : str = "AvgRating"
-        by_avgrating_df : DataFrame = books_df.groupby([cn_publisher])[cn_rating].mean().sort_values(ascending = [False]).reset_index(name = cn_avgrating)
-        by_avgrating_df[cn_avgrating] = by_avgrating_df[cn_avgrating].apply(
-            lambda x : round(number = x, ndigits = self.__setting_bag.rounding_digits)) # 2.5671 => 2.57
+  
+        by_books_df : DataFrame = rl_df.groupby([RLCN.PUBLISHER])[RLCN.TITLE].size().sort_values(ascending = [False]).reset_index(name = RLCN.BOOKS)
+        by_kbsize_df : DataFrame = rl_df.groupby([RLCN.PUBLISHER])[RLCN.KBSIZE].sum().sort_values(ascending = False).reset_index(name = RLCN.KBSIZE)
 
         sas_by_publisher_df : DataFrame = pd.merge(
             left = by_books_df, 
+            right = by_kbsize_df, 
+            how = "inner", 
+            left_on = RLCN.PUBLISHER, 
+            right_on = RLCN.PUBLISHER)
+        sas_by_publisher_df = self.__add_a4sheets_column(df = sas_by_publisher_df)
+        
+        sas_by_publisher_df = sas_by_publisher_df[[RLCN.PUBLISHER, RLCN.BOOKS, RLCN.A4SHEETS]]
+        sas_by_publisher_df[RLCN.ABPERC] = round(((sas_by_publisher_df[RLCN.A4SHEETS] / sas_by_publisher_df[RLCN.BOOKS]) * 100), rounding_digits)
+  
+        by_avgrating_df : DataFrame = rl_df.groupby([RLCN.PUBLISHER])[RLCN.RATING].mean().sort_values(ascending = [False]).reset_index(name = RLCN.AVGRATING)
+        by_avgrating_df[RLCN.AVGRATING] = by_avgrating_df[RLCN.AVGRATING].apply(
+            lambda x : round(number = x, ndigits = rounding_digits)) # 2.5671 => 2.57
+
+        sas_by_publisher_df = pd.merge(
+            left = sas_by_publisher_df, 
             right = by_avgrating_df, 
             how = "inner", 
-            left_on = cn_publisher, 
-            right_on = cn_publisher)
+            left_on = RLCN.PUBLISHER, 
+            right_on = RLCN.PUBLISHER)
 
-        cn_isworth : str = "IsWorth"
-        sas_by_publisher_df[cn_isworth] = np.where(
-            (sas_by_publisher_df[cn_books] >= self.__setting_bag.is_worth_min_books) & 
-            (sas_by_publisher_df[cn_avgrating] >= self.__setting_bag.is_worth_min_avgrating), 
-            "Yes", "No")
+        sas_by_publisher_df[RLCN.ISWORTH] = np.where(
+            np.logical_and(
+                sas_by_publisher_df[RLCN.BOOKS] >= publisher_min_books,
+                np.logical_or(
+                    (sas_by_publisher_df[RLCN.AVGRATING] >= publisher_min_avgrating), 
+                    (sas_by_publisher_df[RLCN.ABPERC] >= publisher_min_ab_perc))
+                ), "Yes", "No")
+        
+        sas_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(sas_by_publisher_df = sas_by_publisher_df, publisher_criteria = publisher_criteria)
 
-        sas_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(sas_by_publisher_df = sas_by_publisher_df)
+        sas_by_publisher_footer : str = self.__create_sas_by_publisher_footer(
+            publisher_min_books = publisher_min_books,
+            publisher_min_ab_perc = publisher_min_ab_perc,
+            publisher_min_avgrating = publisher_min_avgrating
+        )
 
-        return (sas_by_publisher_df, sas_by_publisher_flt_df)       
-    def get_sas_by_rating(self, books_df : DataFrame) -> DataFrame:
+        return (sas_by_publisher_df, sas_by_publisher_flt_df, sas_by_publisher_footer)       
+    def create_sas_by_rating(self, rl_df : DataFrame, md_stars_rating : bool) -> DataFrame:
 
         '''
                 Rating  Books
@@ -1339,39 +1417,19 @@ class ReadingListManager():
             ...
         '''
 
-        cn_rating : str = "Rating"
-
-        sas_by_rating_df : DataFrame = self.__group_books_by_single_column(books_df = books_df, column_name = cn_rating)
-        sas_by_rating_df.sort_values(by = cn_rating, ascending = False, inplace = True)
+        sas_by_rating_df : DataFrame = self.__group_books_by_single_column(rl_df = rl_df, column_name = RLCN.RATING)
+        sas_by_rating_df.sort_values(by = RLCN.RATING, ascending = False, inplace = True)
         sas_by_rating_df.reset_index(drop = True, inplace = True)
 
-        if self.__setting_bag.formatted_rating:
-            sas_by_rating_df[cn_rating] = sas_by_rating_df[cn_rating].apply(
-                lambda x : self.__component_bag.formatter.format_rating(rating = x))
+        if md_stars_rating:
+            sas_by_rating_df[RLCN.RATING] = sas_by_rating_df[RLCN.RATING].apply(
+                lambda x : self.__formatter.format_rating(rating = x))
 
         return sas_by_rating_df    
-    def get_reading_list_by_kbsize(self, books_df : DataFrame) -> DataFrame:
-        
-        '''
-            Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
-            1	    Machine Learning For Dummies	                2017	Data Analysis, Data Science, ML	Wiley	4	    3732	8
-            2	    Machine Learning Projects for .NET Developers	2017	Data Analysis, Data Science, ML	Apress	4	    3272	7        
-            ...
-        '''
-
-        rl_by_kbsize_df : DataFrame = self.__slice_by_kbsize(
-            books_df = books_df, 
-            ascending = self.__setting_bag.kbsize_ascending, 
-            remove_if_zero = self.__setting_bag.kbsize_remove_if_zero)
-        
-        rl_by_kbsize_df = self.__component_bag.converter.convert_index_to_one_based(df = rl_by_kbsize_df)
-        rl_by_kbsize_df = rl_by_kbsize_df.head(n = self.__setting_bag.n_by_kbsize)
-
-        return rl_by_kbsize_df
-    def get_yearly_trend_by_topic(self, books_df : DataFrame) -> DataFrame:
+    def create_trend_by_year_topic(self, rl_df : DataFrame, read_years : list[int], trend_sparklines_maximum : bool) -> DataFrame:
 
         '''
-            Get yearly trend by topic as numbers and sparklines.
+            Get trend by year and topic as numbers and sparklines.
 
                 Topic	                        Books	                    Trend
             0	BI, Data Warehousing, PowerBI	[0, 1, 9, 11, 0, 0, 0, 0]	▁▂▇█▁▁▁▁
@@ -1379,161 +1437,51 @@ class ReadingListManager():
             ...          
         '''
 
-        cn_topic : str = "Topic"
-        cn_books : str = "Books"
-        cn_trend : str = "Trend"
-
-        by_topic_read_year_df : DataFrame = self.__get_books_by_topic_read_year(
-            books_df = books_df, 
-            read_years = self.__setting_bag.read_years)
+        by_topic_read_year_df : DataFrame = self.__create_books_by_topic_read_year(rl_df = rl_df, read_years = read_years)
         
         pivoted_df : DataFrame = self.__pivot_column_values_to_cell(
             df = by_topic_read_year_df, 
-            cn_index = cn_topic, 
-            cn_values = cn_books)
+            cn_index = RLCN.TOPIC, 
+            cn_values = RLCN.BOOKS)
 
-        if self.__setting_bag.enable_sparklines_maximum:
-            maximum : int = by_topic_read_year_df[cn_books].max()
-            return self.__add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend, maximum = maximum)
+        if trend_sparklines_maximum:
+            maximum : int = by_topic_read_year_df[RLCN.BOOKS].max()
+            return self.__add_sparklines(df = pivoted_df, cn_values = RLCN.BOOKS, cn_sparklines = RLCN.TREND, maximum = maximum)
         else: 
-            return self.__add_sparklines(df = pivoted_df, cn_values = cn_books, cn_sparklines = cn_trend)
-class MarkdownProcessor():
+            return self.__add_sparklines(df = pivoted_df, cn_values = RLCN.BOOKS, cn_sparklines = RLCN.TREND)
+    def create_definitions(self) -> DataFrame:
 
-    '''Collects all the logic related to the processing of Markdown content.'''
+        '''Creates a dataframe containing all the definitions in use in this application.'''
 
-    __component_bag : ComponentBag
-    __setting_bag : SettingBag    
+        columns : list[str] = ["Term", "Definition"]
 
-    def __init__(self, component_bag : ComponentBag, setting_bag : SettingBag) -> None:
+        definitions : dict[str, str] = {
+            "RL": "Reading List",
+            "SAS": "Studying Activity Summary.",
+            "KBSize": "This metric is the word count of the notes I took about a given book.",
+            "A4Sheets": "'KBSize' converted into amount of A4 sheets.",
+            "AB%": "Calculated with the following formula: '(A4Sheets / Books) * 100'."
+            }
+        
+        definitions_df : DataFrame = DataFrame(
+            data = definitions.items(), 
+            columns = columns
+        )
 
-        self.__component_bag = component_bag
-        self.__setting_bag = setting_bag
+        return definitions_df
+class RLMarkdownFactory():
 
-    def __get_readme_md(self, rolling_total_df : DataFrame) -> str:
+    '''Collects all the logic related to Markdown creation out of Reading List dataframes.'''
 
-        '''Creates the Markdown content for a README file out of the provided dataframe.'''
+    __markdown_helper : MarkdownHelper
+    __formatter : Formatter
 
-        rolling_total_md : str = rolling_total_df.to_markdown(index = False)
+    def __init__(self, markdown_helper : MarkdownHelper, formatter : Formatter) -> None:
 
-        md_content : str = rolling_total_md
-        md_content += "\n"
+        self.__markdown_helper = markdown_helper
+        self.__formatter = formatter
 
-        return md_content
-    def __get_rl_by_month_md(self, last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame, use_smaller_font : bool) -> str:
-
-        '''Creates the Markdown content for a "Reading List By Month" file out of the provided dataframes.'''
-
-        copy_of_sas_by_month_df : DataFrame = sas_by_month_df.copy(deep=True)
-        copy_of_sas_by_year_street_price_df : DataFrame = sas_by_year_street_price_df.copy(deep=True)
-
-        if use_smaller_font:
-            copy_of_sas_by_month_df = self.__component_bag.markdown_helper.add_subscript_tags_to_dataframe(df = copy_of_sas_by_month_df)
-            copy_of_sas_by_year_street_price_df = self.__component_bag.markdown_helper.add_subscript_tags_to_dataframe(df = copy_of_sas_by_year_street_price_df)
-
-        md_paragraph_title : str = "Reading List By Month"
-
-        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-        sas_by_month_md : str = copy_of_sas_by_month_df.to_markdown(index = False)
-        sas_by_year_street_price_md  : str = copy_of_sas_by_year_street_price_df.to_markdown(index = False)
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += sas_by_month_md
-        md_content += "\n"
-        md_content += ""
-        md_content += "\n"
-        md_content += sas_by_year_street_price_md
-        md_content += "\n"
-        md_content += ""
-
-        return md_content
-    def __get_rl_by_publisher_md(self, last_update : datetime, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> str:
-
-        '''Creates the Markdown content for a "Reading List By Publisher" file out of the provided dataframes.'''
-
-        md_paragraph_title : str = "Reading List By Publisher"
-
-        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-        sas_by_publisher_flt_md : str = sas_by_publisher_tpl[1].to_markdown(index = False)
-        sas_by_publisher_md : str = sas_by_publisher_tpl[0].to_markdown(index = False)
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += sas_by_publisher_flt_md
-        md_content += "\n"
-        md_content += ""
-        md_content += "\n"
-        md_content += sas_by_publisher_md
-        md_content += "\n"
-        md_content += ""
-
-        return md_content
-    def __get_rl_by_rating_md(self, last_update : datetime, sas_by_rating_df : DataFrame) -> str:
-
-        '''Creates the Markdown content for a "Reading List By Rating" file out of the provided dataframe.'''
-
-        md_paragraph_title : str = "Reading List By Rating"
-
-        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-        sas_by_rating_md : str = sas_by_rating_df.to_markdown(index = False)
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += sas_by_rating_md
-        md_content += "\n"
-
-        return md_content
-    def __get_rl_by_topic_md(self, last_update : datetime, sas_by_topic_df : DataFrame) -> str:
-
-        '''Creates the Markdown content for a "Reading List By Topic" file out of the provided dataframe.'''
-
-        md_paragraph_title : str = "Reading List By Topic"
-
-        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-        sas_by_topic_md : str = sas_by_topic_df.to_markdown(index = False)
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += sas_by_topic_md
-        md_content += "\n"
-
-        return md_content
-    def __get_rl_md(self, last_update : datetime, books_df : DataFrame, use_smaller_font : bool) -> str:
-
-        '''Creates the Markdown content for a "Reading List" file out of the provided dataframe.'''
-
-        md_paragraph_title : str = "Reading List"
-
-        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-        formatted_rl_df : DataFrame = self.__get_formatted_rl(books_df = books_df)
-
-        if use_smaller_font:
-            formatted_rl_df = self.__component_bag.markdown_helper.add_subscript_tags_to_dataframe(df = formatted_rl_df)    
-
-        formatted_rl_md : str = formatted_rl_df.to_markdown(index = False)
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += formatted_rl_md
-        md_content += "\n"
-
-        return md_content
-    def __get_rl_topic_trend_md(self, last_update : datetime, yt_by_topic_df : DataFrame) -> str:
-
-        '''Creates the Markdown content for a "Reading List Topic Trend" file out of the provided dataframe.'''
-
-        md_paragraph_title : str = "Reading List Topic Trend"
-
-        markdown_header : str = self.__component_bag.markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = md_paragraph_title)
-        yt_by_topic_md : str = yt_by_topic_df.to_markdown(index = False)
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += yt_by_topic_md
-        md_content += "\n"
-
-        return md_content
-    def __get_formatted_rl(self, books_df : DataFrame) -> DataFrame:
+    def __format(self, rl_df : DataFrame) -> DataFrame:
 
         '''
                 Id	    Title	            Year	Pages	ReadDate	Publisher	    Rating    Topic
@@ -1554,143 +1502,581 @@ class MarkdownProcessor():
         cn_rating : str = "Rating"
         cn_topic : str = "Topic"
 
-        formatted_rl_df[cn_id] = books_df.index + 1
-        formatted_rl_df[cn_title] = books_df[cn_title]
-        formatted_rl_df[cn_year] = books_df[cn_year]
-        formatted_rl_df[cn_language] = books_df[cn_language]
-        formatted_rl_df[cn_pages] = books_df[cn_pages]
-        formatted_rl_df[cn_read_date] = books_df[cn_read_date]   
-        formatted_rl_df[cn_publisher] = books_df[cn_publisher]   
-        formatted_rl_df[cn_rating] = books_df[cn_rating].apply(lambda x : self.__component_bag.formatter.format_rating(rating = x))
-        formatted_rl_df[cn_topic] = books_df[cn_topic]   
+        formatted_rl_df[cn_id] = rl_df.index + 1
+        formatted_rl_df[cn_title] = rl_df[cn_title]
+        formatted_rl_df[cn_year] = rl_df[cn_year]
+        formatted_rl_df[cn_language] = rl_df[cn_language]
+        formatted_rl_df[cn_pages] = rl_df[cn_pages]
+        formatted_rl_df[cn_read_date] = rl_df[cn_read_date]   
+        formatted_rl_df[cn_publisher] = rl_df[cn_publisher]   
+        formatted_rl_df[cn_rating] = rl_df[cn_rating].apply(lambda x : self.__formatter.format_rating(rating = x))
+        formatted_rl_df[cn_topic] = rl_df[cn_topic]   
 
         return formatted_rl_df
 
-    def process_readme_md(self, rolling_total_df : DataFrame) -> None:
+    def create_rl_md(self, paragraph_title : str, last_update : datetime, rl_df : DataFrame) -> str:
 
-        '''Performs all the tasks related to the README file.'''
+        '''Creates the expected Markdown content for the provided arguments.'''
 
-        content : str = self.__get_readme_md(rolling_total_df = rolling_total_df)
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
+        rl_md : str = self.__format(rl_df = rl_df).to_markdown(index = False)
 
-        if self.__setting_bag.show_readme_md:
-            self.__component_bag.logging_function(content)
-    def process_rl_by_month_md(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], sas_by_year_street_price_df : DataFrame) -> None:
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += rl_md
+        md_content += "\n"
 
-        '''Performs all the tasks related to the "Reading List By Month" file.''' 
+        return md_content
+    def create_rl_asrt_md(self, rl_asrt_df : DataFrame) -> str:
 
-        content : str = self.__get_rl_by_month_md(      
-            last_update = self.__setting_bag.rl_last_update, 
-            sas_by_month_df = sas_by_month_tpl[0], 
+        '''Creates the expected Markdown content for the provided arguments.'''
+
+        rl_asrt_md : str = rl_asrt_df.to_markdown(index = False)
+
+        md_content : str = rl_asrt_md
+        md_content += "\n"
+
+        return md_content
+    def create_sas_md(self, paragraph_title : str, last_update : datetime, sas_by_month_df : DataFrame, sas_by_year_street_price_df : DataFrame) -> str:
+
+        '''Creates the expected Markdown content for the provided arguments.'''
+
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
+        sas_by_month_md : str = sas_by_month_df.to_markdown(index = False)
+        sas_by_year_street_price_md  : str = sas_by_year_street_price_df.to_markdown(index = False)
+
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += sas_by_month_md
+        md_content += "\n"
+        md_content += ""
+        md_content += "\n"
+        md_content += sas_by_year_street_price_md
+        md_content += "\n"
+        md_content += ""
+
+        return md_content
+    def create_sas_by_publisher_md(self, paragraph_title : str, last_update : datetime, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]) -> str:
+
+        '''Creates the expected Markdown content for the provided arguments.'''
+
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
+        sas_by_publisher_flt_md : str = sas_by_publisher_tpl[1].to_markdown(index = False)
+        sas_by_publisher_md : str = sas_by_publisher_tpl[0].to_markdown(index = False)
+        sas_by_publisher_footer : str = sas_by_publisher_tpl[2]
+
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += sas_by_publisher_flt_md
+        md_content += "\n"
+        md_content += ""
+        md_content += "\n"
+        md_content += sas_by_publisher_md
+        md_content += "\n"
+        md_content += ""
+        md_content += "\n"        
+        md_content += sas_by_publisher_footer
+        md_content += "\n"
+        md_content += ""
+
+        return md_content
+    def create_sas_by_rating_md(self, paragraph_title : str, last_update : datetime, sas_by_rating_df : DataFrame) -> str:
+
+        '''Creates the expected Markdown content for the provided arguments.'''
+
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
+        sas_by_rating_md : str = sas_by_rating_df.to_markdown(index = False)
+
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += sas_by_rating_md
+        md_content += "\n"
+
+        return md_content
+    def create_sas_by_topic_md(self, paragraph_title : str, last_update : datetime, sas_by_topic_df : DataFrame, trend_by_year_topic_df : DataFrame) -> str:
+
+        '''Creates the expected Markdown content for the provided arguments.'''
+
+        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
+        sas_by_topic_md : str = sas_by_topic_df.to_markdown(index = False)
+        trend_by_year_topic_md : str = trend_by_year_topic_df.to_markdown(index = False)
+
+        md_content : str = markdown_header
+        md_content += "\n"
+        md_content += sas_by_topic_md
+        md_content += "\n"
+        md_content += ""
+        md_content += "\n"
+        md_content += trend_by_year_topic_md
+        md_content += "\n"
+        md_content += ""        
+
+        return md_content
+class ComponentBag():
+
+    '''Represents a collection of components.'''
+
+    file_path_manager : FilePathManager
+    file_manager : FileManager
+    df_factory : RLDataFrameFactory
+    md_factory : RLMarkdownFactory
+    displayer : Displayer
+    plot_manager : PlotManager
+    logging_function : Callable[[str], None]
+
+    def __init__(
+            self, 
+            file_path_manager : FilePathManager = FilePathManager(),
+            file_manager : FileManager = FileManager(file_path_manager = FilePathManager()),
+            df_factory : RLDataFrameFactory = RLDataFrameFactory(
+                converter = Converter(),
+                formatter = Formatter(),
+                df_helper = RLDataFrameHelper()
+                ),
+            md_factory : RLMarkdownFactory = RLMarkdownFactory(
+                markdown_helper = MarkdownHelper(formatter = Formatter()),
+                formatter = Formatter()
+            ),
+            displayer : Displayer = Displayer(),
+            plot_manager : PlotManager = PlotManager(),
+            logging_function : Callable[[str], None] = LambdaProvider().get_default_logging_function()
+        ) -> None:
+
+        self.file_path_manager = file_path_manager
+        self.file_manager = file_manager
+        self.df_factory = df_factory
+        self.md_factory = md_factory
+        self.displayer = displayer
+        self.plot_manager = plot_manager
+        self.logging_function = logging_function
+class ReadingListProcessor():
+
+    '''Collects all the logic related to the processing of "Reading List.xlsx".'''
+
+    __component_bag : ComponentBag
+    __setting_bag : SettingBag
+    __rl_summary : RLSummary
+
+    def __init__(self, component_bag : ComponentBag, setting_bag : SettingBag) -> None:
+
+        self.__component_bag = component_bag
+        self.__setting_bag = setting_bag
+
+    def __create_rl_df(self) -> DataFrame:
+
+        '''Creates the expected dataframe using __setting_bag.'''
+
+        rl_df : DataFrame = self.__component_bag.df_factory.create_rl(
+            excel_path = self.__setting_bag.excel_path,
+            excel_books_skiprows = self.__setting_bag.excel_books_skiprows,
+            excel_books_nrows = self.__setting_bag.excel_books_nrows,
+            excel_books_tabname = self.__setting_bag.excel_books_tabname,
+            excel_null_value = self.__setting_bag.excel_null_value
+            )
+
+        return rl_df
+    def __create_rl_asrt_df(self, rl_df : DataFrame) -> DataFrame:
+
+        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
+
+        rl_asrt_df : DataFrame = self.__component_bag.df_factory.create_rl_asrt(
+            rl_df = rl_df, 
+            rounding_digits = self.__setting_bag.rounding_digits,
+            now = self.__setting_bag.now
+            )
+
+        return rl_asrt_df  
+    def __create_rl_by_kbsize_df(self, rl_df : DataFrame) -> DataFrame:
+
+        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
+
+        rl_by_kbsize_df : DataFrame = self.__component_bag.df_factory.create_rl_by_kbsize(
+            rl_df = rl_df,
+            kbsize_ascending = self.__setting_bag.kbsize_ascending,
+            kbsize_remove_if_zero = self.__setting_bag.kbsize_remove_if_zero,
+            kbsize_n = self.__setting_bag.kbsize_n
+        )
+
+        return rl_by_kbsize_df
+    def __create_sas_by_month_tpl(self, rl_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
+
+        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
+
+        sas_by_month_tpl : Tuple[DataFrame, DataFrame] = self.__component_bag.df_factory.create_sas_by_month(
+            rl_df = rl_df,
+            read_years = self.__setting_bag.read_years,
+            now = self.__setting_bag.now
+        )
+
+        return sas_by_month_tpl
+    def __create_sas_by_year_street_price_df(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame) -> DataFrame:
+
+        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
+
+        sas_by_year_street_price_df : DataFrame = self.__component_bag.df_factory.create_sas_by_year_street_price(
+            sas_by_month_tpl = sas_by_month_tpl,
+            rl_df = rl_df,
+            read_years = self.__setting_bag.read_years,
+            rounding_digits = self.__setting_bag.rounding_digits
+        )
+
+        return sas_by_year_street_price_df
+    def __create_sas_by_publisher_tpl(self, rl_df : DataFrame) -> Tuple[DataFrame, DataFrame, str]:
+
+        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
+
+        sas_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.__component_bag.df_factory.create_sas_by_publisher(
+            rl_df = rl_df,
+            rounding_digits = self.__setting_bag.rounding_digits,
+            publisher_min_books = self.__setting_bag.publisher_min_books,
+            publisher_min_ab_perc = self.__setting_bag.publisher_min_ab_perc,
+            publisher_min_avgrating = self.__setting_bag.publisher_min_avgrating,
+            publisher_criteria = self.__setting_bag.publisher_criteria
+        )
+
+        return sas_by_publisher_tpl
+    def __create_sas_by_rating_df(self, rl_df : DataFrame) -> DataFrame:
+
+        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
+
+        sas_by_rating_df : DataFrame = self.__component_bag.df_factory.create_sas_by_rating(
+            rl_df = rl_df,
+            md_stars_rating = self.__setting_bag.md_stars_rating
+        )
+
+        return sas_by_rating_df 
+    def __create_trend_by_year_topic_df(self, rl_df : DataFrame) -> DataFrame:
+
+        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
+
+        trend_by_year_topic_df : DataFrame = self.__component_bag.df_factory.create_trend_by_year_topic(
+            rl_df = rl_df,
+            read_years = self.__setting_bag.read_years,
+            trend_sparklines_maximum = self.__setting_bag.trend_sparklines_maximum
+        )
+
+        return trend_by_year_topic_df
+    def __extract_file_name_and_paragraph_title(self, id : RLID) -> Tuple[str, str]: 
+    
+        '''Returns (file_name, paragraph_title) for the provided id or raise an Exception.'''
+
+        for md_info in self.__setting_bag.md_infos:
+            if md_info.id == id: 
+                return (md_info.file_name, md_info.paragraph_title)
+
+        raise Exception(_MessageCollection.no_mdinfo_found(id = id)) 
+    def __create_rl_md(self, rl_df : DataFrame) -> str:
+
+        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
+
+        id : str = "rl"
+
+        rl_md : str = self.__component_bag.md_factory.create_rl_md(
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
+            last_update = self.__setting_bag.md_last_update,
+            rl_df = rl_df
+        )
+
+        return rl_md
+    def __create_sas_md(self, sas_by_month_tpl : Tuple[DataFrame, DataFrame], sas_by_year_street_price_df : DataFrame) -> str:
+
+        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
+
+        id : str = "sas"
+
+        sas_md : str = self.__component_bag.md_factory.create_sas_md(
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
+            last_update = self.__setting_bag.md_last_update,
+            sas_by_month_df = sas_by_month_tpl[1],
+            sas_by_year_street_price_df = sas_by_year_street_price_df
+        )
+
+        return sas_md
+    def __create_sas_by_topic_md(self, sas_by_topic_df : DataFrame, trend_by_year_topic_df : DataFrame) -> str:
+
+        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
+
+        id : str = "sas_by_topic"
+
+        sas_by_topic_md : str = self.__component_bag.md_factory.create_sas_by_topic_md(
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
+            last_update = self.__setting_bag.md_last_update,
+            sas_by_topic_df = sas_by_topic_df,
+            trend_by_year_topic_df = trend_by_year_topic_df
+        )
+
+        return sas_by_topic_md
+    def __create_sas_by_publisher_md(self, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]) -> str:
+
+        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
+
+        id : str = "sas_by_publisher"
+
+        sas_by_publisher_md : str = self.__component_bag.md_factory.create_sas_by_publisher_md(
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
+            last_update = self.__setting_bag.md_last_update,
+            sas_by_publisher_tpl = sas_by_publisher_tpl            
+        )
+
+        return sas_by_publisher_md
+    def __create_sas_by_rating_md(self, sas_by_rating_df : DataFrame) -> str:
+
+        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
+
+        id : str = "sas_by_rating"
+
+        sas_by_rating_md : str = self.__component_bag.md_factory.create_sas_by_rating_md(
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
+            last_update = self.__setting_bag.md_last_update,
+            sas_by_rating_df = sas_by_rating_df
+        )
+
+        return sas_by_rating_md
+    def __validate_summary(self) -> None:
+        
+        '''Raises an exception if __rl_summary is None.'''
+
+        if not hasattr(self, '_ReadingListProcessor__rl_summary'):
+            raise Exception(_MessageCollection.please_run_initialize_first())
+    def __save_and_log(self, id : RLID, content : str) -> None:
+
+        '''Creates the provided Markdown content using __setting_bag.'''
+
+        file_path : str = self.__component_bag.file_path_manager.create_file_path(
+            folder_path = self.__setting_bag.working_folder_path,
+            file_name = self.__extract_file_name_and_paragraph_title(id = id)[0]
+        )
+        
+        self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
+
+        message : str = _MessageCollection.this_content_successfully_saved_as(id = id, file_path = file_path)
+        self.__component_bag.logging_function(message)
+
+    def initialize(self) -> None:
+
+        '''Creates a RLSummary object and assign it to __rl_summary.'''
+
+        rl_df : DataFrame = self.__create_rl_df()
+        rl_asrt_df : DataFrame = self.__create_rl_asrt_df(rl_df = rl_df)
+        rl_by_kbsize_df : DataFrame = self.__create_rl_by_kbsize_df(rl_df = rl_df)
+        sas_by_month_tpl : Tuple[DataFrame, DataFrame] = self.__create_sas_by_month_tpl(rl_df = rl_df)
+        sas_by_year_street_price_df : DataFrame = self.__create_sas_by_year_street_price_df(sas_by_month_tpl = sas_by_month_tpl, rl_df = rl_df)
+        sas_by_topic_df : DataFrame = self.__component_bag.df_factory.create_sas_by_topic(rl_df = rl_df)
+        sas_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.__create_sas_by_publisher_tpl(rl_df = rl_df)
+        sas_by_rating_df : DataFrame = self.__create_sas_by_rating_df(rl_df = rl_df)
+        trend_by_year_topic_df : DataFrame = self.__create_trend_by_year_topic_df(rl_df = rl_df)
+        definitions_df : DataFrame = self.__component_bag.df_factory.create_definitions()
+
+        rl_md : str = self.__create_rl_md(rl_df = rl_df)
+        rl_asrt_md : str = self.__component_bag.md_factory.create_rl_asrt_md(rl_asrt_df = rl_asrt_df)
+        sas_by_month_md : str = self.__create_sas_md(sas_by_month_tpl = sas_by_month_tpl, sas_by_year_street_price_df = sas_by_year_street_price_df)
+        sas_by_topic_md : str = self.__create_sas_by_topic_md(sas_by_topic_df = sas_by_topic_df, trend_by_year_topic_df = trend_by_year_topic_df)
+        sas_by_publisher_md : str = self.__create_sas_by_publisher_md(sas_by_publisher_tpl = sas_by_publisher_tpl)
+        sas_by_rating_md : str = self.__create_sas_by_rating_md(sas_by_rating_df = sas_by_rating_df)
+
+        self.__rl_summary = RLSummary(
+            rl_df = rl_df,
+            rl_asrt_df = rl_asrt_df,
+            rl_by_kbsize_df = rl_by_kbsize_df,
+            sas_by_month_tpl = sas_by_month_tpl,
             sas_by_year_street_price_df = sas_by_year_street_price_df,
-            use_smaller_font = self.__setting_bag.rl_by_month_smaller_font)
+            sas_by_topic_df = sas_by_topic_df,
+            sas_by_publisher_tpl = sas_by_publisher_tpl,
+            sas_by_rating_df = sas_by_rating_df,
+            trend_by_year_topic_df = trend_by_year_topic_df,
+            definitions_df = definitions_df,
+            rl_md = rl_md,
+            rl_asrt_md = rl_asrt_md,
+            sas_md = sas_by_month_md,
+            sas_by_topic_md = sas_by_topic_md,
+            sas_by_publisher_md = sas_by_publisher_md,
+            sas_by_rating_md = sas_by_rating_md
+        )
+    def process_rl(self) -> None:
 
-        if self.__setting_bag.show_rl_by_month_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_by_month_file_name)
-            self.__component_bag.logging_function(file_name_content)    
-            self.__component_bag.logging_function(content)
-
-        if self.__setting_bag.save_rl_by_month_md:
-            file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.rl_by_month_file_name)
+        '''
+            Performs all the actions listed in __setting_bag.options_rl.
             
-            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_rl_by_publisher_md(self, sas_by_publisher_tpl : Tuple[DataFrame, DataFrame]) -> None:
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
 
-        '''Performs all the tasks related to the "Reading List By Publisher" file.'''
+        self.__validate_summary()
 
-        content : str = self.__get_rl_by_publisher_md(      
-            last_update = self.__setting_bag.rl_last_update, 
-            sas_by_publisher_tpl = sas_by_publisher_tpl)
+        options : list = self.__setting_bag.options_rl
+        df : DataFrame = self.__rl_summary.rl_df
+        content : str = self.__rl_summary.rl_md
+        id : RLID = RLID.RL
 
-        if self.__setting_bag.show_rl_by_publisher_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_by_publisher_file_name)
-            self.__component_bag.logging_function(file_name_content)        
-            self.__component_bag.logging_function(content)
+        if "display" in options:
+            self.__component_bag.displayer.display(df = df)
 
-        if self.__setting_bag.save_rl_by_publisher_md:
-            file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.rl_by_publisher_file_name)
+        if "save" in options:
+            self.__save_and_log(id = id, content = content)
+    def process_rl_asrt(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rl_asrt.
             
-            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_rl_by_rating_md(self, sas_by_rating_df : DataFrame) -> None:
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
 
-        '''Performs all the tasks related to the "Reading List By Rating" file.'''
+        self.__validate_summary()
 
-        content : str = self.__get_rl_by_rating_md(       
-            last_update = self.__setting_bag.rl_last_update, 
-            sas_by_rating_df = sas_by_rating_df)
+        options : list = self.__setting_bag.options_rl_asrt
+        df : DataFrame = self.__rl_summary.rl_asrt_df
+        content : str = self.__rl_summary.rl_asrt_md
 
-        if self.__setting_bag.show_rl_by_rating_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_by_rating_file_name)
-            self.__component_bag.logging_function(file_name_content)
+        if "display" in options:
+            self.__component_bag.displayer.display(df = df)
+
+        if "log" in options:
             self.__component_bag.logging_function(content)
+    def process_rl_by_kbsize(self) -> None:
 
-        if self.__setting_bag.save_rl_by_rating_md:            
-            file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.rl_by_rating_file_name)
+        '''
+            Performs all the actions listed in __setting_bag.options_rl_by_kbsize.
             
-            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_rl_by_topic_md(self, sas_by_topic_df : DataFrame) -> None:
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
 
-        '''Performs all the tasks related to the "Reading List By Topic" file.'''
+        self.__validate_summary()
 
-        content : str = self.__get_rl_by_topic_md( 
-            last_update = self.__setting_bag.rl_last_update, 
-            sas_by_topic_df = sas_by_topic_df)
+        options : list = self.__setting_bag.options_rl_by_kbsize
+        df : DataFrame = self.__rl_summary.rl_by_kbsize_df
+        x_name : str = "A4Sheets"
 
-        if self.__setting_bag.show_rl_by_topic_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_by_topic_file_name)
-            self.__component_bag.logging_function(file_name_content)
-            self.__component_bag.logging_function(content)
+        if "display" in options:
+            self.__component_bag.displayer.display(df = df)
 
-        if self.__setting_bag.save_rl_by_topic_md:
-            file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.rl_by_topic_file_name)
+        if "plot" in options:
+            self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)            
+    def process_rl_by_books_year(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rl_by_books_year.
             
-            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_rl_by_topic_trend_md(self, yt_by_topic_df : DataFrame) -> None:
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
 
-        '''Performs all the tasks related to the "Reading List Topic Trend" file.'''
+        self.__validate_summary()
 
-        content : str = self.__get_rl_topic_trend_md(
-            last_update = self.__setting_bag.rl_last_update, 
-            yt_by_topic_df = yt_by_topic_df)
+        options : list = self.__setting_bag.options_rl_by_books_year
+        df : DataFrame = self.__rl_summary.rl_df
+        x_name : str = "Year"
 
-        if self.__setting_bag.show_rl_topic_trend_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_topic_trend_file_name)           
-            self.__component_bag.logging_function(file_name_content)
-            self.__component_bag.logging_function(content)
+        if "plot" in options:
+            self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)
+    def process_sas(self) -> None:
 
-        if self.__setting_bag.save_rl_topic_trend_md:           
-            file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.rl_topic_trend_file_name)
+        '''
+            Performs all the actions listed in __setting_bag.options_sas.
             
-            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-    def process_rl_md(self, books_df : DataFrame) -> None:
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
 
-        '''Performs all the tasks related to the "Reading List" file.'''
+        self.__validate_summary()
 
-        content : str = self.__get_rl_md(
-            last_update = self.__setting_bag.rl_last_update, 
-            books_df = books_df,
-            use_smaller_font = self.__setting_bag.rl_smaller_font)
+        options : list = self.__setting_bag.options_sas
+        df_1 : DataFrame = self.__rl_summary.sas_by_month_tpl[1]
+        df_2 : DataFrame = self.__rl_summary.sas_by_year_street_price_df
+        content : str = self.__rl_summary.sas_md     
+        id : RLID = RLID.SAS
 
-        if self.__setting_bag.show_rl_md:
-            file_name_content : str = self.__component_bag.markdown_helper.format_file_name_as_content(file_name = self.__setting_bag.rl_file_name)
-            self.__component_bag.logging_function(file_name_content)
-            self.__component_bag.logging_function(content)
+        if "display" in options:
+            self.__component_bag.displayer.display(df = df_1)
+            self.__component_bag.displayer.display(df = df_2)
 
-        if self.__setting_bag.save_rl_md:
-            file_path : str = self.__component_bag.file_path_manager.create_file_path(
-                folder_path = self.__setting_bag.working_folder_path,
-                file_name = self.__setting_bag.rl_file_name)
+        if "save" in self.__setting_bag.options_sas:
+            self.__save_and_log(id = id, content = content)
+    def process_sas_by_publisher(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_sas_by_publisher.
             
-            self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_sas_by_publisher
+        df : DataFrame = self.__rl_summary.sas_by_publisher_tpl[0].head(n = self.__setting_bag.publisher_n)
+        formatters : dict = self.__setting_bag.publisher_formatters
+        footer : str = self.__rl_summary.sas_by_publisher_tpl[2] + "\n"
+        content : str = self.__rl_summary.sas_by_publisher_md
+        id : RLID = RLID.SASBYPUBLISHER
+
+        if "display" in options:
+            self.__component_bag.displayer.display(df = df, formatters = formatters)
+
+        if "log" in options:
+            self.__component_bag.logging_function(footer)
+
+        if "save" in options:
+            self.__save_and_log(id = id, content = content)
+    def process_sas_by_rating(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_sas_by_rating.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_sas_by_rating
+        df : DataFrame = self.__rl_summary.sas_by_rating_df
+        content : str = self.__rl_summary.sas_by_rating_md
+        id : RLID = RLID.SASBYRATING      
+
+        if "display" in options:
+            self.__component_bag.displayer.display(df = df)
+
+        if "save" in options:
+            self.__save_and_log(id = id, content = content)
+    def process_sas_by_topic(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_sas_by_topic.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_sas_by_topic
+        df_1 : DataFrame = self.__rl_summary.sas_by_topic_df
+        df_2 : DataFrame = self.__rl_summary.trend_by_year_topic_df
+        content : str = self.__rl_summary.sas_by_topic_md
+        id : RLID = RLID.SASBYTOPIC
+
+        if "display" in options:
+            self.__component_bag.displayer.display(df = df_1)
+            self.__component_bag.displayer.display(df = df_2)
+
+        if "save" in options:
+            self.__save_and_log(id = id, content = content)
+    def process_definitions(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_definitions.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_definitions
+        df : DataFrame = self.__rl_summary.definitions_df
+
+        if "display" in options:
+            self.__component_bag.displayer.display(df = df)
+    def get_summary(self) -> RLSummary:
+
+        '''Returns __rl_summary.'''
+
+        self.__validate_summary()
+
+        return self.__rl_summary
 
 # MAIN
 if __name__ == "__main__":

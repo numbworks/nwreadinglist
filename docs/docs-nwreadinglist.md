@@ -15,6 +15,7 @@ Contact: numbworks@gmail.com
 | 2024-08-12 | numbworks | Updated to v3.4.0. |
 | 2024-09-23 | numbworks | Updated to v3.5.0. |
 | 2024-10-28 | numbworks | Updated to v3.8.0. |
+| 2024-11-07 | numbworks | Updated to v4.0.0. |
 
 ## Introduction
 
@@ -103,7 +104,7 @@ To calculate the total unit test coverage in Visual Studio Code (while still con
 To check for the updatability of the dependencies this library is built upon, you can use the `nwpackageversions` library. Please:
 
 1. Launch Visual Studio Code;
-2. Click on <ins>File</ins> > <ins>Open folder</ins> > `nwshared`;
+2. Click on <ins>File</ins> > <ins>Open folder</ins> > `nwreadinglist`;
 3. <ins>Terminal</ins> > <ins>New Terminal</ins>;
 4. Run the following commands to perform the dependency check (it requires an internet connection):
 
