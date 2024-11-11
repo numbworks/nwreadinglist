@@ -27,8 +27,6 @@ class RLCN(StrEnum):
     
     '''Collects all the column names used by RLDataFrameFactory.'''
     
-    MONTH = "Month"
-    TREND = "↕"
     TITLE = "Title"
     YEAR = "Year"
     TYPE = "Type"
@@ -57,6 +55,9 @@ class RLCN(StrEnum):
     YEARS = "Years"
     TOTALSPEND = "TotalSpend"
     LASTUPDATE = "LastUpdate"
+    MONTH = "Month"
+    TREND = "Trend"
+    TRENDSYMBOL = "↕"    
 class RLID(StrEnum):
     
     '''Collects all the ids that identify the dataframes created by RLDataFrameFactory.'''
@@ -338,8 +339,8 @@ class RLDataFrameHelper():
             "↕1"    => "↕"
         '''
 
-        if column_name.startswith(RLCN.TREND):
-            return RLCN.TREND
+        if column_name.startswith(RLCN.TRENDSYMBOL):
+            return RLCN.TRENDSYMBOL
         
         return column_name
     def extract_pages_from_trend(self, trend : str) -> int:
