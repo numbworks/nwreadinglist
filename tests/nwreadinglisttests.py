@@ -79,7 +79,7 @@ class ObjectMother():
             "Topic": np.array(["Development Tools", "Software Engineering", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python"], dtype=object),
             "OnGoodreads": np.array(["No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No"], dtype=object),
             "CommentLenght": np.array([52, 128, 181, 134, 80, 121, 105, 142, 138, 90, 75, 125, 59, 140], dtype=int32),
-            "KBSize": np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=int32),
+            "KBSize": np.array([8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=int32)
         }, index=pd.RangeIndex(start=260, stop=274, step=1))
 
         read_years : list[int] = [ 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 ]
@@ -155,13 +155,25 @@ class ObjectMother():
 
         return (rl_asrt_df, now)
     @staticmethod
+    def create_rl_by_kbsize_df() -> DataFrame:
+
+        return pd.DataFrame({
+            "Title": np.array(["ProxMox VE Administration Guide - Release 7.2"], dtype = object),
+            "ReadYear": np.array(["2024"], dtype = int32),
+            "Topic": np.array(["Development Tools"], dtype = object),
+            "Publisher": np.array(["Self-Published"], dtype = object),
+            "Rating": np.array(["2"], dtype = int32),
+            "KBSize": np.array(["8"], dtype = int32),
+            "A4Sheets": np.array(["1"], dtype = np.int64),
+        }, index = pd.Index([1], dtype = "int64"))
+    @staticmethod
     def create_sas_by_topic_df() -> DataFrame:
 
         return pd.DataFrame({
             "Topic": np.array(["Python", "Development Tools", "Software Engineering"], dtype=object),
             "Books": np.array([12, 1, 1], dtype = np.int64),
             "Pages": np.array([4609, 535, 429], dtype = int32),
-            "A4Sheets": np.array([0, 0, 0], dtype = np.int64)
+            "A4Sheets": np.array([0, 1, 0], dtype = np.int64)
         }, index=pd.RangeIndex(start=0, stop=3, step=1))
     @staticmethod
     def create_sas_by_rating_df() -> DataFrame:
@@ -599,6 +611,9 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         self.excel_books_skiprows : int = 0
         self.excel_books_tabname : str = "Books"
         self.excel_null_value : str = "-"
+        self.kbsize_ascending : bool = False
+        self.kbsize_remove_if_zero : bool = True  
+        self.kbsize_n : int = 10
         self.rounding_digits : int = 2
         self.md_stars_rating : bool = True
         self.trend_sparklines_maximum : bool = True
@@ -639,6 +654,22 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected, actual)        
+    def test_createrlbykbsize_shouldreturnexpecteddataframe_wheninvoked(self):
+        
+        # Arrange
+        rl_df : DataFrame = ObjectMother().create_rl_tpl()[0]
+        expected : DataFrame = ObjectMother().create_rl_by_kbsize_df()
+
+        # Act
+        actual : DataFrame = self.df_factory.create_rl_by_kbsize(
+            rl_df = rl_df,
+            kbsize_ascending = self.kbsize_ascending,
+            kbsize_remove_if_zero = self.kbsize_remove_if_zero,
+            kbsize_n = self.kbsize_n
+        )
+
+        # Assert
+        assert_frame_equal(expected, actual)
     def test_createsasbytopic_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
