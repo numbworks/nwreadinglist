@@ -241,6 +241,25 @@ class ObjectMother():
             "Books": pd.Series([[0, 0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 12], [0, 0, 0, 0, 0, 0, 0, 0, 1]]).to_numpy(),
             "Trend": np.array(["▁▁▁▁▁▁▁▁▂", "▁▁▁▁▁▁▁▁█", "▁▁▁▁▁▁▁▁▂"], dtype=object),
         }, index=pd.RangeIndex(start=0, stop=3, step=1))
+    @staticmethod
+    def create_definitions_df() -> DataFrame:
+
+        columns : list[str] = ["Term", "Definition"]
+
+        definitions : dict[str, str] = {
+            "RL": "Reading List",
+            "SAS": "Studying Activity Summary.",
+            "KBSize": "This metric is the word count of the notes I took about a given book.",
+            "A4Sheets": "'KBSize' converted into amount of A4 sheets.",
+            "AB%": "Calculated with the following formula: '(A4Sheets / Books) * 100'."
+            }
+        
+        definitions_df : DataFrame = DataFrame(
+            data = definitions.items(), 
+            columns = columns
+        )
+
+        return definitions_df
 
 # TEST CLASSES
 class MDInfoTestCase(unittest.TestCase):
@@ -832,6 +851,16 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
             read_years = read_years,
             trend_sparklines_maximum = self.trend_sparklines_maximum
             )
+
+        # Assert
+        assert_frame_equal(expected, actual)
+    def test_createdefinitions_shouldreturnexpecteddataframe_wheninvoked(self):
+        
+        # Arrange
+        expected : DataFrame = ObjectMother().create_definitions_df()
+
+        # Act
+        actual : DataFrame = self.df_factory.create_definitions()
 
         # Assert
         assert_frame_equal(expected, actual)
