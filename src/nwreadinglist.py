@@ -1182,7 +1182,7 @@ class RLDataFrameFactory():
         rl_by_kbsize_df = rl_by_kbsize_df.head(n = kbsize_n)
 
         return rl_by_kbsize_df   
-    def create_sas_by_month_tpl(self, rl_df : DataFrame, read_years : list[int], now : datetime) -> Tuple[DataFrame, DataFrame]:
+    def create_sas_by_month(self, rl_df : DataFrame, read_years : list[int], now : datetime) -> Tuple[DataFrame, DataFrame]:
 
         '''
             The method returns a tuple of dataframes (sas_by_month_df, sas_by_month_upd_df), 
@@ -1305,7 +1305,7 @@ class RLDataFrameFactory():
         sas_by_topic_df = sas_by_topic_df[[RLCN.TOPIC, RLCN.BOOKS, RLCN.PAGES, RLCN.A4SHEETS]]
 
         return sas_by_topic_df
-    def create_sas_by_publisher_tpl(
+    def create_sas_by_publisher(
             self, 
             rl_df : DataFrame, 
             rounding_digits : int, 
@@ -1701,7 +1701,7 @@ class ReadingListProcessor():
 
         '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
 
-        sas_by_month_tpl : Tuple[DataFrame, DataFrame] = self.__component_bag.df_factory.create_sas_by_month_tpl(
+        sas_by_month_tpl : Tuple[DataFrame, DataFrame] = self.__component_bag.df_factory.create_sas_by_month(
             rl_df = rl_df,
             read_years = self.__setting_bag.read_years,
             now = self.__setting_bag.now
@@ -1724,7 +1724,7 @@ class ReadingListProcessor():
 
         '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
 
-        sas_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.__component_bag.df_factory.create_sas_by_publisher_tpl(
+        sas_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.__component_bag.df_factory.create_sas_by_publisher(
             rl_df = rl_df,
             rounding_digits = self.__setting_bag.rounding_digits,
             publisher_min_books = self.__setting_bag.publisher_min_books,

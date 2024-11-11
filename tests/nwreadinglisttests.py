@@ -203,6 +203,30 @@ class ObjectMother():
             "A4Sheets": np.array([0, 1, 0], dtype = np.int64)
         }, index=pd.RangeIndex(start=0, stop=3, step=1))
     @staticmethod
+    def create_sas_by_publisher_tpl() -> Tuple[DataFrame, DataFrame, str]:
+
+        sas_by_publisher_df : DataFrame = DataFrame({
+            "Publisher": np.array(["Self-Published", "Packt", "CRC Press", "MLI", "Apress", "O'Reilly", "Manning", "Pearson Education", "Pragmatic Bookshelf"], dtype=object),
+            "Books": np.array([3, 2, 2, 2, 1, 1, 1, 1, 1], dtype=np.int64),
+            "A4Sheets": np.array([1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.int64),
+            "AB%": np.array([33.33, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=float64),
+            "AvgRating": np.array([1.33, 2.0, 2.5, 1.5, 1.0, 3.0, 1.0, 3.0, 3.0], dtype=float64),
+            "IsWorth": np.array(["No", "No", "No", "No", "No", "No", "No", "No", "No"], dtype=object)
+        }, index=pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype="int64"))
+
+        sas_by_publisher_flt_df : DataFrame = DataFrame({
+            "Publisher": np.array([], dtype=object),
+            "Books": np.array([], dtype=np.int64),
+            "A4Sheets": np.array([], dtype=np.int64),
+            "AB%": np.array([], dtype=float64),
+            "AvgRating": np.array([], dtype=float64),
+            "IsWorth": np.array([], dtype=object)
+        }, index=pd.Index([], dtype="int64"))
+
+        sas_by_publisher_footer : str = "'Yes' if 'Books' >= '8' & ('AvgRating' >= '100' | 'AB%' >= '2.5')"
+    
+        return (sas_by_publisher_df, sas_by_publisher_flt_df, sas_by_publisher_footer)  
+    @staticmethod
     def create_sas_by_rating_df() -> DataFrame:
 
         return pd.DataFrame({
@@ -641,9 +665,15 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         self.kbsize_ascending : bool = False
         self.kbsize_remove_if_zero : bool = True  
         self.kbsize_n : int = 10
-        self.rounding_digits : int = 2
         self.md_stars_rating : bool = True
+        self.publisher_n : int = 10
+        self.publisher_formatters : dict = { "AvgRating" : "{:.2f}", "AB%" : "{:.2f}" }
+        self.publisher_min_books : int = 8
+        self.publisher_min_ab_perc : float = 2.50
+        self.publisher_min_avgrating : float = 100
+        self.publisher_criteria : Literal["Yes", "No"] = "Yes"
         self.trend_sparklines_maximum : bool = True
+        self.rounding_digits : int = 2
 
     def test_createrl_shouldreturnexpecteddataframe_wheninvoked(self):
 
@@ -697,7 +727,7 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected, actual)
-    def test_createsasbymonthtpl_shouldreturnexpecteddataframes_wheninvoked(self):
+    def test_createsasbymonth_shouldreturnexpecteddataframes_wheninvoked(self):
         
         # Arrange
         rl_df : DataFrame = ObjectMother().create_rl_tpl()[0]
@@ -706,7 +736,7 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         (expected_1, expected_2) = ObjectMother().create_sas_by_month_tpl()
 
         # Act
-        (actual_1, actual_2) = self.df_factory.create_sas_by_month_tpl(
+        (actual_1, actual_2) = self.df_factory.create_sas_by_month(
             rl_df = rl_df,
             read_years = read_years,
             now = now
@@ -744,6 +774,26 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected, actual)
+    def test_createsasbypublisher_shouldreturnexpecteddataframes_wheninvoked(self):
+        
+        # Arrange
+        rl_df : DataFrame = ObjectMother().create_rl_tpl()[0]
+        (expected_1, expected_2, expected_3) = ObjectMother().create_sas_by_publisher_tpl()
+
+        # Act
+        (actual_1, actual_2, actual_3) = self.df_factory.create_sas_by_publisher(
+            rl_df = rl_df,
+            rounding_digits = 2,
+            publisher_min_books = self.publisher_min_books,
+            publisher_min_ab_perc = self.publisher_min_ab_perc,
+            publisher_min_avgrating = self.publisher_min_avgrating,
+            publisher_criteria = self.publisher_criteria
+        )
+
+        # Assert
+        assert_frame_equal(expected_1, actual_1)
+        assert_frame_equal(expected_2, actual_2)
+        self.assertEqual(expected_3, actual_3)
     def test_createsasbyrating_shouldreturnexpecteddataframe_whenformattedratingequalstotrue(self):
         
         # Arrange
