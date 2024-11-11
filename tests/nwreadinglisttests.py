@@ -14,7 +14,7 @@ from unittest.mock import Mock, call, patch
 
 # LOCAL MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import RLID, DefaultPathProvider, MDInfo, RLSummary, YearProvider, SettingBag, ComponentBag
+from nwreadinglist import RLID, _MessageCollection, DefaultPathProvider, MDInfo, RLSummary, YearProvider, SettingBag, ComponentBag
 from nwreadinglist import RLDataFrameFactory, RLMarkdownFactory
 from nwshared import MarkdownHelper, Formatter, FilePathManager
 
@@ -244,6 +244,39 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.now, now)
         self.assertEqual(setting_bag.n, n)
         self.assertEqual(setting_bag.rounding_digits, rounding_digits)
+class MessageCollectionTestCase(unittest.TestCase):
+
+    def test_nomdinfofound_shouldreturnexpectedmessage_wheninvoked(self):
+        
+        # Arrange
+        expected : str = "No MDInfo object found for id='rl'."
+        
+        # Act
+        actual : str = _MessageCollection.no_mdinfo_found(id = RLID.RL)
+        
+        # Assert
+        self.assertEqual(actual, expected)
+    def test_pleaseruninitializefirst_shouldreturnexpectedmessage_wheninvoked(self):
+        
+        # Arrange
+        expected : str = "Please run the 'initialize' method first."
+
+        # Act
+        actual : str = _MessageCollection.please_run_initialize_first()
+        
+        # Assert
+        self.assertEqual(actual, expected)
+    def test_thiscontentsuccessfullysaved_shouldreturnexpectedmessage_wheninvoked(self):
+
+        # Arrange
+        expected : str = "This content (id: 'rl') has been successfully saved as '/home/nwreadinglist/READINGLIST.md'."
+        
+        # Act
+        actual : str = _MessageCollection.this_content_successfully_saved_as(id = RLID.RL, file_path = "/home/nwreadinglist/READINGLIST.md")
+        
+        # Assert
+        self.assertEqual(actual, expected)
+
 
 # MAIN
 if __name__ == "__main__":

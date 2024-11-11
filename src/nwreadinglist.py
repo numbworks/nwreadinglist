@@ -219,7 +219,7 @@ class _MessageCollection():
     '''Collects all the messages used for logging and for the exceptions.'''
 
     @staticmethod
-    def no_mdinfo_found(id : str) -> str:
+    def no_mdinfo_found(id : RLID) -> str:
         return f"No MDInfo object found for id='{id}'."
     @staticmethod
     def please_run_initialize_first() -> str:
