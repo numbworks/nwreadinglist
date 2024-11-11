@@ -881,7 +881,6 @@ class ComponentBagTestCase(unittest.TestCase):
         self.assertIsInstance(component_bag.plot_manager, PlotManager)
         self.assertTrue(callable(component_bag.logging_function))
 
-
 # MAIN
 if __name__ == "__main__":
     result = unittest.main(argv=[''], verbosity=3, exit=False)
