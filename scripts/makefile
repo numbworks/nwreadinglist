@@ -1,5 +1,5 @@
 # SETTINGS
-.PHONY: clear makefile-info type-concise howtorelease-concise changelog-concise setup-concise coverage-concise all-concise 
+.PHONY: clear makefile-info type-concise changelog-concise setup-concise coverage-concise all-concise 
 SHELL := /bin/bash
 ROOT_DIR := $(shell cd .. && pwd)
 MODULE_NAME = "nwreadinglist"
@@ -46,9 +46,6 @@ tryinstall-verbose:
 type-concise:
 	@value=$$(mypy $(ROOT_DIR)/src/$(MODULE_NAME).py | grep -c "error:"); \
 	if [ $$value -eq 0 ]; then echo "[OK] $@: passed!"; else echo "[WARNING] $@: not passed! '$$value' error(s) found!"; fi;
-howtorelease-concise:
-	@value=$$(cat $(ROOT_DIR)/docs/docs-$(MODULE_NAME).md | grep -c "\`v$(MODULE_VERSION)\`;\|$(MODULE_VERSION)#egg"); \
-	if [ $$value -eq 2 ]; then echo "[OK] $@: 'How-to Release' updated to current version!"; else echo "[WARNING] $@: 'How-to Release' not updated to current version!"; fi;
 changelog-concise:
 	@value=$$(cat $(ROOT_DIR)/CHANGELOG | grep -c -e "v$(MODULE_VERSION)$$" -e "v$(MODULE_VERSION) - BREAKING CHANGES$$"); \
 	if [ $$value -eq 1 ]; then echo "[OK] $@: 'CHANGELOG' updated to current version!"; else echo "[WARNING] $@: 'CHANGELOG' not updated to current version!"; fi;
@@ -62,4 +59,4 @@ coverage-concise:
 	if [ $$value -ge $(COVERAGE_THRESHOLD) ]; then echo "[OK] $@: unit test coverage >= $(COVERAGE_THRESHOLD)%."; else echo "[WARNING] $@: unit test coverage < $(COVERAGE_THRESHOLD)%."; fi;
 
 # AGGREGATE TARGETS
-all-concise: clear makefile-info type-concise howtorelease-concise changelog-concise setup-concise coverage-concise
+all-concise: clear makefile-info type-concise changelog-concise setup-concise coverage-concise
