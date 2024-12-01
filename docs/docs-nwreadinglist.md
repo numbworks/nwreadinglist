@@ -140,7 +140,6 @@ The avalaible target names are:
 |---|---|
 | type-verbose | Runs a type verification task and logs everything. |
 | coverage-verbose | Runs a unit test coverage calculation task and logs the % per class. |
-| tryinstall-verbose | Creates a venv and tries to build+install this package to verify everything is ok. |
 | all-concise | Runs a batch of verification tasks and logs one summary line for each of them. |
 
 The expected outcome for `all-concise` is:
