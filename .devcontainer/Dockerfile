@@ -25,3 +25,5 @@ RUN wget https://github.com/jgm/pandoc/releases/download/3.4/pandoc-3.4-1-amd64.
 
 # MAKEFILE
 RUN pip install mypy==1.13.0
+RUN pip install pandas-stubs==2.2.3.241009
+RUN pip install types-openpyxl==3.1.5.20241126
