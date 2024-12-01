@@ -16,7 +16,7 @@ makefile-info:
 
 type-verbose:
 	@clear; \
-	mypy $(ROOT_DIR)/src/$(MODULE_NAME).py --check-untyped-defs;
+	mypy $(ROOT_DIR)/src/$(MODULE_NAME).py --check-untyped-defs --disable-error-code=import-untyped;
 coverage-verbose:
 	@clear; \
 	cd $(ROOT_DIR)/tests/; \
@@ -44,7 +44,7 @@ tryinstall-verbose:
 	rm -rf venv;
 
 type-concise:
-	@value=$$(mypy $(ROOT_DIR)/src/$(MODULE_NAME).py | grep -c "error:"); \
+	@value=$$(mypy $(ROOT_DIR)/src/$(MODULE_NAME).py --disable-error-code=import-untyped | grep -c "error:"); \
 	if [ $$value -eq 0 ]; then echo "[OK] $@: passed!"; else echo "[WARNING] $@: not passed! '$$value' error(s) found!"; fi;
 changelog-concise:
 	@value=$$(cat $(ROOT_DIR)/CHANGELOG | grep -c -e "v$(MODULE_VERSION)$$" -e "v$(MODULE_VERSION) - BREAKING CHANGES$$"); \

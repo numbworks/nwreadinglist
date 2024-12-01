@@ -1769,10 +1769,8 @@ class ReadingListProcessor():
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
-        id : str = "rl"
-
         rl_md : str = self.__component_bag.md_factory.create_rl_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = RLID.RL)[1],
             last_update = self.__setting_bag.md_last_update,
             rl_df = rl_df
         )
@@ -1782,10 +1780,8 @@ class ReadingListProcessor():
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
-        id : str = "sas"
-
         sas_md : str = self.__component_bag.md_factory.create_sas_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = RLID.SAS)[1],
             last_update = self.__setting_bag.md_last_update,
             sas_by_month_df = sas_by_month_tpl[1],
             sas_by_year_street_price_df = sas_by_year_street_price_df
@@ -1796,10 +1792,8 @@ class ReadingListProcessor():
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
-        id : str = "sas_by_topic"
-
         sas_by_topic_md : str = self.__component_bag.md_factory.create_sas_by_topic_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = RLID.SASBYTOPIC)[1],
             last_update = self.__setting_bag.md_last_update,
             sas_by_topic_df = sas_by_topic_df,
             trend_by_year_topic_df = trend_by_year_topic_df
@@ -1810,10 +1804,8 @@ class ReadingListProcessor():
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
-        id : str = "sas_by_publisher"
-
         sas_by_publisher_md : str = self.__component_bag.md_factory.create_sas_by_publisher_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = RLID.SASBYPUBLISHER)[1],
             last_update = self.__setting_bag.md_last_update,
             sas_by_publisher_tpl = sas_by_publisher_tpl            
         )
@@ -1823,10 +1815,8 @@ class ReadingListProcessor():
 
         '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
 
-        id : str = "sas_by_rating"
-
         sas_by_rating_md : str = self.__component_bag.md_factory.create_sas_by_rating_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = id)[1],
+            paragraph_title = self.__extract_file_name_and_paragraph_title(id = RLID.SASBYRATING)[1],
             last_update = self.__setting_bag.md_last_update,
             sas_by_rating_df = sas_by_rating_df
         )
