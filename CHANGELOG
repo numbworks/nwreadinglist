@@ -1,3 +1,11 @@
+v4.1.0
+- Library:
+	- Feature: makefile added.
+	- Bugfix: types fixed according to mypy analysis.
+	- Maintenance: dependency update (nwshared v1.7.0 => v1.8.0, nwpackageversions v1.6.0 => v1.8.0).
+- Documentation:
+	- Feature: updated to v4.1.0.
+
 v4.0.0 - BREAKING CHANGES
 - Application:
 	- Feature: re-structured the whole architecture to simplify usage and future expansions.
