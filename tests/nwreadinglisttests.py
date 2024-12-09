@@ -913,6 +913,14 @@ class RLAdapterTestCase(unittest.TestCase):
         self.excel_null_value : str = "-"
         self.rounding_digits : int = 2
         self.now : datetime = datetime(2024, 1, 1)
+        self.rls_by_kbsize_n  : int = 5
+        self.rls_by_kbsize_ascending : bool = True
+        self.rls_by_kbsize_remove_if_zero : bool = False
+        self.rls_by_publisher_min_books : int = 8
+        self.rls_by_publisher_min_ab_perc : float = 100
+        self.rls_by_publisher_min_avgrating : float = 2.50
+        self.rls_by_publisher_criteria : str = "Yes"
+        self.rls_by_rating_number_as_stars = True
         self.md_infos : list[MDInfo] = [
             MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List")
         ]
@@ -991,7 +999,7 @@ class RLAdapterTestCase(unittest.TestCase):
         setting_bag.rounding_digits = self.rounding_digits
         setting_bag.now = self.now
 
-        rl_df : Mock = Mock()
+        rl_df : DataFrame = Mock()
 
         # Act
         rl_adapter.create_rls_asrt_df(rl_df = rl_df, setting_bag = setting_bag)
@@ -1002,8 +1010,128 @@ class RLAdapterTestCase(unittest.TestCase):
             rounding_digits = self.rounding_digits,
             now = self.now
         )
+    def test_createrlsbykbdf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
+        
+        # Arrange
+        df_factory : RLDataFrameFactory = Mock()
+        md_factory : RLMarkdownFactory = Mock()
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
 
+        setting_bag : SettingBag = Mock()
+        setting_bag.rls_by_kbsize_n = self.rls_by_kbsize_n
+        setting_bag.rls_by_kbsize_ascending = self.rls_by_kbsize_ascending
+        setting_bag.rls_by_kbsize_remove_if_zero = self.rls_by_kbsize_remove_if_zero
 
+        rl_df : DataFrame = Mock()
+
+        # Act
+        rl_adapter.create_rls_by_kbsize_df(rl_df = rl_df, setting_bag = setting_bag)
+
+        # Assert
+        df_factory.create_rls_by_kbsize_df.assert_called_once_with(
+            rl_df = rl_df,
+            n = self.rls_by_kbsize_n,
+            ascending = self.rls_by_kbsize_ascending,
+            remove_if_zero = self.rls_by_kbsize_remove_if_zero,
+        )
+    def test_createrlsbymonthtpl_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
+        
+        # Arrange
+        df_factory : RLDataFrameFactory = Mock()
+        md_factory : RLMarkdownFactory = Mock()
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+
+        setting_bag : SettingBag = Mock()
+        setting_bag.read_years = self.read_years
+        setting_bag.now = self.now
+
+        rl_df : DataFrame = Mock()
+
+        # Act
+        rl_adapter.create_rls_by_month_tpl(rl_df = rl_df, setting_bag = setting_bag)
+
+        # Assert
+        df_factory.create_rls_by_month_tpl.assert_called_once_with(
+            rl_df = rl_df,
+            read_years = self.read_years,
+            now = self.now
+        )
+    def test_createrlsbyyearstreetpricedf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
+        
+        # Arrange
+        df_factory : RLDataFrameFactory = Mock()
+        md_factory : RLMarkdownFactory = Mock()
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+
+        setting_bag : SettingBag = Mock()
+        setting_bag.read_years = self.read_years
+        setting_bag.rounding_digits = self.rounding_digits
+
+        rl_df : DataFrame = Mock()
+        rls_by_month_tpl : Tuple[DataFrame, DataFrame] = (Mock(), Mock())
+
+        # Act
+        rl_adapter.create_rls_by_year_street_price_df(
+            rls_by_month_tpl = rls_by_month_tpl,
+            rl_df = rl_df,
+            setting_bag = setting_bag
+        )
+
+        # Assert
+        df_factory.create_rls_by_year_street_price_df.assert_called_once_with(
+            rls_by_month_tpl = rls_by_month_tpl,
+            rl_df = rl_df,
+            read_years = self.read_years,
+            rounding_digits = self.rounding_digits
+        )
+    def test_createrlsbypublishertpl_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
+        
+        # Arrange
+        df_factory : RLDataFrameFactory = Mock()
+        md_factory : RLMarkdownFactory = Mock()
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+
+        setting_bag : SettingBag = Mock()
+        setting_bag.rounding_digits = self.rounding_digits
+        setting_bag.rls_by_publisher_min_books = self.rls_by_publisher_min_books
+        setting_bag.rls_by_publisher_min_ab_perc = self.rls_by_publisher_min_ab_perc
+        setting_bag.rls_by_publisher_min_avgrating = self.rls_by_publisher_min_avgrating
+        setting_bag.rls_by_publisher_criteria = self.rls_by_publisher_criteria
+
+        rl_df : DataFrame = Mock()
+
+        # Act
+        rl_adapter.create_rls_by_publisher_tpl(rl_df = rl_df, setting_bag = setting_bag)
+
+        # Assert
+        df_factory.create_rls_by_publisher_tpl.assert_called_once_with(
+            rl_df = rl_df,
+            rounding_digits = self.rounding_digits,
+            min_books = self.rls_by_publisher_min_books,
+            min_ab_perc = self.rls_by_publisher_min_ab_perc,
+            min_avgrating = self.rls_by_publisher_min_avgrating,
+            criteria = self.rls_by_publisher_criteria
+        )
+    def test_createrlsbyratingdf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
+        
+        # Arrange
+        df_factory : RLDataFrameFactory = Mock()
+        md_factory : RLMarkdownFactory = Mock()
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+
+        setting_bag : SettingBag = Mock()
+        setting_bag.rls_by_rating_number_as_stars = self.rls_by_rating_number_as_stars
+
+        rl_df : DataFrame = Mock()
+
+        # Act
+        rl_adapter.create_rls_by_rating_df(rl_df = rl_df, setting_bag = setting_bag)
+
+        # Assert
+        df_factory.create_rls_by_rating_df.assert_called_once_with(
+            rl_df = rl_df,
+            number_as_stars = self.rls_by_rating_number_as_stars
+        )
 
 # MAIN
 if __name__ == "__main__":
