@@ -740,9 +740,9 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         with patch.object(pd, 'read_excel', return_value = rl_df) as mocked_context:
             actual = self.df_factory.create_rl_df(
                 excel_path = self.excel_path,
-                excel_books_skiprows = self.excel_books_skiprows,
-                excel_books_nrows = self.excel_books_nrows,
-                excel_books_tabname = self.excel_books_tabname,
+                excel_skiprows = self.excel_books_skiprows,
+                excel_nrows = self.excel_books_nrows,
+                excel_tabname = self.excel_books_tabname,
                 excel_null_value = self.excel_null_value
             )
 
@@ -910,6 +910,7 @@ class RLAdapterTestCase(unittest.TestCase):
         self.excel_skiprows : int = 0
         self.excel_nrows : int = 100
         self.excel_tabname : str = "Books"
+        self.excel_null_value : str = "-"
         self.rounding_digits : int = 2
         self.now : datetime = datetime(2024, 1, 1)
         self.md_infos : list[MDInfo] = [
@@ -954,6 +955,55 @@ class RLAdapterTestCase(unittest.TestCase):
         
         # Assert
         self.assertEqual(str(context.exception), _MessageCollection.no_mdinfo_found(id = id)) 
+    def test_createrldf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
+        
+        # Arrange
+        df_factory : RLDataFrameFactory = Mock()
+        md_factory : RLMarkdownFactory = Mock()
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+
+        setting_bag : SettingBag = Mock()
+        setting_bag.excel_path = self.excel_path
+        setting_bag.excel_skiprows = self.excel_skiprows
+        setting_bag.excel_nrows = self.excel_nrows
+        setting_bag.excel_tabname = self.excel_tabname
+        setting_bag.excel_null_value = self.excel_null_value
+
+        # Act
+        rl_adapter.create_rl_df(setting_bag = setting_bag)
+
+        # Assert
+        df_factory.create_rl_df.assert_called_once_with(
+            excel_path = self.excel_path,
+            excel_skiprows = self.excel_skiprows,
+            excel_nrows = self.excel_nrows,
+            excel_tabname = self.excel_tabname,
+            excel_null_value = self.excel_null_value
+        )
+    def test_createrlsasrtdf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
+        
+        # Arrange
+        df_factory : RLDataFrameFactory = Mock()
+        md_factory : RLMarkdownFactory = Mock()
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+
+        setting_bag : SettingBag = Mock()
+        setting_bag.rounding_digits = self.rounding_digits
+        setting_bag.now = self.now
+
+        rl_df : Mock = Mock()
+
+        # Act
+        rl_adapter.create_rls_asrt_df(rl_df = rl_df, setting_bag = setting_bag)
+
+        # Assert
+        df_factory.create_rls_asrt_df.assert_called_once_with(
+            rl_df = rl_df,
+            rounding_digits = self.rounding_digits,
+            now = self.now
+        )
+
+
 
 # MAIN
 if __name__ == "__main__":

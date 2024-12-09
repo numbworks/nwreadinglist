@@ -1061,15 +1061,15 @@ class RLDataFrameFactory():
 
         return filtered_df
 
-    def create_rl_df(self, excel_path : str, excel_books_skiprows : int, excel_books_nrows : int, excel_books_tabname : str, excel_null_value : str) -> DataFrame:
+    def create_rl_df(self, excel_path : str, excel_skiprows : int, excel_nrows : int, excel_tabname : str, excel_null_value : str) -> DataFrame:
         
         '''Retrieves the content of the "Books" tab and returns it as a Dataframe.'''
 
         rl_df = pd.read_excel(
             io = excel_path, 	
-            skiprows = excel_books_skiprows,
-            nrows = excel_books_nrows,
-            sheet_name = excel_books_tabname, 
+            skiprows = excel_skiprows,
+            nrows = excel_nrows,
+            sheet_name = excel_tabname, 
             engine = 'openpyxl'
             )
         
@@ -1582,9 +1582,9 @@ class RLAdapter():
 
         rl_df : DataFrame = self.__df_factory.create_rl_df(
             excel_path = setting_bag.excel_path,
-            excel_books_skiprows = setting_bag.excel_skiprows,
-            excel_books_nrows = setting_bag.excel_nrows,
-            excel_books_tabname = setting_bag.excel_tabname,
+            excel_skiprows = setting_bag.excel_skiprows,
+            excel_nrows = setting_bag.excel_nrows,
+            excel_tabname = setting_bag.excel_tabname,
             excel_null_value = setting_bag.excel_null_value
             )
 
