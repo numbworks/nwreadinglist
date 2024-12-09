@@ -256,6 +256,23 @@ class YearProvider():
         years : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
 
         return years
+class MDInfoProvider():
+
+    '''Collects all the logic related to the retrieval of MDInfo objects.'''
+
+    def get_all(self) -> list[MDInfo]:
+
+        '''Returns a list of MDInfo objects.'''
+
+        md_infos : list[MDInfo] = [
+                MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List"),
+                MDInfo(id = RLID.SAS, file_name = "STUDYINGACTIVITY.md", paragraph_title = "Studying Activity"),
+                MDInfo(id = RLID.SASBYPUBLISHER, file_name = "STUDYINGACTIVITYBYPUBLISHER.md", paragraph_title = "Studying Activity By Publisher"),
+                MDInfo(id = RLID.SASBYRATING, file_name = "STUDYINGACTIVITYBYRATING.md", paragraph_title = "Studying Activity By Rating"),
+                MDInfo(id = RLID.SASBYTOPIC, file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic")
+            ]
+        
+        return md_infos
 class RLDataFrameHelper():
 
     '''Collects helper functions for RLDataFrameFactory.'''

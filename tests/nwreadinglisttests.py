@@ -14,7 +14,7 @@ from unittest.mock import Mock, call, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import RLCN, RLID, _MessageCollection, DefaultPathProvider, MDInfo, YearProvider, SettingBag, ComponentBag
+from nwreadinglist import RLCN, RLID, _MessageCollection, DefaultPathProvider, MDInfo, MDInfoProvider, YearProvider, SettingBag, ComponentBag
 from nwreadinglist import RLDataFrameFactory, RLMarkdownFactory, RLDataFrameHelper, RLSummary
 from nwshared import Converter, Formatter, FilePathManager, FileManager, Displayer, PlotManager
 
@@ -880,6 +880,28 @@ class ComponentBagTestCase(unittest.TestCase):
         self.assertIsInstance(component_bag.displayer, Displayer)
         self.assertIsInstance(component_bag.plot_manager, PlotManager)
         self.assertTrue(callable(component_bag.logging_function))
+class MDInfoProviderTestCase(unittest.TestCase):
+    
+    def test_getall_shouldreturnexpectedlist_wheninvoked(self):
+        
+        # Arrange
+        expected : list[MDInfo] = [
+                MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List"),
+                MDInfo(id = RLID.SAS, file_name = "STUDYINGACTIVITY.md", paragraph_title = "Studying Activity"),
+                MDInfo(id = RLID.SASBYPUBLISHER, file_name = "STUDYINGACTIVITYBYPUBLISHER.md", paragraph_title = "Studying Activity By Publisher"),
+                MDInfo(id = RLID.SASBYRATING, file_name = "STUDYINGACTIVITYBYRATING.md", paragraph_title = "Studying Activity By Rating"),
+                MDInfo(id = RLID.SASBYTOPIC, file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic")
+            ]
+
+        # Act
+        actual : list[MDInfo] = MDInfoProvider().get_all()
+
+        # Assert
+        self.assertEqual(len(expected), len(actual))
+        for i in range(len(expected)):
+            self.assertEqual(expected[i].id, actual[i].id)
+            self.assertEqual(expected[i].file_name, actual[i].file_name)
+            self.assertEqual(expected[i].paragraph_title, actual[i].paragraph_title)
 
 # MAIN
 if __name__ == "__main__":
