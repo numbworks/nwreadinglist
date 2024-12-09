@@ -14,7 +14,7 @@ from unittest.mock import Mock, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import RLCN, RLID, _MessageCollection, MDInfo, RLSummary, DefaultPathProvider, YearProvider
+from nwreadinglist import RLCN, RLID, _MessageCollection, MDInfo, RLSummary, DefaultPathProvider, ReadingListProcessor, YearProvider
 from nwreadinglist import MDInfoProvider, SettingBag, RLDataFrameHelper, RLDataFrameFactory, RLMarkdownFactory
 from nwreadinglist import RLAdapter, ComponentBag
 from nwshared import Converter, Formatter, FilePathManager, FileManager, Displayer, PlotManager
@@ -1220,6 +1220,30 @@ class RLAdapterTestCase(unittest.TestCase):
         self.assertEqual(actual.rls_by_publisher_md, rls_by_publisher_md)
         self.assertEqual(actual.rls_by_rating_md, rls_by_rating_md)
         self.assertEqual(actual.rls_by_topic_md, rls_by_topic_md)
+class ReadingListProcessorTestCase(unittest.TestCase):
+
+    @parameterized.expand([
+        ["process_rl"],
+        ["process_rls_asrt"],
+        ["process_rls_by_kbsize"],
+        ["process_rls_by_books_year"],
+        ["process_rls_by_month"],
+        ["process_rls_by_publisher"],
+        ["process_rls_by_rating"],
+        ["process_rls_by_topic"],
+        ["process_definitions"],
+        ["get_summary"]
+    ])
+    def test_processmethod_shouldraiseexception_wheninitializenotrun(self, method_name : str) -> None:
+        
+        # Arrange
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = Mock(), setting_bag = Mock())
+
+        # Act & Assert
+        with self.assertRaises(Exception) as context:
+            getattr(rl_processor, method_name)()
+
+        self.assertEqual(str(context.exception), "Please run the 'initialize' method first.")
 
 # MAIN
 if __name__ == "__main__":
