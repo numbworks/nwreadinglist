@@ -85,7 +85,7 @@ class _MessageCollection():
         return f"This content (id: '{id}') has been successfully saved as '{file_path}'."
 
 # DTOs
-@dataclass(frozen = True)
+@dataclass(frozen=True)
 class MDInfo():
 
     '''Represents a collection of information related to a Markdown file.'''
@@ -93,7 +93,7 @@ class MDInfo():
     id : RLID
     file_name : str
     paragraph_title : str
-@dataclass(frozen = True)
+@dataclass(frozen=True)
 class RLSummary():
 
     '''Collects all the dataframes and markdowns.'''
@@ -159,7 +159,7 @@ class MDInfoProvider():
             ]
         
         return md_infos
-@dataclass(frozen = True)
+@dataclass(frozen=True)
 class SettingBag():
 
     '''Represents a collection of settings.'''
@@ -1555,43 +1555,28 @@ class RLMarkdownFactory():
         md_content += ""        
 
         return md_content
+@dataclass(frozen=True)
 class ComponentBag():
 
     '''Represents a collection of components.'''
 
-    file_path_manager : FilePathManager
-    file_manager : FileManager
-    df_factory : RLDataFrameFactory
-    md_factory : RLMarkdownFactory
-    displayer : Displayer
-    plot_manager : PlotManager
-    logging_function : Callable[[str], None]
-
-    def __init__(
-            self, 
-            file_path_manager : FilePathManager = FilePathManager(),
-            file_manager : FileManager = FileManager(file_path_manager = FilePathManager()),
-            df_factory : RLDataFrameFactory = RLDataFrameFactory(
+    file_path_manager : FilePathManager = field(default = FilePathManager())
+    file_manager : FileManager = field(default = FileManager(file_path_manager = FilePathManager()))
+	
+    df_factory : RLDataFrameFactory = field(default = RLDataFrameFactory(
                 converter = Converter(),
                 formatter = Formatter(),
                 df_helper = RLDataFrameHelper()
-                ),
-            md_factory : RLMarkdownFactory = RLMarkdownFactory(
+                ))
+    
+    md_factory : RLMarkdownFactory = field(default = RLMarkdownFactory(
                 markdown_helper = MarkdownHelper(formatter = Formatter()),
                 formatter = Formatter()
-            ),
-            displayer : Displayer = Displayer(),
-            plot_manager : PlotManager = PlotManager(),
-            logging_function : Callable[[str], None] = LambdaProvider().get_default_logging_function()
-        ) -> None:
-
-        self.file_path_manager = file_path_manager
-        self.file_manager = file_manager
-        self.df_factory = df_factory
-        self.md_factory = md_factory
-        self.displayer = displayer
-        self.plot_manager = plot_manager
-        self.logging_function = logging_function
+            ))
+    
+    displayer : Displayer = field(default = Displayer())
+    plot_manager : PlotManager = field(default = PlotManager())
+    logging_function : Callable[[str], None] = field(default = LambdaProvider().get_default_logging_function())
 class ReadingListProcessor():
 
     '''Collects all the logic related to the processing of "Reading List.xlsx".'''
