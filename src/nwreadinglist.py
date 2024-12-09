@@ -152,10 +152,10 @@ class MDInfoProvider():
 
         md_infos : list[MDInfo] = [
                 MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List"),
-                MDInfo(id = RLID.RLSBYMONTH, file_name = "RLSBYMONTH.md", paragraph_title = "Reading List By Month"),
-                MDInfo(id = RLID.RLSBYPUBLISHER, file_name = "RLSBYPUBLISHER.md", paragraph_title = "Reading List By Publisher"),
-                MDInfo(id = RLID.RLSBYRATING, file_name = "RLSBYRATING.md", paragraph_title = "Reading List By Rating"),
-                MDInfo(id = RLID.RLSBYTOPIC, file_name = "RLSBYTOPIC.md", paragraph_title = "Reading List By Topic")
+                MDInfo(id = RLID.RLSBYMONTH, file_name = "READINGLISTBYMONTH.md", paragraph_title = "Reading List By Month"),
+                MDInfo(id = RLID.RLSBYPUBLISHER, file_name = "READINGLISTBYPUBLISHER.md", paragraph_title = "Reading List By Publisher"),
+                MDInfo(id = RLID.RLSBYRATING, file_name = "READINGLISTBYRATING.md", paragraph_title = "Reading List By Rating"),
+                MDInfo(id = RLID.RLSBYTOPIC, file_name = "READINGLISTBYTOPIC.md", paragraph_title = "Reading List By Topic")
             ]
         
         return md_infos
