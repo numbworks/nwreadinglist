@@ -9,7 +9,7 @@ import copy
 import numpy as np
 import os
 import pandas as pd
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 from numpy import float64
@@ -115,120 +115,6 @@ class RLSummary():
     sas_by_topic_md : str
     sas_by_publisher_md : str
     sas_by_rating_md : str
-class SettingBag():
-
-    '''Represents a collection of settings.'''
-
-    options_rl : list[Literal["display", "save"]]
-    options_rl_asrt : list[Literal["display", "log"]]
-    options_rl_by_kbsize : list[Literal["display", "plot"]]
-    options_rl_by_books_year : list[Literal["plot"]]
-    options_sas : list[Literal["display", "save"]]
-    options_sas_by_topic : list[Literal["display", "save"]]
-    options_sas_by_publisher : list[Literal["display", "log", "save"]]
-    options_sas_by_rating : list[Literal["display", "save"]]
-    options_trend_by_year_topic : list[Literal["display", "save"]]
-    options_definitions : list[Literal["display"]]
-    read_years : list[int]
-    excel_path : str
-    excel_books_nrows : int
-    excel_books_skiprows : int
-    excel_books_tabname : str
-    excel_null_value : str 
-    kbsize_ascending : bool
-    kbsize_remove_if_zero : bool
-    kbsize_n : int  
-    md_stars_rating : bool
-    md_last_update : datetime
-    md_infos : list[MDInfo]
-    publisher_n : int
-    publisher_formatters : dict
-    publisher_min_books : int
-    publisher_min_ab_perc : float
-    publisher_min_avgrating : float
-    publisher_criteria : Literal["Yes", "No"]
-    trend_sparklines_maximum : bool
-    working_folder_path : str    
-    now : datetime
-    n : int
-    rounding_digits : int
-
-    def __init__(
-            self,
-            options_rl : list[Literal["display", "save"]],
-            options_rl_asrt : list[Literal["display", "log"]],
-            options_rl_by_kbsize : list[Literal["display", "plot"]],
-            options_rl_by_books_year : list[Literal["plot"]],
-            options_sas : list[Literal["display", "save"]],
-            options_sas_by_topic : list[Literal["display", "save"]],
-            options_sas_by_publisher : list[Literal["display", "log", "save"]],
-            options_sas_by_rating : list[Literal["display", "save"]],
-            options_trend_by_year_topic : list[Literal["display", "save"]],
-            options_definitions : list[Literal["display"]],
-            read_years : list[int],
-            excel_path : str,
-            excel_books_nrows : int,
-            excel_books_skiprows : int = 0,
-            excel_books_tabname : str = "Books",
-            excel_null_value : str = "-",
-            kbsize_ascending : bool = False,
-            kbsize_remove_if_zero : bool = True,  
-            kbsize_n : int = 10,
-            md_stars_rating : bool = True,
-            md_last_update : datetime = datetime.now(),
-            md_infos : list[MDInfo] = [
-                MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List"),
-                MDInfo(id = RLID.SAS, file_name = "STUDYINGACTIVITY.md", paragraph_title = "Studying Activity"),
-                MDInfo(id = RLID.SASBYPUBLISHER, file_name = "STUDYINGACTIVITYBYPUBLISHER.md", paragraph_title = "Studying Activity By Publisher"),
-                MDInfo(id = RLID.SASBYRATING, file_name = "STUDYINGACTIVITYBYRATING.md", paragraph_title = "Studying Activity By Rating"),
-                MDInfo(id = RLID.SASBYTOPIC, file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic")
-            ],            
-            publisher_n : int = 10,
-            publisher_formatters : dict = { "AvgRating" : "{:.2f}", "AB%" : "{:.2f}" },
-            publisher_min_books : int = 8,
-            publisher_min_avgrating : float = 2.50,
-            publisher_min_ab_perc : float = 100,
-            publisher_criteria : Literal["Yes", "No"] = "Yes",            
-            trend_sparklines_maximum : bool = False,
-            working_folder_path : str = "/home/nwreadinglist/",
-            now : datetime  = datetime.now(),
-            n : int = 5,
-            rounding_digits : int = 2
-            ) -> None:
-
-        self.options_rl = options_rl
-        self.options_rl_asrt = options_rl_asrt
-        self.options_rl_by_kbsize = options_rl_by_kbsize
-        self.options_rl_by_books_year = options_rl_by_books_year
-        self.options_sas = options_sas
-        self.options_sas_by_topic = options_sas_by_topic
-        self.options_sas_by_publisher = options_sas_by_publisher
-        self.options_sas_by_rating = options_sas_by_rating
-        self.options_trend_by_year_topic = options_trend_by_year_topic
-        self.options_definitions = options_definitions
-        self.read_years = read_years
-        self.excel_path = excel_path
-        self.excel_books_nrows = excel_books_nrows
-        self.excel_books_skiprows = excel_books_skiprows
-        self.excel_books_tabname = excel_books_tabname
-        self.excel_null_value = excel_null_value     
-        self.kbsize_ascending = kbsize_ascending
-        self.kbsize_remove_if_zero = kbsize_remove_if_zero        
-        self.kbsize_n = kbsize_n
-        self.publisher_n = publisher_n
-        self.publisher_formatters = publisher_formatters
-        self.publisher_min_books = publisher_min_books
-        self.publisher_min_avgrating = publisher_min_avgrating
-        self.publisher_min_ab_perc = publisher_min_ab_perc
-        self.publisher_criteria = publisher_criteria
-        self.trend_sparklines_maximum = trend_sparklines_maximum
-        self.working_folder_path = working_folder_path        
-        self.now = now
-        self.n = n
-        self.rounding_digits = rounding_digits
-        self.md_stars_rating = md_stars_rating
-        self.md_last_update = md_last_update
-        self.md_infos = md_infos
 
 # CLASSES
 class DefaultPathProvider():
@@ -273,6 +159,47 @@ class MDInfoProvider():
             ]
         
         return md_infos
+@dataclass(frozen = True)
+class SettingBag():
+
+    '''Represents a collection of settings.'''
+
+	# Without Defaults
+    options_rl : list[Literal["display", "save"]]
+    options_rl_asrt : list[Literal["display", "log"]]
+    options_rl_by_kbsize : list[Literal["display", "plot"]]
+    options_rl_by_books_year : list[Literal["plot"]]
+    options_sas : list[Literal["display", "save"]]
+    options_sas_by_topic : list[Literal["display", "save"]]
+    options_sas_by_publisher : list[Literal["display", "log", "save"]]
+    options_sas_by_rating : list[Literal["display", "save"]]
+    options_trend_by_year_topic : list[Literal["display", "save"]]
+    options_definitions : list[Literal["display"]]
+    read_years : list[int]
+    excel_path : str
+    excel_books_nrows : int
+	
+	# With Defaults
+    excel_books_skiprows : int = field(default = 0)
+    excel_books_tabname : str = field(default = "Books")
+    excel_null_value : str = field(default = "-")
+    kbsize_ascending : bool = field(default = False)
+    kbsize_remove_if_zero : bool = field(default = True)
+    kbsize_n : int = field(default = 10)
+    md_stars_rating : bool = field(default = True)
+    md_last_update : datetime = field(default = datetime.now())
+    md_infos : list[MDInfo] = field(default_factory = lambda : MDInfoProvider().get_all())
+    publisher_n : int = field(default = 10)
+    publisher_formatters : dict = field(default_factory = lambda : { "AvgRating" : "{:.2f}", "AB%" : "{:.2f}" })
+    publisher_min_books : int = field(default = 8)
+    publisher_min_ab_perc : float = field(default = 100)
+    publisher_min_avgrating : float = field(default = 2.50)
+    publisher_criteria : Literal["Yes", "No"] = field(default = "Yes")
+    trend_sparklines_maximum : bool = field(default = False)
+    working_folder_path : str = field(default = "/home/nwreadinglist/")
+    now : datetime = field(default = datetime.now())
+    n : int = field(default = 5)
+    rounding_digits : int = field(default = 2)
 class RLDataFrameHelper():
 
     '''Collects helper functions for RLDataFrameFactory.'''
