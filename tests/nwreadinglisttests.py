@@ -41,7 +41,7 @@ class ObjectMother():
     '''Collects all the DTOs required by the unit tests.'''
 
     @staticmethod
-    def create_default_sa_by_2024_df() -> DataFrame:
+    def get_default_sa_by_2024_df() -> DataFrame:
 
         default_df : DataFrame = pd.DataFrame(
             {
@@ -57,7 +57,7 @@ class ObjectMother():
         return default_df
 
     @staticmethod
-    def create_rl_tpl() -> Tuple[DataFrame, list[int]]:
+    def get_rl_tpl() -> Tuple[DataFrame, list[int]]:
 
         rl_df : DataFrame = pd.DataFrame({
             "Title": np.array(["ProxMox VE Administration Guide - Release 7.2", "Clean Architecture", "Python How-To", "Python Foundation", "Python Unit Test Automation (2nd Edition)", "Testing in Python", "Python Object-Oriented Programming (4th Edition)", "Intermediate Python [MLI]", "Learning Advanced Python By Studying Open-Source Projects", "Python in a Nutshell (4th Edition)", "Python 3 And Feature Engineering", "Python Testing Cookbook (2nd Edition)", "Python Testing with pytest (2nd Edition)", "Python Packages"], dtype=object),
@@ -86,33 +86,33 @@ class ObjectMother():
 
         return (rl_df, read_years)
     @staticmethod
-    def create_rl_df_column_names() -> list[str]:
+    def get_rl_df_column_names() -> list[str]:
 
         column_names : list[str] = []
-        column_names.append("Title")                # [0], str
-        column_names.append("Year")                 # [1], int
-        column_names.append("Type")                 # [2], str
-        column_names.append("Format")               # [3], str
-        column_names.append("Language")             # [4], str
-        column_names.append("Pages")                # [5], int
-        column_names.append("ReadDate")             # [6], date
-        column_names.append("ReadYear")             # [7], int
-        column_names.append("ReadMonth")            # [8], int    
-        column_names.append("WorthBuying")          # [9], str
-        column_names.append("WorthReadingAgain")    # [10], str
-        column_names.append("Publisher")            # [11], str
-        column_names.append("Rating")               # [12], int
-        column_names.append("StreetPrice")          # [13], float
-        column_names.append("Currency")             # [14], str
-        column_names.append("Comment")              # [15], str
-        column_names.append("Topic")                # [16], str
-        column_names.append("OnGoodreads")          # [17], str
-        column_names.append("CommentLenght")        # [18], int
-        column_names.append("KBSize")               # [19], int
+        column_names.append(RLCN.TITLE)             # [0], str
+        column_names.append(RLCN.YEAR)              # [1], int
+        column_names.append(RLCN.TYPE)              # [2], str
+        column_names.append(RLCN.FORMAT)            # [3], str
+        column_names.append(RLCN.LANGUAGE)          # [4], str
+        column_names.append(RLCN.PAGES)             # [5], int
+        column_names.append(RLCN.READDATE)          # [6], date
+        column_names.append(RLCN.READYEAR)          # [7], int
+        column_names.append(RLCN.READMONTH)         # [8], int    
+        column_names.append(RLCN.WORTHBUYING)       # [9], str
+        column_names.append(RLCN.WORTHREADINGAGAIN) # [10], str
+        column_names.append(RLCN.PUBLISHER)         # [11], str
+        column_names.append(RLCN.RATING)            # [12], int
+        column_names.append(RLCN.STREETPRICE)       # [13], float
+        column_names.append(RLCN.CURRENCY)          # [14], str
+        column_names.append(RLCN.COMMENT)           # [15], str
+        column_names.append(RLCN.TOPIC)             # [16], str
+        column_names.append(RLCN.ONGOODREADS)       # [17], str
+        column_names.append(RLCN.COMMENTLENGHT)     # [18], int
+        column_names.append(RLCN.KBSIZE)            # [19], int
 
         return column_names
     @staticmethod
-    def create_rl_df_dtype_names() -> list[str]:
+    def get_rl_df_dtype_names() -> list[str]:
 
         '''Note: the 7th should be "date", but it's rendered by Pandas as "object".'''
 
@@ -141,9 +141,9 @@ class ObjectMother():
 
         return expected_dtype_names
     @staticmethod
-    def create_rl_asrt_tpl() -> Tuple[DataFrame, datetime]:
+    def get_rls_asrt_tpl() -> Tuple[DataFrame, datetime]:
 
-        rl_asrt_df : DataFrame = pd.DataFrame({
+        rls_asrt_df : DataFrame = pd.DataFrame({
             "Years": np.array(["1"], dtype = object),
             "Books": np.array(["14"], dtype = object),
             "Pages": np.array(["5573"], dtype = object),
@@ -153,9 +153,9 @@ class ObjectMother():
 
         now : datetime = datetime(2024, 3, 4)
 
-        return (rl_asrt_df, now)
+        return (rls_asrt_df, now)
     @staticmethod
-    def create_rl_by_kbsize_df() -> DataFrame:
+    def get_rls_by_kbsize_df() -> DataFrame:
 
         return pd.DataFrame({
             "Title": np.array(["ProxMox VE Administration Guide - Release 7.2"], dtype = object),
@@ -167,9 +167,9 @@ class ObjectMother():
             "A4Sheets": np.array(["1"], dtype = np.int64),
         }, index = pd.Index([1], dtype = "int64"))   
     @staticmethod
-    def create_sas_by_month_tpl() -> Tuple[DataFrame, DataFrame]:
+    def get_rls_by_month_tpl() -> Tuple[DataFrame, DataFrame]:
 
-        sas_by_month_df : DataFrame = DataFrame({
+        rls_by_month_df : DataFrame = DataFrame({
             "Month": np.array([str(i) for i in range(1, 13)], dtype=np.int64),
             "2023": np.array(["0 (0)"] * 12, dtype=object),
             "↕": np.array(["=", "↑", "=", "=", "=", "=", "=", "=", "=", "=", "=", "="], dtype=object),
@@ -177,16 +177,16 @@ class ObjectMother():
                             "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)"], dtype=object)
         }, index=pd.Index(range(12), dtype="int64"))
 
-        sas_by_month_upd_df : DataFrame = DataFrame({
+        rls_by_month_upd_df : DataFrame = DataFrame({
             "Month": np.array([str(i) for i in range(1, 13)], dtype=np.int64),
             "2023": np.array(["0 (0)"] * 12, dtype=object),
             "↕": np.array(["=", "↑", "", "", "", "", "", "", "", "", "", ""], dtype=object),
             "2024": np.array(["0 (0)", "14 (5573)", "", "", "", "", "", "", "", "", "", ""], dtype=object)
         }, index=pd.Index(range(12), dtype="int64"))
 
-        return (sas_by_month_df, sas_by_month_upd_df)
+        return (rls_by_month_df, rls_by_month_upd_df)
     @staticmethod
-    def create_sas_by_year_street_price_df() -> DataFrame:
+    def get_rls_by_year_street_price_df() -> DataFrame:
 
         return DataFrame({
             "2023": np.array(["0 (0)", "$0.00"], dtype = object),
@@ -194,7 +194,7 @@ class ObjectMother():
             "2024": np.array(["14 (5573)", "$587.57"], dtype = object)
         }, index=pd.Index([0, 1], dtype="int64")) 
     @staticmethod
-    def create_sas_by_topic_df() -> DataFrame:
+    def get_rls_by_topic_df() -> DataFrame:
 
         return pd.DataFrame({
             "Topic": np.array(["Python", "Development Tools", "Software Engineering"], dtype=object),
@@ -203,9 +203,9 @@ class ObjectMother():
             "A4Sheets": np.array([0, 1, 0], dtype = np.int64)
         }, index=pd.RangeIndex(start=0, stop=3, step=1))
     @staticmethod
-    def create_sas_by_publisher_tpl() -> Tuple[DataFrame, DataFrame, str]:
+    def get_rls_by_publisher_tpl() -> Tuple[DataFrame, DataFrame, str]:
 
-        sas_by_publisher_df : DataFrame = DataFrame({
+        rls_by_publisher_df : DataFrame = DataFrame({
             "Publisher": np.array(["Self-Published", "Packt", "CRC Press", "MLI", "Apress", "O'Reilly", "Manning", "Pearson Education", "Pragmatic Bookshelf"], dtype=object),
             "Books": np.array([3, 2, 2, 2, 1, 1, 1, 1, 1], dtype=np.int64),
             "A4Sheets": np.array([1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.int64),
@@ -214,7 +214,7 @@ class ObjectMother():
             "IsWorth": np.array(["No", "No", "No", "No", "No", "No", "No", "No", "No"], dtype=object)
         }, index=pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype="int64"))
 
-        sas_by_publisher_flt_df : DataFrame = DataFrame({
+        rls_by_publisher_flt_df : DataFrame = DataFrame({
             "Publisher": np.array([], dtype=object),
             "Books": np.array([], dtype=np.int64),
             "A4Sheets": np.array([], dtype=np.int64),
@@ -223,18 +223,18 @@ class ObjectMother():
             "IsWorth": np.array([], dtype=object)
         }, index=pd.Index([], dtype="int64"))
 
-        sas_by_publisher_footer : str = "'Yes' if 'Books' >= '8' & ('AvgRating' >= '100' | 'AB%' >= '2.5')"
+        rls_by_publisher_footer : str = "'Yes' if 'Books' >= '8' & ('AvgRating' >= '100' | 'AB%' >= '2.5')"
     
-        return (sas_by_publisher_df, sas_by_publisher_flt_df, sas_by_publisher_footer)  
+        return (rls_by_publisher_df, rls_by_publisher_flt_df, rls_by_publisher_footer)  
     @staticmethod
-    def create_sas_by_rating_df() -> DataFrame:
+    def get_rls_by_rating_df() -> DataFrame:
 
         return pd.DataFrame({
             "Rating": np.array(["★★★★☆", "★★★☆☆", "★★☆☆☆", "★☆☆☆☆"], dtype = object),
             "Books": np.array([1, 3, 4, 6], dtype = np.int64),
         }, index=pd.RangeIndex(start = 0, stop = 4, step = 1))
     @staticmethod
-    def create_trend_by_year_topic_df() -> DataFrame:
+    def get_rls_by_topic_bt_df() -> DataFrame:
 
         return pd.DataFrame({
             "Topic": np.array(["Development Tools", "Python", "Software Engineering"], dtype=object),
@@ -242,16 +242,16 @@ class ObjectMother():
             "Trend": np.array(["▁▁▁▁▁▁▁▁▂", "▁▁▁▁▁▁▁▁█", "▁▁▁▁▁▁▁▁▂"], dtype=object),
         }, index=pd.RangeIndex(start=0, stop=3, step=1))
     @staticmethod
-    def create_definitions_df() -> DataFrame:
+    def get_definitions_df() -> DataFrame:
 
         columns : list[str] = ["Term", "Definition"]
 
         definitions : dict[str, str] = {
             "RL": "Reading List",
-            "SAS": "Studying Activity Summary.",
-            "KBSize": "This metric is the word count of the notes I took about a given book.",
-            "A4Sheets": "'KBSize' converted into amount of A4 sheets.",
-            "AB%": "Calculated with the following formula: '(A4Sheets / Books) * 100'."
+            "RLS": "Reading List Summary",
+            "KBSize": "This metric is the word count of the notes I took about a given book",
+            "A4Sheets": "'KBSize' converted into amount of A4 sheets",
+            "AB%": "Calculated with the following formula: '(A4Sheets / Books) * 100'"
             }
         
         definitions_df : DataFrame = DataFrame(
@@ -262,6 +262,38 @@ class ObjectMother():
         return definitions_df
 
 # TEST CLASSES
+class MessageCollectionTestCase(unittest.TestCase):
+
+    def test_nomdinfofound_shouldreturnexpectedmessage_wheninvoked(self):
+        
+        # Arrange
+        expected : str = "No MDInfo object found for id='rl'."
+        
+        # Act
+        actual : str = _MessageCollection.no_mdinfo_found(id = RLID.RL)
+        
+        # Assert
+        self.assertEqual(actual, expected)
+    def test_pleaseruninitializefirst_shouldreturnexpectedmessage_wheninvoked(self):
+        
+        # Arrange
+        expected : str = "Please run the 'initialize' method first."
+
+        # Act
+        actual : str = _MessageCollection.please_run_initialize_first()
+        
+        # Assert
+        self.assertEqual(actual, expected)
+    def test_thiscontentsuccessfullysaved_shouldreturnexpectedmessage_wheninvoked(self):
+
+        # Arrange
+        expected : str = "This content (id: 'rl') has been successfully saved as '/home/nwreadinglist/READINGLIST.md'."
+        
+        # Act
+        actual : str = _MessageCollection.this_content_successfully_saved_as(id = RLID.RL, file_path = "/home/nwreadinglist/READINGLIST.md")
+        
+        # Assert
+        self.assertEqual(actual, expected)
 class MDInfoTestCase(unittest.TestCase):
     
     def test_mdinfo_shouldinitializeasexpected_wheninvoked(self):
@@ -292,43 +324,92 @@ class RLSummaryTestCase(unittest.TestCase):
         # Act
         rl_summary : RLSummary = RLSummary(
             rl_df = df,
-            rl_asrt_df = df,
-            rl_by_kbsize_df = df,
-            sas_by_month_tpl = tpl,
-            sas_by_year_street_price_df = df,
-            sas_by_topic_df = df,
-            sas_by_publisher_tpl = tpl_footer,
-            sas_by_rating_df = df,
-            trend_by_year_topic_df = df,
+            rls_asrt_df = df,
+            rls_by_kbsize_df = df,
+            rls_by_month_tpl = tpl,
+            rls_by_publisher_tpl = tpl_footer,
+            rls_by_rating_df = df,
+            rls_by_topic_df = df,
+            rls_by_topic_bt_df = df,
+            rls_by_year_street_price_df = df,
             definitions_df = df,
             rl_md = content,
-            rl_asrt_md = content,
-            sas_md = content,
-            sas_by_topic_md = content,
-            sas_by_publisher_md = content,
-            sas_by_rating_md = content
+            rls_asrt_md = content,
+            rls_by_month_md = content,
+            rls_by_publisher_md = content,
+            rls_by_rating_md = content,
+            rls_by_topic_md = content
         )
 
         # Assert
         assert_frame_equal(rl_summary.rl_df, df)
-        assert_frame_equal(rl_summary.rl_asrt_df, df)
-        assert_frame_equal(rl_summary.rl_by_kbsize_df, df)
-        assert_frame_equal(rl_summary.sas_by_month_tpl[0], df)
-        assert_frame_equal(rl_summary.sas_by_month_tpl[1], df)
-        assert_frame_equal(rl_summary.sas_by_year_street_price_df, df)
-        assert_frame_equal(rl_summary.sas_by_topic_df, df)
-        assert_frame_equal(rl_summary.sas_by_publisher_tpl[0], df)
-        assert_frame_equal(rl_summary.sas_by_publisher_tpl[1], df)
-        self.assertEqual(rl_summary.sas_by_publisher_tpl[2], footer)
-        assert_frame_equal(rl_summary.sas_by_rating_df, df)
-        assert_frame_equal(rl_summary.trend_by_year_topic_df, df)
+        assert_frame_equal(rl_summary.rls_asrt_df, df)
+        assert_frame_equal(rl_summary.rls_by_kbsize_df, df)
+        assert_frame_equal(rl_summary.rls_by_month_tpl[0], df)
+        assert_frame_equal(rl_summary.rls_by_month_tpl[1], df)
+        assert_frame_equal(rl_summary.rls_by_publisher_tpl[0], df)
+        assert_frame_equal(rl_summary.rls_by_publisher_tpl[1], df)
+        self.assertEqual(rl_summary.rls_by_publisher_tpl[2], footer)
+        assert_frame_equal(rl_summary.rls_by_rating_df, df)
+        assert_frame_equal(rl_summary.rls_by_year_street_price_df, df)
+        assert_frame_equal(rl_summary.rls_by_topic_df, df)
+        assert_frame_equal(rl_summary.rls_by_topic_bt_df, df)
         assert_frame_equal(rl_summary.definitions_df, df)
         self.assertEqual(rl_summary.rl_md, content)
-        self.assertEqual(rl_summary.rl_asrt_md, content)
-        self.assertEqual(rl_summary.sas_md, content)
-        self.assertEqual(rl_summary.sas_by_topic_md, content)
-        self.assertEqual(rl_summary.sas_by_publisher_md, content)
-        self.assertEqual(rl_summary.sas_by_rating_md, content)
+        self.assertEqual(rl_summary.rls_asrt_md, content)
+        self.assertEqual(rl_summary.rls_by_month_md, content)
+        self.assertEqual(rl_summary.rls_by_publisher_md, content)
+        self.assertEqual(rl_summary.rls_by_rating_md, content)
+        self.assertEqual(rl_summary.rls_by_topic_md, content)
+class DefaultPathProviderTestCase(unittest.TestCase):
+
+    def test_getdefaultreadinglistpath_shouldreturnexpectedpath_wheninvoked(self):
+        
+        '''"C:/project_dir/src/" => "C:/project_dir/data/Reading List.xlsx"'''
+
+        # Arrange
+        expected : str = "C:/project_dir/data/Reading List.xlsx"
+
+        # Act
+        with patch.object(os, 'getcwd', return_value="C:/project_dir/src/") as mocked_context:
+            actual : str = DefaultPathProvider().get_default_reading_list_path()
+
+        # Assert
+        self.assertEqual(expected, actual)
+class YearProviderTestCase(unittest.TestCase):
+
+    def test_getallyears_shouldreturnexpectedlist_wheninvoked(self):
+
+        # Arrange
+        expected : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
+
+        # Act
+        actual : list[int] = YearProvider().get_all_years()
+
+        # Assert
+        self.assertEqual(expected, actual)
+class MDInfoProviderTestCase(unittest.TestCase):
+    
+    def test_getall_shouldreturnexpectedlist_wheninvoked(self):
+        
+        # Arrange
+        expected : list[MDInfo] = [
+                MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List"),
+                MDInfo(id = RLID.RLSBYMONTH, file_name = "RLSBYMONTH.md", paragraph_title = "Reading List By Month"),
+                MDInfo(id = RLID.RLSBYPUBLISHER, file_name = "RLSBYPUBLISHER.md", paragraph_title = "Reading List By Publisher"),
+                MDInfo(id = RLID.RLSBYRATING, file_name = "RLSBYRATING.md", paragraph_title = "Reading List By Rating"),
+                MDInfo(id = RLID.RLSBYTOPIC, file_name = "RLSBYTOPIC.md", paragraph_title = "Reading List By Topic")
+            ]
+
+        # Act
+        actual : list[MDInfo] = MDInfoProvider().get_all()
+
+        # Assert
+        self.assertEqual(len(expected), len(actual))
+        for i in range(len(expected)):
+            self.assertEqual(expected[i].id, actual[i].id)
+            self.assertEqual(expected[i].file_name, actual[i].file_name)
+            self.assertEqual(expected[i].paragraph_title, actual[i].paragraph_title)
 class SettingBagTestCase(unittest.TestCase):
 
     def test_settingbag_shouldinitializeasexpected_wheninvoked(self):
@@ -441,65 +522,6 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.now, now)
         self.assertEqual(setting_bag.n, n)
         self.assertEqual(setting_bag.rounding_digits, rounding_digits)
-class MessageCollectionTestCase(unittest.TestCase):
-
-    def test_nomdinfofound_shouldreturnexpectedmessage_wheninvoked(self):
-        
-        # Arrange
-        expected : str = "No MDInfo object found for id='rl'."
-        
-        # Act
-        actual : str = _MessageCollection.no_mdinfo_found(id = RLID.RL)
-        
-        # Assert
-        self.assertEqual(actual, expected)
-    def test_pleaseruninitializefirst_shouldreturnexpectedmessage_wheninvoked(self):
-        
-        # Arrange
-        expected : str = "Please run the 'initialize' method first."
-
-        # Act
-        actual : str = _MessageCollection.please_run_initialize_first()
-        
-        # Assert
-        self.assertEqual(actual, expected)
-    def test_thiscontentsuccessfullysaved_shouldreturnexpectedmessage_wheninvoked(self):
-
-        # Arrange
-        expected : str = "This content (id: 'rl') has been successfully saved as '/home/nwreadinglist/READINGLIST.md'."
-        
-        # Act
-        actual : str = _MessageCollection.this_content_successfully_saved_as(id = RLID.RL, file_path = "/home/nwreadinglist/READINGLIST.md")
-        
-        # Assert
-        self.assertEqual(actual, expected)
-class DefaultPathProviderTestCase(unittest.TestCase):
-
-    def test_getdefaultreadinglistpath_shouldreturnexpectedpath_wheninvoked(self):
-        
-        '''"C:/project_dir/src/" => "C:/project_dir/data/Reading List.xlsx"'''
-
-        # Arrange
-        expected : str = "C:/project_dir/data/Reading List.xlsx"
-
-        # Act
-        with patch.object(os, 'getcwd', return_value="C:/project_dir/src/") as mocked_context:
-            actual : str = DefaultPathProvider().get_default_reading_list_path()
-
-        # Assert
-        self.assertEqual(expected, actual)
-class YearProviderTestCase(unittest.TestCase):
-
-    def test_getallyears_shouldreturnexpectedlist_wheninvoked(self):
-
-        # Arrange
-        expected : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
-
-        # Act
-        actual : list[int] = YearProvider().get_all_years()
-
-        # Assert
-        self.assertEqual(expected, actual)
 class RLDataFrameHelperTestCase(unittest.TestCase):
 
     @parameterized.expand([
@@ -518,7 +540,7 @@ class RLDataFrameHelperTestCase(unittest.TestCase):
     def test_getdefaultsabyyear_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
-        expected : DataFrame = ObjectMother().create_default_sa_by_2024_df()
+        expected : DataFrame = ObjectMother().get_default_sa_by_2024_df()
 
         # Act
         actual : DataFrame = RLDataFrameHelper().get_default_sa_by_year(read_year = 2024)
@@ -709,17 +731,17 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(sa_by_year_df, actual)
-    def test_createrl_shouldreturnexpecteddataframe_wheninvoked(self):
+    def test_createrldf_shouldreturnexpecteddataframe_wheninvoked(self):
 
         # Arrange
-        rl_df : DataFrame = ObjectMother().create_rl_tpl()[0]
-        expected_column_names : list[str] = ObjectMother().create_rl_df_column_names()
-        expected_dtype_names : list[str] = ObjectMother().create_rl_df_dtype_names()
+        rl_df : DataFrame = ObjectMother().get_rl_tpl()[0]
+        expected_column_names : list[str] = ObjectMother().get_rl_df_column_names()
+        expected_dtype_names : list[str] = ObjectMother().get_rl_df_dtype_names()
         
         # Act
         actual : DataFrame = pd.DataFrame()
         with patch.object(pd, 'read_excel', return_value = rl_df) as mocked_context:
-            actual = self.df_factory.create_rl(
+            actual = self.df_factory.create_rl_df(
                 excel_path = self.excel_path,
                 excel_books_skiprows = self.excel_books_skiprows,
                 excel_books_nrows = self.excel_books_nrows,
@@ -730,14 +752,14 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         # Assert
         self.assertEqual(expected_column_names, actual.columns.tolist())
         self.assertEqual(expected_dtype_names, SupportMethodProvider().get_dtype_names(df = actual))    
-    def test_createrlasrt_shouldreturnexpecteddataframe_wheninvoked(self):
+    def test_createrlsasrtdf_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
-        rl_df : DataFrame = ObjectMother().create_rl_tpl()[0]
-        (expected, now) = ObjectMother().create_rl_asrt_tpl()
+        rl_df : DataFrame = ObjectMother().get_rl_tpl()[0]
+        (expected, now) = ObjectMother().get_rls_asrt_tpl()
 
         # Act
-        actual : DataFrame = self.df_factory.create_rl_asrt(
+        actual : DataFrame = self.df_factory.create_rls_asrt_df(
             rl_df = rl_df,
             rounding_digits = self.rounding_digits,
             now = now
@@ -745,14 +767,14 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected, actual)        
-    def test_createrlbykbsize_shouldreturnexpecteddataframe_wheninvoked(self):
+    def test_createrlsbykbsizedf_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
-        rl_df : DataFrame = ObjectMother().create_rl_tpl()[0]
-        expected : DataFrame = ObjectMother().create_rl_by_kbsize_df()
+        rl_df : DataFrame = ObjectMother().get_rl_tpl()[0]
+        expected : DataFrame = ObjectMother().get_rls_by_kbsize_df()
 
         # Act
-        actual : DataFrame = self.df_factory.create_rl_by_kbsize(
+        actual : DataFrame = self.df_factory.create_rls_by_kbsize_df(
             rl_df = rl_df,
             kbsize_ascending = self.kbsize_ascending,
             kbsize_remove_if_zero = self.kbsize_remove_if_zero,
@@ -761,16 +783,16 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected, actual)
-    def test_createsasbymonth_shouldreturnexpecteddataframes_wheninvoked(self):
+    def test_createrlsbymonthtpl_shouldreturnexpecteddataframes_wheninvoked(self):
         
         # Arrange
-        rl_df : DataFrame = ObjectMother().create_rl_tpl()[0]
+        rl_df : DataFrame = ObjectMother().get_rl_tpl()[0]
         now : datetime = datetime(2024, 2, 19)
         read_years : list[int] = [ 2023, 2024 ]
-        (expected_1, expected_2) = ObjectMother().create_sas_by_month_tpl()
+        (expected_1, expected_2) = ObjectMother().get_rls_by_month_tpl()
 
         # Act
-        (actual_1, actual_2) = self.df_factory.create_sas_by_month(
+        (actual_1, actual_2) = self.df_factory.create_rls_by_month_tpl(
             rl_df = rl_df,
             read_years = read_years,
             now = now
@@ -779,17 +801,17 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         # Assert
         assert_frame_equal(expected_1, actual_1)    
         assert_frame_equal(expected_2, actual_2)     
-    def test_createsasbyyearstreetprice_shouldreturnexpecteddataframe_wheninvoked(self):
+    def test_createrlsbyyearstreetpricedf_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
-        rl_df : DataFrame = ObjectMother().create_rl_tpl()[0]
-        sas_by_month_tpl : Tuple[DataFrame, DataFrame] = ObjectMother().create_sas_by_month_tpl()
+        rl_df : DataFrame = ObjectMother().get_rl_tpl()[0]
+        rls_by_month_tpl : Tuple[DataFrame, DataFrame] = ObjectMother().get_rls_by_month_tpl()
         read_years : list[int] = [ 2023, 2024 ]
-        expected : DataFrame = ObjectMother().create_sas_by_year_street_price_df()
+        expected : DataFrame = ObjectMother().get_rls_by_year_street_price_df()
 
         # Act
-        actual : DataFrame = self.df_factory.create_sas_by_year_street_price(
-            sas_by_month_tpl = sas_by_month_tpl,
+        actual : DataFrame = self.df_factory.create_rls_by_year_street_price_df(
+            rls_by_month_tpl = rls_by_month_tpl,
             rl_df = rl_df,
             read_years = read_years,
             rounding_digits = self.rounding_digits
@@ -797,25 +819,25 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected, actual)       
-    def test_createsasbytopic_shouldreturnexpecteddataframe_wheninvoked(self):
+    def test_createrlsbytopicdf_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
-        rl_df : DataFrame = ObjectMother().create_rl_tpl()[0]
-        expected : DataFrame = ObjectMother().create_sas_by_topic_df()
+        rl_df : DataFrame = ObjectMother().get_rl_tpl()[0]
+        expected : DataFrame = ObjectMother().get_rls_by_topic_df()
 
         # Act
-        actual : DataFrame = self.df_factory.create_sas_by_topic(rl_df = rl_df)
+        actual : DataFrame = self.df_factory.create_rls_by_topic_df(rl_df = rl_df)
 
         # Assert
         assert_frame_equal(expected, actual)
-    def test_createsasbypublisher_shouldreturnexpecteddataframes_wheninvoked(self):
+    def test_createrlsbypublishertpl_shouldreturnexpecteddataframes_wheninvoked(self):
         
         # Arrange
-        rl_df : DataFrame = ObjectMother().create_rl_tpl()[0]
-        (expected_1, expected_2, expected_3) = ObjectMother().create_sas_by_publisher_tpl()
+        rl_df : DataFrame = ObjectMother().get_rl_tpl()[0]
+        (expected_1, expected_2, expected_3) = ObjectMother().get_rls_by_publisher_tpl()
 
         # Act
-        (actual_1, actual_2, actual_3) = self.df_factory.create_sas_by_publisher(
+        (actual_1, actual_2, actual_3) = self.df_factory.create_rls_by_publisher_tpl(
             rl_df = rl_df,
             rounding_digits = 2,
             publisher_min_books = self.publisher_min_books,
@@ -828,25 +850,25 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         assert_frame_equal(expected_1, actual_1)
         assert_frame_equal(expected_2, actual_2)
         self.assertEqual(expected_3, actual_3)
-    def test_createsasbyrating_shouldreturnexpecteddataframe_whenformattedratingequalstotrue(self):
+    def test_createrlsbyratingdf_shouldreturnexpecteddataframe_whenformattedratingequalstotrue(self):
         
         # Arrange
-        rl_df : DataFrame = ObjectMother().create_rl_tpl()[0]
-        expected : DataFrame = ObjectMother().create_sas_by_rating_df()
+        rl_df : DataFrame = ObjectMother().get_rl_tpl()[0]
+        expected : DataFrame = ObjectMother().get_rls_by_rating_df()
 
         # Act
-        actual : DataFrame = self.df_factory.create_sas_by_rating(rl_df = rl_df, md_stars_rating = self.md_stars_rating)
+        actual : DataFrame = self.df_factory.create_rls_by_rating_df(rl_df = rl_df, md_stars_rating = self.md_stars_rating)
 
         # Assert
         assert_frame_equal(expected, actual)
-    def test_createtrendbyyeartopic_shouldreturnexpecteddataframe_wheninvoked(self):
+    def test_createtrlsbytopicbtdf_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
-        (rl_df, read_years) = ObjectMother().create_rl_tpl()
-        expected : DataFrame = ObjectMother().create_trend_by_year_topic_df()
+        (rl_df, read_years) = ObjectMother().get_rl_tpl()
+        expected : DataFrame = ObjectMother().get_rls_by_topic_bt_df()
 
         # Act
-        actual : DataFrame = self.df_factory.create_trend_by_year_topic(
+        actual : DataFrame = self.df_factory.create_rls_by_topic_bt_df(
             rl_df = rl_df,
             read_years = read_years,
             trend_sparklines_maximum = self.trend_sparklines_maximum
@@ -854,13 +876,13 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected, actual)
-    def test_createdefinitions_shouldreturnexpecteddataframe_wheninvoked(self):
+    def test_createdefinitionsdf_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
-        expected : DataFrame = ObjectMother().create_definitions_df()
+        expected : DataFrame = ObjectMother().get_definitions_df()
 
         # Act
-        actual : DataFrame = self.df_factory.create_definitions()
+        actual : DataFrame = self.df_factory.create_definitions_df()
 
         # Assert
         assert_frame_equal(expected, actual)
@@ -880,28 +902,6 @@ class ComponentBagTestCase(unittest.TestCase):
         self.assertIsInstance(component_bag.displayer, Displayer)
         self.assertIsInstance(component_bag.plot_manager, PlotManager)
         self.assertTrue(callable(component_bag.logging_function))
-class MDInfoProviderTestCase(unittest.TestCase):
-    
-    def test_getall_shouldreturnexpectedlist_wheninvoked(self):
-        
-        # Arrange
-        expected : list[MDInfo] = [
-                MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List"),
-                MDInfo(id = RLID.SAS, file_name = "STUDYINGACTIVITY.md", paragraph_title = "Studying Activity"),
-                MDInfo(id = RLID.SASBYPUBLISHER, file_name = "STUDYINGACTIVITYBYPUBLISHER.md", paragraph_title = "Studying Activity By Publisher"),
-                MDInfo(id = RLID.SASBYRATING, file_name = "STUDYINGACTIVITYBYRATING.md", paragraph_title = "Studying Activity By Rating"),
-                MDInfo(id = RLID.SASBYTOPIC, file_name = "STUDYINGACTIVITYBYTOPIC.md", paragraph_title = "Studying Activity By Topic")
-            ]
-
-        # Act
-        actual : list[MDInfo] = MDInfoProvider().get_all()
-
-        # Assert
-        self.assertEqual(len(expected), len(actual))
-        for i in range(len(expected)):
-            self.assertEqual(expected[i].id, actual[i].id)
-            self.assertEqual(expected[i].file_name, actual[i].file_name)
-            self.assertEqual(expected[i].paragraph_title, actual[i].paragraph_title)
 
 # MAIN
 if __name__ == "__main__":
