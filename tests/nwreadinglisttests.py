@@ -261,6 +261,27 @@ class ObjectMother():
 
         return definitions_df
 
+    @staticmethod
+    def get_setting_bag() -> SettingBag:
+
+        setting_bag : SettingBag = SettingBag(
+            options_rl = ["save"],
+            options_rls_asrt = ["display", "log"],
+            options_rls_by_kbsize = ["display", "plot"],
+            options_rls_by_books_year = ["plot"],
+            options_rls_by_month = ["display", "save"],
+            options_rls_by_publisher = ["display", "log", "save"],
+            options_rls_by_rating = ["display", "save"],
+            options_rls_by_topic = ["display", "save"],
+            options_rls_by_topic_bt = ["display", "save"],
+            options_definitions = ["display"],
+            read_years = YearProvider().get_all_years(),
+            excel_path = DefaultPathProvider().get_default_reading_list_path(),
+            excel_nrows = 323
+        )
+
+        return setting_bag
+
 # TEST CLASSES
 class MessageCollectionTestCase(unittest.TestCase):
 
@@ -1132,6 +1153,72 @@ class RLAdapterTestCase(unittest.TestCase):
             rl_df = rl_df,
             number_as_stars = self.rls_by_rating_number_as_stars
         )
+    def test_createsummary_shouldreturnexpectedsummary_wheninvoked(self) -> None:
+
+        # Arrange
+        rl_df : DataFrame = ObjectMother.get_rl_tpl()[0]
+        rls_asrt_df : DataFrame = ObjectMother.get_rls_asrt_tpl()[0]
+        rls_by_kbsize_df : DataFrame = ObjectMother.get_rls_by_kbsize_df()
+        rls_by_month_tpl : Tuple[DataFrame, DataFrame] = ObjectMother.get_rls_by_month_tpl()
+        rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = ObjectMother.get_rls_by_publisher_tpl()
+        rls_by_rating_df : DataFrame = ObjectMother.get_rls_by_rating_df()
+        rls_by_topic_df : DataFrame = ObjectMother.get_rls_by_topic_df()
+        rls_by_topic_bt_df : DataFrame = ObjectMother.get_rls_by_topic_bt_df()
+        rls_by_year_street_price_df : DataFrame = ObjectMother.get_rls_by_year_street_price_df()
+        definitions_df : DataFrame = ObjectMother.get_definitions_df()
+        rl_md : str = "Sample RL Markdown"
+        rls_asrt_md : str = "Sample Assertion Markdown"
+        rls_by_month_md : str = "Sample Month Markdown"
+        rls_by_publisher_md : str = "Sample Publisher Markdown"
+        rls_by_rating_md : str = "Sample Rating Markdown"
+        rls_by_topic_md : str = "Sample Topic Markdown"
+
+        df_factory : RLDataFrameFactory = Mock()
+        df_factory.create_rls_by_topic_df.return_value = rls_by_topic_df
+        df_factory.create_definitions_df.return_value = definitions_df
+        df_factory.create_rl_df = Mock(return_value = rl_df)
+        df_factory.create_rls_asrt_df = Mock(return_value = rls_asrt_df)
+        df_factory.create_rls_by_kbsize_df = Mock(return_value = rls_by_kbsize_df)
+        df_factory.create_rls_by_month_tpl = Mock(return_value = rls_by_month_tpl)
+        df_factory.create_rls_by_publisher_tpl = Mock(return_value = rls_by_publisher_tpl)
+        df_factory.create_rls_by_rating_df = Mock(return_value = rls_by_rating_df)
+        df_factory.create_rls_by_topic_bt_df = Mock(return_value = rls_by_topic_bt_df)
+        df_factory.create_rls_by_year_street_price_df = Mock(return_value = rls_by_year_street_price_df)
+
+        md_factory : RLMarkdownFactory = Mock()
+        md_factory.create_rl_asrt_md.return_value = rls_asrt_md
+        md_factory.create_rl_md = Mock(return_value = rl_md)
+        md_factory.create_rls_by_month_md = Mock(return_value = rls_by_month_md)
+        md_factory.create_rls_by_publisher_md = Mock(return_value = rls_by_publisher_md)
+        md_factory.create_rls_by_rating_md = Mock(return_value = rls_by_rating_md)
+        md_factory.create_rls_by_topic_md = Mock(return_value = rls_by_topic_md)
+
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+        setting_bag : SettingBag = ObjectMother.get_setting_bag()
+
+        # Act
+        actual : RLSummary = rl_adapter.create_summary(setting_bag = setting_bag)
+
+        # Assert
+        assert_frame_equal(actual.rl_df, rl_df)
+        assert_frame_equal(actual.rls_asrt_df, rls_asrt_df)
+        assert_frame_equal(actual.rls_by_kbsize_df, rls_by_kbsize_df)
+        assert_frame_equal(actual.rls_by_month_tpl[0], rls_by_month_tpl[0])
+        assert_frame_equal(actual.rls_by_month_tpl[1], rls_by_month_tpl[1])
+        assert_frame_equal(actual.rls_by_publisher_tpl[0], rls_by_publisher_tpl[0])
+        assert_frame_equal(actual.rls_by_publisher_tpl[1], rls_by_publisher_tpl[1])
+        self.assertEqual(actual.rls_by_publisher_tpl[2], rls_by_publisher_tpl[2])
+        assert_frame_equal(actual.rls_by_rating_df, rls_by_rating_df)
+        assert_frame_equal(actual.rls_by_topic_df, rls_by_topic_df)
+        assert_frame_equal(actual.rls_by_topic_bt_df, rls_by_topic_bt_df)
+        assert_frame_equal(actual.rls_by_year_street_price_df, rls_by_year_street_price_df)
+        assert_frame_equal(actual.definitions_df, definitions_df)
+        self.assertEqual(actual.rl_md, rl_md)
+        self.assertEqual(actual.rls_asrt_md, rls_asrt_md)
+        self.assertEqual(actual.rls_by_month_md, rls_by_month_md)
+        self.assertEqual(actual.rls_by_publisher_md, rls_by_publisher_md)
+        self.assertEqual(actual.rls_by_rating_md, rls_by_rating_md)
+        self.assertEqual(actual.rls_by_topic_md, rls_by_topic_md)
 
 # MAIN
 if __name__ == "__main__":
