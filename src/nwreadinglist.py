@@ -166,40 +166,39 @@ class SettingBag():
 
 	# Without Defaults
     options_rl : list[Literal["display", "save"]]
-    options_rl_asrt : list[Literal["display", "log"]]
-    options_rl_by_kbsize : list[Literal["display", "plot"]]
-    options_rl_by_books_year : list[Literal["plot"]]
-    options_sas : list[Literal["display", "save"]]
-    options_sas_by_topic : list[Literal["display", "save"]]
-    options_sas_by_publisher : list[Literal["display", "log", "save"]]
-    options_sas_by_rating : list[Literal["display", "save"]]
-    options_trend_by_year_topic : list[Literal["display", "save"]]
+    options_rls_asrt : list[Literal["display", "log"]]
+    options_rls_by_books_year : list[Literal["plot"]]
+    options_rls_by_kbsize : list[Literal["display", "plot"]]
+    options_rls_by_month : list[Literal["display", "save"]]
+    options_rls_by_publisher : list[Literal["display", "log", "save"]]
+    options_rls_by_rating : list[Literal["display", "save"]]
+    options_rls_by_topic : list[Literal["display", "save"]]
+    options_rls_by_topic_bt : list[Literal["display", "save"]]
     options_definitions : list[Literal["display"]]
     read_years : list[int]
     excel_path : str
-    excel_books_nrows : int
+    excel_nrows : int
 	
 	# With Defaults
-    excel_books_skiprows : int = field(default = 0)
-    excel_books_tabname : str = field(default = "Books")
+    excel_skiprows : int = field(default = 0)
+    excel_tabname : str = field(default = "Books")
     excel_null_value : str = field(default = "-")
-    kbsize_ascending : bool = field(default = False)
-    kbsize_remove_if_zero : bool = field(default = True)
-    kbsize_n : int = field(default = 10)
-    md_stars_rating : bool = field(default = True)
+    working_folder_path : str = field(default = "/home/nwreadinglist/")
+    rounding_digits : int = field(default = 2)
+    now : datetime = field(default = datetime.now())
+    rls_by_kbsize_n : int = field(default = 10)
+    rls_by_kbsize_ascending : bool = field(default = False)
+    rls_by_kbsize_remove_if_zero : bool = field(default = True)
+    rls_by_publisher_n : int = field(default = 10)
+    rls_by_publisher_formatters : dict = field(default_factory = lambda : { "AvgRating" : "{:.2f}", "AB%" : "{:.2f}" })
+    rls_by_publisher_min_books : int = field(default = 8)
+    rls_by_publisher_min_ab_perc : float = field(default = 100)
+    rls_by_publisher_min_avgrating : float = field(default = 2.50)
+    rls_by_publisher_criteria : Literal["Yes", "No"] = field(default = "Yes")    
+    rls_by_rating_number_as_stars : bool = field(default = True)
+    rls_by_topic_bt_sparklines_maximum : bool = field(default = False)    
     md_last_update : datetime = field(default = datetime.now())
     md_infos : list[MDInfo] = field(default_factory = lambda : MDInfoProvider().get_all())
-    publisher_n : int = field(default = 10)
-    publisher_formatters : dict = field(default_factory = lambda : { "AvgRating" : "{:.2f}", "AB%" : "{:.2f}" })
-    publisher_min_books : int = field(default = 8)
-    publisher_min_ab_perc : float = field(default = 100)
-    publisher_min_avgrating : float = field(default = 2.50)
-    publisher_criteria : Literal["Yes", "No"] = field(default = "Yes")
-    trend_sparklines_maximum : bool = field(default = False)
-    working_folder_path : str = field(default = "/home/nwreadinglist/")
-    now : datetime = field(default = datetime.now())
-    n : int = field(default = 5)
-    rounding_digits : int = field(default = 2)
 class RLDataFrameHelper():
 
     '''Collects helper functions for RLDataFrameFactory.'''
@@ -1606,9 +1605,9 @@ class ReadingListProcessor():
 
         rl_df : DataFrame = self.__component_bag.df_factory.create_rl_df(
             excel_path = self.__setting_bag.excel_path,
-            excel_books_skiprows = self.__setting_bag.excel_books_skiprows,
-            excel_books_nrows = self.__setting_bag.excel_books_nrows,
-            excel_books_tabname = self.__setting_bag.excel_books_tabname,
+            excel_books_skiprows = self.__setting_bag.excel_skiprows,
+            excel_books_nrows = self.__setting_bag.excel_nrows,
+            excel_books_tabname = self.__setting_bag.excel_tabname,
             excel_null_value = self.__setting_bag.excel_null_value
             )
 
@@ -1630,9 +1629,9 @@ class ReadingListProcessor():
 
         rls_by_kbsize_df : DataFrame = self.__component_bag.df_factory.create_rls_by_kbsize_df(
             rl_df = rl_df,
-            kbsize_ascending = self.__setting_bag.kbsize_ascending,
-            kbsize_remove_if_zero = self.__setting_bag.kbsize_remove_if_zero,
-            kbsize_n = self.__setting_bag.kbsize_n
+            kbsize_ascending = self.__setting_bag.rls_by_kbsize_ascending,
+            kbsize_remove_if_zero = self.__setting_bag.rls_by_kbsize_remove_if_zero,
+            kbsize_n = self.__setting_bag.rls_by_kbsize_n
         )
 
         return rls_by_kbsize_df
@@ -1666,10 +1665,10 @@ class ReadingListProcessor():
         rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.__component_bag.df_factory.create_rls_by_publisher_tpl(
             rl_df = rl_df,
             rounding_digits = self.__setting_bag.rounding_digits,
-            publisher_min_books = self.__setting_bag.publisher_min_books,
-            publisher_min_ab_perc = self.__setting_bag.publisher_min_ab_perc,
-            publisher_min_avgrating = self.__setting_bag.publisher_min_avgrating,
-            publisher_criteria = self.__setting_bag.publisher_criteria
+            publisher_min_books = self.__setting_bag.rls_by_publisher_min_books,
+            publisher_min_ab_perc = self.__setting_bag.rls_by_publisher_min_ab_perc,
+            publisher_min_avgrating = self.__setting_bag.rls_by_publisher_min_avgrating,
+            publisher_criteria = self.__setting_bag.rls_by_publisher_criteria
         )
 
         return rls_by_publisher_tpl
@@ -1679,7 +1678,7 @@ class ReadingListProcessor():
 
         rls_by_rating_df : DataFrame = self.__component_bag.df_factory.create_rls_by_rating_df(
             rl_df = rl_df,
-            md_stars_rating = self.__setting_bag.md_stars_rating
+            md_stars_rating = self.__setting_bag.rls_by_rating_number_as_stars
         )
 
         return rls_by_rating_df 
@@ -1690,7 +1689,7 @@ class ReadingListProcessor():
         rls_by_topic_bt_df : DataFrame = self.__component_bag.df_factory.create_rls_by_topic_bt_df(
             rl_df = rl_df,
             read_years = self.__setting_bag.read_years,
-            trend_sparklines_maximum = self.__setting_bag.trend_sparklines_maximum
+            trend_sparklines_maximum = self.__setting_bag.rls_by_topic_bt_sparklines_maximum
         )
 
         return rls_by_topic_bt_df
@@ -1842,7 +1841,7 @@ class ReadingListProcessor():
 
         self.__validate_summary()
 
-        options : list = self.__setting_bag.options_rl_asrt
+        options : list = self.__setting_bag.options_rls_asrt
         df : DataFrame = self.__rl_summary.rls_asrt_df
         content : str = self.__rl_summary.rls_asrt_md
 
@@ -1861,7 +1860,7 @@ class ReadingListProcessor():
 
         self.__validate_summary()
 
-        options : list = self.__setting_bag.options_rl_by_kbsize
+        options : list = self.__setting_bag.options_rls_by_kbsize
         df : DataFrame = self.__rl_summary.rls_by_kbsize_df
         x_name : str = "A4Sheets"
 
@@ -1880,7 +1879,7 @@ class ReadingListProcessor():
 
         self.__validate_summary()
 
-        options : list = self.__setting_bag.options_rl_by_books_year
+        options : list = self.__setting_bag.options_rls_by_books_year
         df : DataFrame = self.__rl_summary.rl_df
         x_name : str = "Year"
 
@@ -1896,7 +1895,7 @@ class ReadingListProcessor():
 
         self.__validate_summary()
 
-        options : list = self.__setting_bag.options_sas
+        options : list = self.__setting_bag.options_rls_by_month
         df_1 : DataFrame = self.__rl_summary.rls_by_month_tpl[1]
         df_2 : DataFrame = self.__rl_summary.rls_by_year_street_price_df
         content : str = self.__rl_summary.rls_by_month_md     
@@ -1906,7 +1905,7 @@ class ReadingListProcessor():
             self.__component_bag.displayer.display(df = df_1)
             self.__component_bag.displayer.display(df = df_2)
 
-        if "save" in self.__setting_bag.options_sas:
+        if "save" in self.__setting_bag.options_rls_by_month:
             self.__save_and_log(id = id, content = content)
     def process_rls_by_publisher(self) -> None:
 
@@ -1918,9 +1917,9 @@ class ReadingListProcessor():
 
         self.__validate_summary()
 
-        options : list = self.__setting_bag.options_sas_by_publisher
-        df : DataFrame = self.__rl_summary.rls_by_publisher_tpl[0].head(n = self.__setting_bag.publisher_n)
-        formatters : dict = self.__setting_bag.publisher_formatters
+        options : list = self.__setting_bag.options_rls_by_publisher
+        df : DataFrame = self.__rl_summary.rls_by_publisher_tpl[0].head(n = self.__setting_bag.rls_by_publisher_n)
+        formatters : dict = self.__setting_bag.rls_by_publisher_formatters
         footer : str = self.__rl_summary.rls_by_publisher_tpl[2] + "\n"
         content : str = self.__rl_summary.rls_by_publisher_md
         id : RLID = RLID.RLSBYPUBLISHER
@@ -1943,7 +1942,7 @@ class ReadingListProcessor():
 
         self.__validate_summary()
 
-        options : list = self.__setting_bag.options_sas_by_rating
+        options : list = self.__setting_bag.options_rls_by_rating
         df : DataFrame = self.__rl_summary.rls_by_rating_df
         content : str = self.__rl_summary.rls_by_rating_md
         id : RLID = RLID.RLSBYRATING      
@@ -1963,7 +1962,7 @@ class ReadingListProcessor():
 
         self.__validate_summary()
 
-        options : list = self.__setting_bag.options_sas_by_topic
+        options : list = self.__setting_bag.options_rls_by_topic
         df_1 : DataFrame = self.__rl_summary.rls_by_topic_df
         df_2 : DataFrame = self.__rl_summary.rls_by_topic_bt_df
         content : str = self.__rl_summary.rls_by_topic_md
