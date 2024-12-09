@@ -14,7 +14,7 @@ from unittest.mock import Mock, call, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import RLCN, RLID, _MessageCollection, DefaultPathProvider, MDInfo, MDInfoProvider, YearProvider, SettingBag, ComponentBag
+from nwreadinglist import RLCN, RLID, _MessageCollection, DefaultPathProvider, MDInfo, MDInfoProvider, RLAdapter, YearProvider, SettingBag, ComponentBag
 from nwreadinglist import RLDataFrameFactory, RLMarkdownFactory, RLDataFrameHelper, RLSummary
 from nwshared import Converter, Formatter, FilePathManager, FileManager, Displayer, PlotManager
 
@@ -773,9 +773,9 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         # Act
         actual : DataFrame = self.df_factory.create_rls_by_kbsize_df(
             rl_df = rl_df,
-            kbsize_ascending = self.kbsize_ascending,
-            kbsize_remove_if_zero = self.kbsize_remove_if_zero,
-            kbsize_n = self.kbsize_n
+            ascending = self.kbsize_ascending,
+            remove_if_zero = self.kbsize_remove_if_zero,
+            n = self.kbsize_n
         )
 
         # Assert
@@ -837,10 +837,10 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         (actual_1, actual_2, actual_3) = self.df_factory.create_rls_by_publisher_tpl(
             rl_df = rl_df,
             rounding_digits = 2,
-            publisher_min_books = self.publisher_min_books,
-            publisher_min_ab_perc = self.publisher_min_ab_perc,
-            publisher_min_avgrating = self.publisher_min_avgrating,
-            publisher_criteria = self.publisher_criteria
+            min_books = self.publisher_min_books,
+            min_ab_perc = self.publisher_min_ab_perc,
+            min_avgrating = self.publisher_min_avgrating,
+            criteria = self.publisher_criteria
         )
 
         # Assert
@@ -854,7 +854,7 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         expected : DataFrame = ObjectMother().get_rls_by_rating_df()
 
         # Act
-        actual : DataFrame = self.df_factory.create_rls_by_rating_df(rl_df = rl_df, md_stars_rating = self.md_stars_rating)
+        actual : DataFrame = self.df_factory.create_rls_by_rating_df(rl_df = rl_df, number_as_stars = self.md_stars_rating)
 
         # Assert
         assert_frame_equal(expected, actual)
@@ -868,7 +868,7 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         actual : DataFrame = self.df_factory.create_rls_by_topic_bt_df(
             rl_df = rl_df,
             read_years = read_years,
-            trend_sparklines_maximum = self.trend_sparklines_maximum
+            sparklines_maximum = self.trend_sparklines_maximum
             )
 
         # Assert
@@ -894,8 +894,7 @@ class ComponentBagTestCase(unittest.TestCase):
         self.assertIsInstance(component_bag, ComponentBag)
         self.assertIsInstance(component_bag.file_path_manager, FilePathManager)
         self.assertIsInstance(component_bag.file_manager, FileManager)
-        self.assertIsInstance(component_bag.df_factory, RLDataFrameFactory)
-        self.assertIsInstance(component_bag.md_factory, RLMarkdownFactory)
+        self.assertIsInstance(component_bag.rl_adapter, RLAdapter)
         self.assertIsInstance(component_bag.displayer, Displayer)
         self.assertIsInstance(component_bag.plot_manager, PlotManager)
         self.assertTrue(callable(component_bag.logging_function))

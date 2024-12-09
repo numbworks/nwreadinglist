@@ -1107,7 +1107,7 @@ class RLDataFrameFactory():
         rl_asrt_df : DataFrame = pd.DataFrame(rl_asrt_dict, index=[0])
         
         return rl_asrt_df        
-    def create_rls_by_kbsize_df(self, rl_df : DataFrame, kbsize_ascending : bool, kbsize_remove_if_zero : bool, kbsize_n : int) -> DataFrame:
+    def create_rls_by_kbsize_df(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool, n : int) -> DataFrame:
         
         '''
             Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
@@ -1118,11 +1118,11 @@ class RLDataFrameFactory():
 
         rl_by_kbsize_df : DataFrame = self.__slice_by_kbsize(
             rl_df = rl_df, 
-            ascending = kbsize_ascending, 
-            remove_if_zero = kbsize_remove_if_zero)
+            ascending = ascending, 
+            remove_if_zero = remove_if_zero)
         
         rl_by_kbsize_df = self.__converter.convert_index_to_one_based(df = rl_by_kbsize_df)
-        rl_by_kbsize_df = rl_by_kbsize_df.head(n = kbsize_n)
+        rl_by_kbsize_df = rl_by_kbsize_df.head(n = n)
 
         return rl_by_kbsize_df   
     def create_rls_by_month_tpl(self, rl_df : DataFrame, read_years : list[int], now : datetime) -> Tuple[DataFrame, DataFrame]:
@@ -1252,10 +1252,10 @@ class RLDataFrameFactory():
             self, 
             rl_df : DataFrame, 
             rounding_digits : int, 
-            publisher_min_books : int, 
-            publisher_min_ab_perc : float, 
-            publisher_min_avgrating : float, 
-            publisher_criteria : str) -> Tuple[DataFrame, DataFrame, str]:
+            min_books : int, 
+            min_ab_perc : float, 
+            min_avgrating : float, 
+            criteria : str) -> Tuple[DataFrame, DataFrame, str]:
         
         """
             The method returns (sas_by_publisher_df, sas_by_publisher_flt_df, sas_by_publisher_footer).
@@ -1335,22 +1335,22 @@ class RLDataFrameFactory():
 
         sas_by_publisher_df[RLCN.ISWORTH] = np.where(
             np.logical_and(
-                sas_by_publisher_df[RLCN.BOOKS] >= publisher_min_books,
+                sas_by_publisher_df[RLCN.BOOKS] >= min_books,
                 np.logical_or(
-                    (sas_by_publisher_df[RLCN.AVGRATING] >= publisher_min_avgrating), 
-                    (sas_by_publisher_df[RLCN.ABPERC] >= publisher_min_ab_perc))
+                    (sas_by_publisher_df[RLCN.AVGRATING] >= min_avgrating), 
+                    (sas_by_publisher_df[RLCN.ABPERC] >= min_ab_perc))
                 ), "Yes", "No")
         
-        sas_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(rls_by_publisher_df = sas_by_publisher_df, publisher_criteria = publisher_criteria)
+        sas_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(rls_by_publisher_df = sas_by_publisher_df, publisher_criteria = criteria)
 
         sas_by_publisher_footer : str = self.__create_rls_by_publisher_footer(
-            publisher_min_books = publisher_min_books,
-            publisher_min_ab_perc = publisher_min_ab_perc,
-            publisher_min_avgrating = publisher_min_avgrating
+            publisher_min_books = min_books,
+            publisher_min_ab_perc = min_ab_perc,
+            publisher_min_avgrating = min_avgrating
         )
 
         return (sas_by_publisher_df, sas_by_publisher_flt_df, sas_by_publisher_footer)       
-    def create_rls_by_rating_df(self, rl_df : DataFrame, md_stars_rating : bool) -> DataFrame:
+    def create_rls_by_rating_df(self, rl_df : DataFrame, number_as_stars : bool) -> DataFrame:
 
         '''
                 Rating  Books
@@ -1363,12 +1363,12 @@ class RLDataFrameFactory():
         sas_by_rating_df.sort_values(by = RLCN.RATING, ascending = False, inplace = True)
         sas_by_rating_df.reset_index(drop = True, inplace = True)
 
-        if md_stars_rating:
+        if number_as_stars:
             sas_by_rating_df[RLCN.RATING] = sas_by_rating_df[RLCN.RATING].apply(
                 lambda x : self.__formatter.format_rating(rating = x))
 
         return sas_by_rating_df    
-    def create_rls_by_topic_bt_df(self, rl_df : DataFrame, read_years : list[int], trend_sparklines_maximum : bool) -> DataFrame:
+    def create_rls_by_topic_bt_df(self, rl_df : DataFrame, read_years : list[int], sparklines_maximum : bool) -> DataFrame:
 
         '''
             Get trend by year and topic as numbers and sparklines.
@@ -1386,7 +1386,7 @@ class RLDataFrameFactory():
             cn_index = RLCN.TOPIC, 
             cn_values = RLCN.BOOKS)
 
-        if trend_sparklines_maximum:
+        if sparklines_maximum:
             maximum : int = by_topic_read_year_df[RLCN.BOOKS].max()
             return self.__add_sparklines(df = pivoted_df, cn_values = RLCN.BOOKS, cn_sparklines = RLCN.TREND, maximum = maximum)
         else: 
@@ -1554,6 +1554,221 @@ class RLMarkdownFactory():
         md_content += ""        
 
         return md_content
+class RLAdapter():
+
+    '''Adapts SettingBag properties for use in RL*Factory methods.'''
+
+    __df_factory : RLDataFrameFactory
+    __md_factory : RLMarkdownFactory
+
+    def __init__(self, df_factory : RLDataFrameFactory, md_factory : RLMarkdownFactory) -> None:
+        
+        self.__df_factory = df_factory
+        self.__md_factory = md_factory
+
+    def extract_file_name_and_paragraph_title(self, id : RLID, setting_bag : SettingBag) -> Tuple[str, str]: 
+    
+        '''Returns (file_name, paragraph_title) for the provided id or raise an Exception.'''
+
+        for md_info in setting_bag.md_infos:
+            if md_info.id == id: 
+                return (md_info.file_name, md_info.paragraph_title)
+
+        raise Exception(_MessageCollection.no_mdinfo_found(id = id)) 
+
+    def create_rl_df(self, setting_bag : SettingBag) -> DataFrame:
+
+        '''Creates the expected dataframe using setting_bag.'''
+
+        rl_df : DataFrame = self.__df_factory.create_rl_df(
+            excel_path = setting_bag.excel_path,
+            excel_books_skiprows = setting_bag.excel_skiprows,
+            excel_books_nrows = setting_bag.excel_nrows,
+            excel_books_tabname = setting_bag.excel_tabname,
+            excel_null_value = setting_bag.excel_null_value
+            )
+
+        return rl_df
+    def create_rls_asrt_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+
+        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
+
+        rls_asrt_df : DataFrame = self.__df_factory.create_rls_asrt_df(
+            rl_df = rl_df, 
+            rounding_digits = setting_bag.rounding_digits,
+            now = setting_bag.now
+            )
+
+        return rls_asrt_df  
+    def create_rls_by_kbsize_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+
+        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
+
+        rls_by_kbsize_df : DataFrame = self.__df_factory.create_rls_by_kbsize_df(
+            rl_df = rl_df,
+            ascending = setting_bag.rls_by_kbsize_ascending,
+            remove_if_zero = setting_bag.rls_by_kbsize_remove_if_zero,
+            n = setting_bag.rls_by_kbsize_n
+        )
+
+        return rls_by_kbsize_df
+    def create_rls_by_month_tpl(self, rl_df : DataFrame, setting_bag : SettingBag) -> Tuple[DataFrame, DataFrame]:
+
+        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
+
+        rls_by_month_tpl : Tuple[DataFrame, DataFrame] = self.__df_factory.create_rls_by_month_tpl(
+            rl_df = rl_df,
+            read_years = setting_bag.read_years,
+            now = setting_bag.now
+        )
+
+        return rls_by_month_tpl
+    def create_rls_by_year_street_price_df(self, rls_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+
+        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
+
+        rls_by_year_street_price_df : DataFrame = self.__df_factory.create_rls_by_year_street_price_df(
+            rls_by_month_tpl = rls_by_month_tpl,
+            rl_df = rl_df,
+            read_years = setting_bag.read_years,
+            rounding_digits = setting_bag.rounding_digits
+        )
+
+        return rls_by_year_street_price_df
+    def create_rls_by_publisher_tpl(self, rl_df : DataFrame, setting_bag : SettingBag) -> Tuple[DataFrame, DataFrame, str]:
+
+        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
+
+        rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.__df_factory.create_rls_by_publisher_tpl(
+            rl_df = rl_df,
+            rounding_digits = setting_bag.rounding_digits,
+            min_books = setting_bag.rls_by_publisher_min_books,
+            min_ab_perc = setting_bag.rls_by_publisher_min_ab_perc,
+            min_avgrating = setting_bag.rls_by_publisher_min_avgrating,
+            criteria = setting_bag.rls_by_publisher_criteria
+        )
+
+        return rls_by_publisher_tpl
+    def create_rls_by_rating_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+
+        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
+
+        rls_by_rating_df : DataFrame = self.__df_factory.create_rls_by_rating_df(
+            rl_df = rl_df,
+            number_as_stars = setting_bag.rls_by_rating_number_as_stars
+        )
+
+        return rls_by_rating_df 
+    def create_rls_by_topic_bt_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+
+        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
+
+        rls_by_topic_bt_df : DataFrame = self.__df_factory.create_rls_by_topic_bt_df(
+            rl_df = rl_df,
+            read_years = setting_bag.read_years,
+            sparklines_maximum = setting_bag.rls_by_topic_bt_sparklines_maximum
+        )
+
+        return rls_by_topic_bt_df
+    def create_rl_md(self, rl_df : DataFrame, setting_bag : SettingBag) -> str:
+
+        '''Creates the expected Markdown content using setting_bag and the provided arguments.'''
+
+        rl_md : str = self.__md_factory.create_rl_md(
+            paragraph_title = self.extract_file_name_and_paragraph_title(id = RLID.RL, setting_bag = setting_bag)[1],
+            last_update = setting_bag.md_last_update,
+            rl_df = rl_df
+        )
+
+        return rl_md
+    def create_rls_by_month_md(self, rls_by_month_tpl : Tuple[DataFrame, DataFrame], rls_by_year_street_price_df : DataFrame, setting_bag : SettingBag) -> str:
+
+        '''Creates the expected Markdown content using setting_bag and the provided arguments.'''
+
+        rls_by_month_md : str = self.__md_factory.create_rls_by_month_md(
+            paragraph_title = self.extract_file_name_and_paragraph_title(id = RLID.RLSBYMONTH, setting_bag = setting_bag)[1],
+            last_update = setting_bag.md_last_update,
+            rls_by_month_df = rls_by_month_tpl[1],
+            rls_by_year_street_price_df = rls_by_year_street_price_df
+        )
+
+        return rls_by_month_md
+    def create_rls_by_topic_md(self, rls_by_topic_df : DataFrame, rls_by_ytt_df : DataFrame, setting_bag : SettingBag) -> str:
+
+        '''Creates the expected Markdown content using setting_bag and the provided arguments.'''
+
+        rls_by_topic_md : str = self.__md_factory.create_rls_by_topic_md(
+            paragraph_title = self.extract_file_name_and_paragraph_title(id = RLID.RLSBYTOPIC, setting_bag = setting_bag)[1],
+            last_update = setting_bag.md_last_update,
+            rls_by_topic_df = rls_by_topic_df,
+            rls_by_ytt_df = rls_by_ytt_df
+        )
+
+        return rls_by_topic_md
+    def create_rls_by_publisher_md(self, rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str], setting_bag : SettingBag) -> str:
+
+        '''Creates the expected Markdown content using setting_bag and the provided arguments.'''
+
+        rls_by_publisher_md : str = self.__md_factory.create_rls_by_publisher_md(
+            paragraph_title = self.extract_file_name_and_paragraph_title(id = RLID.RLSBYPUBLISHER, setting_bag = setting_bag)[1],
+            last_update = setting_bag.md_last_update,
+            rls_by_publisher_tpl = rls_by_publisher_tpl
+        )
+
+        return rls_by_publisher_md
+    def create_rls_by_rating_md(self, rls_by_rating_df : DataFrame, setting_bag : SettingBag) -> str:
+
+        '''Creates the expected Markdown content using setting_bag and the provided arguments.'''
+
+        rls_by_rating_md : str = self.__md_factory.create_rls_by_rating_md(
+            paragraph_title = self.extract_file_name_and_paragraph_title(id = RLID.RLSBYRATING, setting_bag = setting_bag)[1],
+            last_update = setting_bag.md_last_update,
+            rls_by_rating_df = rls_by_rating_df
+        )
+
+        return rls_by_rating_md
+    def create_summary(self, setting_bag : SettingBag) -> RLSummary:
+
+        '''Creates a RLSummary object out of setting_bag.'''
+
+        rl_df : DataFrame = self.create_rl_df(setting_bag = setting_bag)
+        rls_asrt_df : DataFrame = self.create_rls_asrt_df(rl_df = rl_df, setting_bag = setting_bag)
+        rls_by_kbsize_df : DataFrame = self.create_rls_by_kbsize_df(rl_df = rl_df, setting_bag = setting_bag)
+        rls_by_month_tpl : Tuple[DataFrame, DataFrame] = self.create_rls_by_month_tpl(rl_df = rl_df, setting_bag = setting_bag)
+        rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.create_rls_by_publisher_tpl(rl_df = rl_df, setting_bag = setting_bag)
+        rls_by_rating_df : DataFrame = self.create_rls_by_rating_df(rl_df = rl_df, setting_bag = setting_bag)
+        rls_by_topic_df : DataFrame = self.__df_factory.create_rls_by_topic_df(rl_df = rl_df)
+        rls_by_topic_bt_df : DataFrame = self.create_rls_by_topic_bt_df(rl_df = rl_df, setting_bag = setting_bag)
+        rls_by_year_street_price_df : DataFrame = self.create_rls_by_year_street_price_df(rls_by_month_tpl = rls_by_month_tpl, rl_df = rl_df, setting_bag = setting_bag)
+        definitions_df : DataFrame = self.__df_factory.create_definitions_df()
+
+        rl_md : str = self.create_rl_md(rl_df = rl_df, setting_bag = setting_bag)
+        rls_asrt_md : str = self.__md_factory.create_rl_asrt_md(rl_asrt_df = rls_asrt_df)
+        rls_by_month_md : str = self.create_rls_by_month_md(rls_by_month_tpl = rls_by_month_tpl, rls_by_year_street_price_df = rls_by_year_street_price_df, setting_bag = setting_bag)
+        rls_by_publisher_md : str = self.create_rls_by_publisher_md(rls_by_publisher_tpl = rls_by_publisher_tpl, setting_bag = setting_bag)
+        rls_by_rating_md : str = self.create_rls_by_rating_md(rls_by_rating_df = rls_by_rating_df, setting_bag = setting_bag)
+        rls_by_topic_md : str = self.create_rls_by_topic_md(rls_by_topic_df = rls_by_topic_df, rls_by_ytt_df = rls_by_topic_bt_df, setting_bag = setting_bag)
+
+        rl_summary : RLSummary = RLSummary(
+            rl_df = rl_df,
+            rls_asrt_df = rls_asrt_df,
+            rls_by_kbsize_df = rls_by_kbsize_df,
+            rls_by_month_tpl = rls_by_month_tpl,
+            rls_by_publisher_tpl = rls_by_publisher_tpl,
+            rls_by_rating_df = rls_by_rating_df,
+            rls_by_topic_df = rls_by_topic_df,
+            rls_by_topic_bt_df = rls_by_topic_bt_df,
+            rls_by_year_street_price_df = rls_by_year_street_price_df,
+            definitions_df = definitions_df,
+            rl_md = rl_md,
+            rls_asrt_md = rls_asrt_md,
+            rls_by_month_md = rls_by_month_md,
+            rls_by_publisher_md = rls_by_publisher_md,
+            rls_by_rating_md = rls_by_rating_md,
+            rls_by_topic_md = rls_by_topic_md
+        )
+
+        return rl_summary
 @dataclass(frozen=True)
 class ComponentBag():
 
@@ -1562,17 +1777,18 @@ class ComponentBag():
     file_path_manager : FilePathManager = field(default = FilePathManager())
     file_manager : FileManager = field(default = FileManager(file_path_manager = FilePathManager()))
 	
-    df_factory : RLDataFrameFactory = field(default = RLDataFrameFactory(
-                converter = Converter(),
-                formatter = Formatter(),
-                df_helper = RLDataFrameHelper()
-                ))
-    
-    md_factory : RLMarkdownFactory = field(default = RLMarkdownFactory(
-                markdown_helper = MarkdownHelper(formatter = Formatter()),
-                formatter = Formatter()
-            ))
-    
+    rl_adapter : RLAdapter = field(default = RLAdapter(
+        df_factory = RLDataFrameFactory(
+                    converter = Converter(),
+                    formatter = Formatter(),
+                    df_helper = RLDataFrameHelper()
+                    ),
+        md_factory = RLMarkdownFactory(
+                    markdown_helper = MarkdownHelper(formatter = Formatter()),
+                    formatter = Formatter()
+                )
+        ))
+
     displayer : Displayer = field(default = Displayer())
     plot_manager : PlotManager = field(default = PlotManager())
     logging_function : Callable[[str], None] = field(default = LambdaProvider().get_default_logging_function())
@@ -1589,168 +1805,6 @@ class ReadingListProcessor():
         self.__component_bag = component_bag
         self.__setting_bag = setting_bag
 
-    def __extract_file_name_and_paragraph_title(self, id : RLID) -> Tuple[str, str]: 
-    
-        '''Returns (file_name, paragraph_title) for the provided id or raise an Exception.'''
-
-        for md_info in self.__setting_bag.md_infos:
-            if md_info.id == id: 
-                return (md_info.file_name, md_info.paragraph_title)
-
-        raise Exception(_MessageCollection.no_mdinfo_found(id = id)) 
-
-    def __create_rl_df(self) -> DataFrame:
-
-        '''Creates the expected dataframe using __setting_bag.'''
-
-        rl_df : DataFrame = self.__component_bag.df_factory.create_rl_df(
-            excel_path = self.__setting_bag.excel_path,
-            excel_books_skiprows = self.__setting_bag.excel_skiprows,
-            excel_books_nrows = self.__setting_bag.excel_nrows,
-            excel_books_tabname = self.__setting_bag.excel_tabname,
-            excel_null_value = self.__setting_bag.excel_null_value
-            )
-
-        return rl_df
-    def __create_rls_asrt_df(self, rl_df : DataFrame) -> DataFrame:
-
-        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
-
-        rls_asrt_df : DataFrame = self.__component_bag.df_factory.create_rls_asrt_df(
-            rl_df = rl_df, 
-            rounding_digits = self.__setting_bag.rounding_digits,
-            now = self.__setting_bag.now
-            )
-
-        return rls_asrt_df  
-    def __create_rls_by_kbsize_df(self, rl_df : DataFrame) -> DataFrame:
-
-        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
-
-        rls_by_kbsize_df : DataFrame = self.__component_bag.df_factory.create_rls_by_kbsize_df(
-            rl_df = rl_df,
-            kbsize_ascending = self.__setting_bag.rls_by_kbsize_ascending,
-            kbsize_remove_if_zero = self.__setting_bag.rls_by_kbsize_remove_if_zero,
-            kbsize_n = self.__setting_bag.rls_by_kbsize_n
-        )
-
-        return rls_by_kbsize_df
-    def __create_rls_by_month_tpl(self, rl_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
-
-        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
-
-        rls_by_month_tpl : Tuple[DataFrame, DataFrame] = self.__component_bag.df_factory.create_rls_by_month_tpl(
-            rl_df = rl_df,
-            read_years = self.__setting_bag.read_years,
-            now = self.__setting_bag.now
-        )
-
-        return rls_by_month_tpl
-    def __create_rls_by_year_street_price_df(self, rls_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame) -> DataFrame:
-
-        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
-
-        rls_by_year_street_price_df : DataFrame = self.__component_bag.df_factory.create_rls_by_year_street_price_df(
-            rls_by_month_tpl = rls_by_month_tpl,
-            rl_df = rl_df,
-            read_years = self.__setting_bag.read_years,
-            rounding_digits = self.__setting_bag.rounding_digits
-        )
-
-        return rls_by_year_street_price_df
-    def __create_rls_by_publisher_tpl(self, rl_df : DataFrame) -> Tuple[DataFrame, DataFrame, str]:
-
-        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
-
-        rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.__component_bag.df_factory.create_rls_by_publisher_tpl(
-            rl_df = rl_df,
-            rounding_digits = self.__setting_bag.rounding_digits,
-            publisher_min_books = self.__setting_bag.rls_by_publisher_min_books,
-            publisher_min_ab_perc = self.__setting_bag.rls_by_publisher_min_ab_perc,
-            publisher_min_avgrating = self.__setting_bag.rls_by_publisher_min_avgrating,
-            publisher_criteria = self.__setting_bag.rls_by_publisher_criteria
-        )
-
-        return rls_by_publisher_tpl
-    def __create_rls_by_rating_df(self, rl_df : DataFrame) -> DataFrame:
-
-        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
-
-        rls_by_rating_df : DataFrame = self.__component_bag.df_factory.create_rls_by_rating_df(
-            rl_df = rl_df,
-            md_stars_rating = self.__setting_bag.rls_by_rating_number_as_stars
-        )
-
-        return rls_by_rating_df 
-    def __create_rls_by_topic_bt_df(self, rl_df : DataFrame) -> DataFrame:
-
-        '''Creates the expected dataframe using __setting_bag and the provided arguments.'''
-
-        rls_by_topic_bt_df : DataFrame = self.__component_bag.df_factory.create_rls_by_topic_bt_df(
-            rl_df = rl_df,
-            read_years = self.__setting_bag.read_years,
-            trend_sparklines_maximum = self.__setting_bag.rls_by_topic_bt_sparklines_maximum
-        )
-
-        return rls_by_topic_bt_df
-    def __create_rl_md(self, rl_df : DataFrame) -> str:
-
-        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
-
-        rl_md : str = self.__component_bag.md_factory.create_rl_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = RLID.RL)[1],
-            last_update = self.__setting_bag.md_last_update,
-            rl_df = rl_df
-        )
-
-        return rl_md
-    def __create_rls_by_month_md(self, rls_by_month_tpl : Tuple[DataFrame, DataFrame], rls_by_year_street_price_df : DataFrame) -> str:
-
-        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
-
-        rls_by_month_md : str = self.__component_bag.md_factory.create_rls_by_month_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = RLID.RLSBYMONTH)[1],
-            last_update = self.__setting_bag.md_last_update,
-            rls_by_month_df = rls_by_month_tpl[1],
-            rls_by_year_street_price_df = rls_by_year_street_price_df
-        )
-
-        return rls_by_month_md
-    def __create_rls_by_topic_md(self, rls_by_topic_df : DataFrame, rls_by_ytt_df : DataFrame) -> str:
-
-        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
-
-        rls_by_topic_md : str = self.__component_bag.md_factory.create_rls_by_topic_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = RLID.RLSBYTOPIC)[1],
-            last_update = self.__setting_bag.md_last_update,
-            rls_by_topic_df = rls_by_topic_df,
-            rls_by_ytt_df = rls_by_ytt_df
-        )
-
-        return rls_by_topic_md
-    def __create_rls_by_publisher_md(self, rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]) -> str:
-
-        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
-
-        rls_by_publisher_md : str = self.__component_bag.md_factory.create_rls_by_publisher_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = RLID.RLSBYPUBLISHER)[1],
-            last_update = self.__setting_bag.md_last_update,
-            rls_by_publisher_tpl = rls_by_publisher_tpl            
-        )
-
-        return rls_by_publisher_md
-    def __create_rls_by_rating_md(self, rls_by_rating_df : DataFrame) -> str:
-
-        '''Creates the expected Markdown content using __setting_bag and the provided arguments.'''
-
-        rls_by_rating_md : str = self.__component_bag.md_factory.create_rls_by_rating_md(
-            paragraph_title = self.__extract_file_name_and_paragraph_title(id = RLID.RLSBYRATING)[1],
-            last_update = self.__setting_bag.md_last_update,
-            rls_by_rating_df = rls_by_rating_df
-        )
-
-        return rls_by_rating_md
-    
     def __validate_summary(self) -> None:
         
         '''Raises an exception if __rl_summary is None.'''
@@ -1763,7 +1817,7 @@ class ReadingListProcessor():
 
         file_path : str = self.__component_bag.file_path_manager.create_file_path(
             folder_path = self.__setting_bag.working_folder_path,
-            file_name = self.__extract_file_name_and_paragraph_title(id = id)[0]
+            file_name = self.__component_bag.rl_adapter.extract_file_name_and_paragraph_title(id = id, setting_bag = self.__setting_bag)[0]
         )
         
         self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
@@ -1775,42 +1829,7 @@ class ReadingListProcessor():
 
         '''Creates a RLSummary object and assign it to __rl_summary.'''
 
-        rl_df : DataFrame = self.__create_rl_df()
-        rl_asrt_df : DataFrame = self.__create_rls_asrt_df(rl_df = rl_df)
-        rl_by_kbsize_df : DataFrame = self.__create_rls_by_kbsize_df(rl_df = rl_df)
-        sas_by_month_tpl : Tuple[DataFrame, DataFrame] = self.__create_rls_by_month_tpl(rl_df = rl_df)
-        sas_by_year_street_price_df : DataFrame = self.__create_rls_by_year_street_price_df(rls_by_month_tpl = sas_by_month_tpl, rl_df = rl_df)
-        sas_by_topic_df : DataFrame = self.__component_bag.df_factory.create_rls_by_topic_df(rl_df = rl_df)
-        sas_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.__create_rls_by_publisher_tpl(rl_df = rl_df)
-        sas_by_rating_df : DataFrame = self.__create_rls_by_rating_df(rl_df = rl_df)
-        trend_by_year_topic_df : DataFrame = self.__create_rls_by_topic_bt_df(rl_df = rl_df)
-        definitions_df : DataFrame = self.__component_bag.df_factory.create_definitions_df()
-
-        rl_md : str = self.__create_rl_md(rl_df = rl_df)
-        rl_asrt_md : str = self.__component_bag.md_factory.create_rl_asrt_md(rl_asrt_df = rl_asrt_df)
-        sas_by_month_md : str = self.__create_rls_by_month_md(rls_by_month_tpl = sas_by_month_tpl, rls_by_year_street_price_df = sas_by_year_street_price_df)
-        sas_by_topic_md : str = self.__create_rls_by_topic_md(rls_by_topic_df = sas_by_topic_df, rls_by_ytt_df = trend_by_year_topic_df)
-        sas_by_publisher_md : str = self.__create_rls_by_publisher_md(rls_by_publisher_tpl = sas_by_publisher_tpl)
-        sas_by_rating_md : str = self.__create_rls_by_rating_md(rls_by_rating_df = sas_by_rating_df)
-
-        self.__rl_summary = RLSummary(
-            rl_df = rl_df,
-            rls_asrt_df = rl_asrt_df,
-            rls_by_kbsize_df = rl_by_kbsize_df,
-            rls_by_month_tpl = sas_by_month_tpl,
-            rls_by_year_street_price_df = sas_by_year_street_price_df,
-            rls_by_topic_df = sas_by_topic_df,
-            rls_by_publisher_tpl = sas_by_publisher_tpl,
-            rls_by_rating_df = sas_by_rating_df,
-            rls_by_topic_bt_df = trend_by_year_topic_df,
-            definitions_df = definitions_df,
-            rl_md = rl_md,
-            rls_asrt_md = rl_asrt_md,
-            rls_by_month_md = sas_by_month_md,
-            rls_by_topic_md = sas_by_topic_md,
-            rls_by_publisher_md = sas_by_publisher_md,
-            rls_by_rating_md = sas_by_rating_md
-        )
+        self.__rl_summary = self.__component_bag.rl_adapter.create_summary(setting_bag = self.__setting_bag)
     def process_rl(self) -> None:
 
         '''
