@@ -898,6 +898,62 @@ class ComponentBagTestCase(unittest.TestCase):
         self.assertIsInstance(component_bag.displayer, Displayer)
         self.assertIsInstance(component_bag.plot_manager, PlotManager)
         self.assertTrue(callable(component_bag.logging_function))
+class RLAdapterTestCase(unittest.TestCase):
+
+    def setUp(self) -> None:
+        
+        # Without Defaults
+        self.read_years : list[int] = [2020, 2021, 2022]
+
+        # With Defaults
+        self.excel_path : str = "/home/nwreadinglist/Reading List.xlsx"
+        self.excel_skiprows : int = 0
+        self.excel_nrows : int = 100
+        self.excel_tabname : str = "Books"
+        self.rounding_digits : int = 2
+        self.now : datetime = datetime(2024, 1, 1)
+        self.md_infos : list[MDInfo] = [
+            MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List")
+        ]
+        self.md_last_update : datetime = datetime(2024, 1, 1)
+    def test_extractfilenameandparagraphtitle_shouldreturnexpectedvalues_whenidexists(self) -> None:
+        
+        # Arrange
+        df_factory : RLDataFrameFactory = Mock()
+        md_factory : RLMarkdownFactory = Mock()
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+
+        setting_bag : SettingBag = Mock()
+        setting_bag.md_infos = self.md_infos
+
+        # Act
+        actual : Tuple[str, str] = rl_adapter.extract_file_name_and_paragraph_title(
+            id = self.md_infos[0].id, 
+            setting_bag = setting_bag
+        )
+
+        # Assert
+        self.assertEqual(actual, (self.md_infos[0].file_name, self.md_infos[0].paragraph_title))
+    def test_extractfilenameandparagraphtitle_shouldraiseexception_wheniddoesnotexist(self) -> None:
+        
+        # Arrange
+        df_factory : RLDataFrameFactory = Mock()
+        md_factory : RLMarkdownFactory = Mock()
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+        
+        id : RLID = RLID.RL
+
+        md_infos : list[MDInfo] = [
+            MDInfo(id = Mock(id = "other_id"), file_name = "OTHERFILE.md", paragraph_title = "Other Title")
+        ]
+        setting_bag : SettingBag = Mock(md_infos = md_infos)
+
+        # Act
+        with self.assertRaises(Exception) as context:
+            rl_adapter.extract_file_name_and_paragraph_title(id = id, setting_bag = setting_bag)
+        
+        # Assert
+        self.assertEqual(str(context.exception), _MessageCollection.no_mdinfo_found(id = id)) 
 
 # MAIN
 if __name__ == "__main__":
