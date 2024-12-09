@@ -7,7 +7,6 @@ Alias: nwrl
 # GLOBAL MODULES
 import copy
 import numpy as np
-import openpyxl
 import os
 import pandas as pd
 from dataclasses import dataclass
@@ -68,6 +67,22 @@ class RLID(StrEnum):
     SASBYPUBLISHER = "sas_by_publisher"
     SASBYRATING = "sas_by_rating"
     SASBYTOPIC = "sas_by_topic"
+
+# STATIC CLASSES
+class _MessageCollection():
+
+    '''Collects all the messages used for logging and for the exceptions.'''
+
+    @staticmethod
+    def no_mdinfo_found(id : RLID) -> str:
+        return f"No MDInfo object found for id='{id}'."
+    @staticmethod
+    def please_run_initialize_first() -> str:
+        return "Please run the 'initialize' method first."
+
+    @staticmethod
+    def this_content_successfully_saved_as(id : RLID, file_path : str) -> str:
+        return f"This content (id: '{id}') has been successfully saved as '{file_path}'."
 
 # DTOs
 @dataclass(frozen = True)
@@ -214,22 +229,6 @@ class SettingBag():
         self.md_stars_rating = md_stars_rating
         self.md_last_update = md_last_update
         self.md_infos = md_infos
-
-# STATIC CLASSES
-class _MessageCollection():
-
-    '''Collects all the messages used for logging and for the exceptions.'''
-
-    @staticmethod
-    def no_mdinfo_found(id : RLID) -> str:
-        return f"No MDInfo object found for id='{id}'."
-    @staticmethod
-    def please_run_initialize_first() -> str:
-        return "Please run the 'initialize' method first."
-
-    @staticmethod
-    def this_content_successfully_saved_as(id : RLID, file_path : str) -> str:
-        return f"This content (id: '{id}') has been successfully saved as '{file_path}'."
 
 # CLASSES
 class DefaultPathProvider():
