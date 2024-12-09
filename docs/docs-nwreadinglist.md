@@ -17,10 +17,13 @@ Contact: numbworks@gmail.com
 | 2024-10-28 | numbworks | Updated to v3.8.0. |
 | 2024-11-07 | numbworks | Updated to v4.0.0. |
 | 2024-12-01 | numbworks | Updated to v4.1.0. |
+| 2024-12-09 | numbworks | Updated to v4.2.0. |
 
 ## Introduction
 
-`nwreadinglist` is a `Jupyter Notebook` designed to analyze the Excel file I use to annotate all the books I study in my continuous education journey. As a second set of features, it converts some of the analyses to `Markdown` files, so that I can easily show them on my `Github` account.
+`nwreadinglist` is an application designed to run automated data analysis tasks on `Reading List.xlsx`.
+
+This file is the one I use to annotate all the books I study in my continuous education journey. As a second set of features, it converts some of the analyses to `Markdown` files, so that I can easily show them on my `Github` account.
 
 The previous implementation of this software has been developed in `Microsoft VBA` (`Visual Basic for Applications`) and it run fine for years, but it reached a point that it was difficult to scale up and therefore I rewrote it from scratch using `Python` and `Jupyter Notebook`
 
@@ -146,7 +149,7 @@ The expected outcome for `all-concise` is:
 
 ```
 MODULE_NAME: nwreadinglist
-MODULE_VERSION: 4.1.0
+MODULE_VERSION: 4.2.0
 COVERAGE_THRESHOLD: 70%
 [WARNING] type-concise: not passed! '1' error(s) found!
 [WARNING] changelog-concise: 'CHANGELOG' not updated to current version!

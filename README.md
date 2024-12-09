@@ -8,7 +8,7 @@ Contact: numbworks@gmail.com
 
 From the documentation:
 
-> nwreadinglist is a Jupyter Notebook designed to analyze the Excel file I use to annotate all the books I study in my continuous education journey. As a second set of features, it converts some of the analyses to Markdown files, so that I can easily show them on my Github account.
+> `nwreadinglist` is an application designed to run automated data analysis tasks on `Reading List.xlsx`. This file is the one I use to annotate all the books I study in my continuous education journey. As a second set of features, it converts some of the analyses to `Markdown` files, so that I can easily show them on my `Github` account.
 
 ## Getting started
 
