@@ -403,7 +403,7 @@ class YearProviderTestCase(unittest.TestCase):
     def test_getallyears_shouldreturnexpectedlist_wheninvoked(self):
 
         # Arrange
-        expected : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
+        expected : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
 
         # Act
         actual : list[int] = YearProvider().get_all_years()

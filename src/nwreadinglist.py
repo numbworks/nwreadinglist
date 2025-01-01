@@ -139,7 +139,7 @@ class YearProvider():
 
         '''Returns a list of years.'''
 
-        years : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
+        years : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
 
         return years
 class MDInfoProvider():
