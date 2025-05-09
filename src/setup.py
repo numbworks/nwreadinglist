@@ -26,7 +26,7 @@ if __name__ == "__main__":
             "matplotlib>=3.9.2",        
             "tabulate>=0.9.0",
             "sparklines>=0.5.0",
-            "nwshared @ git+https://github.com/numbworks/nwshared.git@v1.8.0#egg=nwshared&subdirectory=src"
+            "nwshared @ git+https://github.com/numbworks/nwshared.git@v1.8.1#egg=nwshared&subdirectory=src"
         ],
         python_requires = ">=3.12",
         license = "MIT"
