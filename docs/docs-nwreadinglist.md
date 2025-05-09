@@ -18,6 +18,7 @@ Contact: numbworks@gmail.com
 | 2024-11-07 | numbworks | Updated to v4.0.0. |
 | 2024-12-01 | numbworks | Updated to v4.1.0. |
 | 2024-12-09 | numbworks | Updated to v4.2.0. |
+| 2025-05-09 | numbworks | Updated to v4.3.0. |
 
 ## Introduction
 
@@ -74,6 +75,11 @@ To run this application on Windows and Linux:
 13. Click on <ins>Run All</ins>;
 14. Done!
 
+Note: the mount point in `devcointainer.json` is meant to be used on Windows. If you are running VSCode on Linux, please change the current mount point with the following one:
+
+```
+"source=${localEnv:HOME}/Documents/nwreadinglist,target=/home/nwreadinglist/,type=bind,consistency=cached"
+```
 ## Unit Tests
 
 To run the unit tests in Visual Studio Code (while still connected to the Dev Container):
@@ -144,19 +150,34 @@ The avalaible target names are:
 | type-verbose | Runs a type verification task and logs everything. |
 | coverage-verbose | Runs a unit test coverage calculation task and logs the % per class. |
 | tryinstall-verbose | Simulates a "pip install" and logs everything. |
+| compile-verbose | Runs "python -m py_compile" command against the module file. |
+| compilenotebook-verbose | Runs "python -m py_compile" command against the notebook file. |
+| unittest-verbose | Runs "python" command against the test files. |
+| codemetrics-verbose | Runs a cyclomatic complexity analysis against all the nw*.py files in /src. |
+| docstrings-verbose | Lists all the methods that lack of docstring. |
+| calculate-commitavg | Shows the daily average time between commits, grouped by year and month. |
+| check-pythonversion | Checks if the installed Python version is the expected one and logs a message. |
+| check-requirements | Checks if the required dependencies match with the most recent releases on PyPi. |
+| update-codecoverage | Updates the codecoverage.txt/.svg files according to the total unit test coverage. |
+| create-classdiagram | Creates a class diagram in Mermaid format that shows only relationships. |
 | all-concise | Runs a batch of verification tasks and logs one summary line for each of them. |
 
 The expected outcome for `all-concise` is:
 
 ```
 MODULE_NAME: nwreadinglist
-MODULE_VERSION: 4.2.0
+MODULE_VERSION: 4.3.0
 COVERAGE_THRESHOLD: 70%
 [OK] type-concise: passed!
 [OK] changelog-concise: 'CHANGELOG' updated to current version!
 [OK] setup-concise: 'setup.py' updated to current version!
 [OK] coverage-concise: unit test coverage >= 70%.
 [OK] tryinstall-concise: installation process works.
+[OK] compile-concise: compiling the library throws no issues.
+[OK] compilenotebook-concise: compiling the notebook throws no issues.
+[OK] unittest-concise: '376' tests found and run.
+[OK] codemetrics-concise: the cyclomatic complexity is excellent ('A').
+[OK] docstrings-concise: all methods have docstrings.
 ```
 
 Considering the old-fashioned syntax adopted by both `make` and `bash`, here a summary of its less intuitive aspects:
@@ -173,6 +194,44 @@ Considering the old-fashioned syntax adopted by both `make` and `bash`, here a s
 ## Known Issues - nwshared
 
 If `nwshared` creates some issues for you, please refer to [its documentation on Github](https://github.com/numbworks/nwshared/blob/master/docs/docs-nwshared.md).
+
+## Known Issues - "ImportError: cannot import name 'display' from 'IPython.core.display'"
+
+Starting `v4.3.0`, the devcontainer's Dockerfile forces `ipkernel` to use a specific version of its `ipython` dependency:
+
+```
+FROM python:3.12.5-bookworm
+
+# ...
+RUN pip install ipykernel==6.29.5 ipython==7.23.1
+RUN pip install jupyter==1.1.0
+# ...
+```
+
+Without this enforcement in place, the devcontainer would return the following error message:
+
+> ImportError: cannot import name 'display' from 'IPython.core.display'
+
+By investigating the dependency tree with the following commands:
+
+```
+pip install pipdeptree
+pipdeptree -p ipykernel
+```
+
+I discovered that `ipykernel` has the following (very lousy) dependency constraint:
+
+```
+...
+├── ipython [required: >=7.23.1, ...
+...
+```
+
+The `>=` means that, even if your devcontainer uses a frozen version of `ipykernel`, the latest version of `ipython` will be downloaded at each rebuild.
+
+When I started getting the error message, the installed `ipython` version was `9.2.0` (quite far from the original `7.23.1`). 
+
+Forcing `pip` to use an older dependency was necessary to bring back the devcontainer to a working status.
 
 ## Markdown Toolset
 
