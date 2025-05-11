@@ -1,7 +1,9 @@
 v4.3.0
+- Notebook:
+	- Maintenance: notebook, removed "Language/Requirement Checks".
 - Library:
-	- Refactoring: ...
-	- Maintenance: ... 	
+	- Maintenance: makefile expanded (commitavg-verbose, check-pythonversion, check-requirements, ...).
+	- Maintenance: dependency update (nwshared, nwpackageversions v1.8.0 => v1.8.1).
 - Documentation:
 	- Feature: updated to v4.3.0.
 
