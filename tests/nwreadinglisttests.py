@@ -14,9 +14,9 @@ from unittest.mock import Mock, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import RLCN, RLID, OPTION, _MessageCollection, MDInfo, RLSummary, DefaultPathProvider, ReadingListProcessor, YearProvider
+from nwreadinglist import RLCN, RLID, DEFINITIONSCN, OPTION, _MessageCollection, MDInfo, RLSummary, DefaultPathProvider
 from nwreadinglist import MDInfoProvider, SettingBag, RLDataFrameHelper, RLDataFrameFactory, RLMarkdownFactory
-from nwreadinglist import RLAdapter, ComponentBag
+from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor, YearProvider
 from nwshared import Converter, Formatter, FilePathManager, FileManager, Displayer, PlotManager
 
 # SUPPORT METHODS
@@ -245,7 +245,7 @@ class ObjectMother():
     @staticmethod
     def get_definitions_df() -> DataFrame:
 
-        columns : list[str] = ["Term", "Definition"]
+        columns : list[str] = [DEFINITIONSCN.TERM, DEFINITIONSCN.DEFINITION]
 
         definitions : dict[str, str] = {
             RLID.RL: "Reading List",

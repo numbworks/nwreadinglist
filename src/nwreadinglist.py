@@ -68,6 +68,12 @@ class RLID(StrEnum):
     RLSBYPUBLISHER = "rls_by_publisher"
     RLSBYRATING = "rls_by_rating"
     RLSBYTOPIC = "rls_by_topic"  
+class DEFINITIONSCN(StrEnum):
+    
+    '''Collects all the column names used by definitions.'''
+
+    TERM = "Term"
+    DEFINITION = "Definition"
 class OPTION(StrEnum):
 
     '''Represents a collection of options.'''
@@ -1407,7 +1413,7 @@ class RLDataFrameFactory():
 
         '''Creates a dataframe containing all the definitions in use in this application.'''
 
-        columns : list[str] = ["Term", "Definition"]
+        columns : list[str] = [DEFINITIONSCN.TERM, DEFINITIONSCN.DEFINITION]
 
         definitions : dict[str, str] = {
             RLID.RL: "Reading List",
