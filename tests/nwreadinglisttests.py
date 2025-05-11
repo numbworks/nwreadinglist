@@ -14,9 +14,9 @@ from unittest.mock import Mock, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import RLCN, RLID, _MessageCollection, MDInfo, RLSummary, DefaultPathProvider, ReadingListProcessor, YearProvider
+from nwreadinglist import RLCN, RLID, DEFINITIONSCN, OPTION, _MessageCollection, MDInfo, RLSummary, DefaultPathProvider
 from nwreadinglist import MDInfoProvider, SettingBag, RLDataFrameHelper, RLDataFrameFactory, RLMarkdownFactory
-from nwreadinglist import RLAdapter, ComponentBag
+from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor, YearProvider
 from nwshared import Converter, Formatter, FilePathManager, FileManager, Displayer, PlotManager
 
 # SUPPORT METHODS
@@ -46,13 +46,13 @@ class ObjectMother():
 
         default_df : DataFrame = pd.DataFrame(
             {
-                "Month": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                RLCN.MONTH: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
                 "2024": ["0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)"]
             },
             index=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
         )
 
-        default_df = default_df.astype({"Month": int})
+        default_df = default_df.astype({RLCN.MONTH: int})
         default_df = default_df.astype({"2024": str})
 
         return default_df
@@ -61,26 +61,26 @@ class ObjectMother():
     def get_rl_tpl() -> Tuple[DataFrame, list[int]]:
 
         rl_df : DataFrame = pd.DataFrame({
-            "Title": np.array(["ProxMox VE Administration Guide - Release 7.2", "Clean Architecture", "Python How-To", "Python Foundation", "Python Unit Test Automation (2nd Edition)", "Testing in Python", "Python Object-Oriented Programming (4th Edition)", "Intermediate Python [MLI]", "Learning Advanced Python By Studying Open-Source Projects", "Python in a Nutshell (4th Edition)", "Python 3 And Feature Engineering", "Python Testing Cookbook (2nd Edition)", "Python Testing with pytest (2nd Edition)", "Python Packages"], dtype=object),
-            "Year": np.array([2022, 2018, 2023, 2022, 2022, 2020, 2021, 2023, 2024, 2023, 2024, 2018, 2022, 2022], dtype=int32),
-            "Type": np.array(["Book", "Book", "Book", "Book", "Book", "Book", "Book", "Book", "Book", "Book", "Book", "Book", "Book", "Book"], dtype=object),
-            "Format": np.array(["Digital", "Digital", "Digital", "Digital", "Digital", "Digital", "Digital", "Digital", "Digital", "Digital", "Digital", "Digital", "Digital", "Digital"], dtype=object),
-            "Language": np.array(["EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN"], dtype=object),
-            "Pages": np.array([535, 429, 455, 205, 94, 132, 715, 192, 139, 963, 229, 978, 264, 243], dtype=int32),
-            "ReadDate": np.array([date(2024, 2, 19), date(2024, 2, 19), date(2024, 2, 20), date(2024, 2, 20), date(2024, 2, 20), date(2024, 2, 20), date(2024, 2, 25), date(2024, 2, 25), date(2024, 2, 25), date(2024, 2, 25), date(2024, 2, 25), date(2024, 2, 26), date(2024, 2, 26), date(2024, 2, 26)], dtype=object),
-            "ReadYear": np.array([2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024], dtype=int32),
-            "ReadMonth": np.array([2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], dtype=int32),
-            "WorthBuying": np.array(["No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "Yes"], dtype=object),
-            "WorthReadingAgain": np.array(["No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "Yes", "No", "No", "No"], dtype=object),
-            "Publisher": np.array(["Self-Published", "Pearson Education", "Manning", "Self-Published", "Apress", "Self-Published", "Packt", "MLI", "CRC Press", "O'Reilly", "MLI", "Packt", "Pragmatic Bookshelf", "CRC Press"], dtype=object),
-            "Rating": np.array([2, 3, 1, 1, 1, 1, 2, 1, 1, 3, 2, 2, 3, 4], dtype=int32),
-            "StreetPrice": np.array([0.0, 30.39, 49.99, 22.49, 38.88, 49.99, 38.24, 54.99, 59.95, 65.23, 54.99, 33.99, 39.49, 48.95], dtype= np.float64),
-            "Currency": np.array(["USD", "USD", "USD", "USD", "USD", "USD", "USD", "USD", "USD", "USD", "USD", "USD", "USD", "USD"], dtype=object),
-            "Comment": np.array(["Useful. It shows how well ProxMox has been designed.", "Useful. A good book for beginners, well-written and clear. The last part about the history of computers could be easily removed.", "Useless. Well-written, but it contains no original nor well-structured knowledge. In addition, the second half of the book is not about Python but about Flask. Totally useless book.", "Useless. Very basic overview about multiple Python-related topics. The layout of the book is horrible (dense, lack of bold face, ...).", "Useless. Just a walkthrough of Python unit test frameworks. No original content.", "Useless. Too much opinionated towards pytest, not able to explain why pytest is better than unittest in a convincing way.", "Useful. An ok getting started guide for whom wants to learn OOP and Python from scratch at the same time.", "Useless. Well-written (organized like a recipe book and without ramblings), but contains no different knowledge than hundreds of Python books.", "Useless. The book title is misleading: the author doesn't study any open-source project. It's just a Python cookbook like hundreds others.", "Useful. Well-written and comprehensive, it contains few bits of information I didn't know.", "Useful. No-frills introduction to feature engineering in a cookbook format.", "Useful. It's a long list of testing techniques and Python tools to perform them. Good to have all collected in the same book.", "Useful. A well-written and comprehensive book about pytest.", "Useful. Excellent book about the topic. It's well-written, comprehensive and pragmatic. It would become perfect by removing the repetitions."], dtype=object),
-            "Topic": np.array(["Development Tools", "Software Engineering", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python"], dtype=object),
-            "OnGoodreads": np.array(["No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No"], dtype=object),
-            "CommentLenght": np.array([52, 128, 181, 134, 80, 121, 105, 142, 138, 90, 75, 125, 59, 140], dtype=int32),
-            "KBSize": np.array([8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=int32)
+            RLCN.TITLE: np.array(["ProxMox VE Administration Guide - Release 7.2", "Clean Architecture", "Python How-To", "Python Foundation", "Python Unit Test Automation (2nd Edition)", "Testing in Python", "Python Object-Oriented Programming (4th Edition)", "Intermediate Python [MLI]", "Learning Advanced Python By Studying Open-Source Projects", "Python in a Nutshell (4th Edition)", "Python 3 And Feature Engineering", "Python Testing Cookbook (2nd Edition)", "Python Testing with pytest (2nd Edition)", "Python Packages"], dtype=object),
+            RLCN.YEAR: np.array([2022, 2018, 2023, 2022, 2022, 2020, 2021, 2023, 2024, 2023, 2024, 2018, 2022, 2022], dtype=int32),
+            RLCN.TYPE: np.array(["Book", "Book", "Book", "Book", "Book", "Book", "Book", "Book", "Book", "Book", "Book", "Book", "Book", "Book"], dtype=object),
+            RLCN.FORMAT: np.array(["Digital", "Digital", "Digital", "Digital", "Digital", "Digital", "Digital", "Digital", "Digital", "Digital", "Digital", "Digital", "Digital", "Digital"], dtype=object),
+            RLCN.LANGUAGE: np.array(["EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN"], dtype=object),
+            RLCN.PAGES: np.array([535, 429, 455, 205, 94, 132, 715, 192, 139, 963, 229, 978, 264, 243], dtype=int32),
+            RLCN.READDATE: np.array([date(2024, 2, 19), date(2024, 2, 19), date(2024, 2, 20), date(2024, 2, 20), date(2024, 2, 20), date(2024, 2, 20), date(2024, 2, 25), date(2024, 2, 25), date(2024, 2, 25), date(2024, 2, 25), date(2024, 2, 25), date(2024, 2, 26), date(2024, 2, 26), date(2024, 2, 26)], dtype=object),
+            RLCN.READYEAR: np.array([2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024], dtype=int32),
+            RLCN.READMONTH: np.array([2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], dtype=int32),
+            RLCN.WORTHBUYING: np.array(["No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "Yes"], dtype=object),
+            RLCN.WORTHREADINGAGAIN: np.array(["No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "Yes", "No", "No", "No"], dtype=object),
+            RLCN.PUBLISHER: np.array(["Self-Published", "Pearson Education", "Manning", "Self-Published", "Apress", "Self-Published", "Packt", "MLI", "CRC Press", "O'Reilly", "MLI", "Packt", "Pragmatic Bookshelf", "CRC Press"], dtype=object),
+            RLCN.RATING: np.array([2, 3, 1, 1, 1, 1, 2, 1, 1, 3, 2, 2, 3, 4], dtype=int32),
+            RLCN.STREETPRICE: np.array([0.0, 30.39, 49.99, 22.49, 38.88, 49.99, 38.24, 54.99, 59.95, 65.23, 54.99, 33.99, 39.49, 48.95], dtype= np.float64),
+            RLCN.CURRENCY: np.array(["USD", "USD", "USD", "USD", "USD", "USD", "USD", "USD", "USD", "USD", "USD", "USD", "USD", "USD"], dtype=object),
+            RLCN.COMMENT: np.array(["Useful. It shows how well ProxMox has been designed.", "Useful. A good book for beginners, well-written and clear. The last part about the history of computers could be easily removed.", "Useless. Well-written, but it contains no original nor well-structured knowledge. In addition, the second half of the book is not about Python but about Flask. Totally useless book.", "Useless. Very basic overview about multiple Python-related topics. The layout of the book is horrible (dense, lack of bold face, ...).", "Useless. Just a walkthrough of Python unit test frameworks. No original content.", "Useless. Too much opinionated towards pytest, not able to explain why pytest is better than unittest in a convincing way.", "Useful. An ok getting started guide for whom wants to learn OOP and Python from scratch at the same time.", "Useless. Well-written (organized like a recipe book and without ramblings), but contains no different knowledge than hundreds of Python books.", "Useless. The book title is misleading: the author doesn't study any open-source project. It's just a Python cookbook like hundreds others.", "Useful. Well-written and comprehensive, it contains few bits of information I didn't know.", "Useful. No-frills introduction to feature engineering in a cookbook format.", "Useful. It's a long list of testing techniques and Python tools to perform them. Good to have all collected in the same book.", "Useful. A well-written and comprehensive book about pytest.", "Useful. Excellent book about the topic. It's well-written, comprehensive and pragmatic. It would become perfect by removing the repetitions."], dtype=object),
+            RLCN.TOPIC: np.array(["Development Tools", "Software Engineering", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python"], dtype=object),
+            RLCN.ONGOODREADS: np.array(["No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No"], dtype=object),
+            RLCN.COMMENTLENGHT: np.array([52, 128, 181, 134, 80, 121, 105, 142, 138, 90, 75, 125, 59, 140], dtype=int32),
+            RLCN.KBSIZE: np.array([8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=int32)
         }, index=pd.RangeIndex(start=260, stop=274, step=1))
 
         read_years : list[int] = [ 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 ]
@@ -145,11 +145,11 @@ class ObjectMother():
     def get_rls_asrt_tpl() -> Tuple[DataFrame, datetime]:
 
         rls_asrt_df : DataFrame = pd.DataFrame({
-            "Years": np.array(["1"], dtype = object),
-            "Books": np.array(["14"], dtype = object),
-            "Pages": np.array(["5573"], dtype = object),
-            "TotalSpend": np.array(["$587.57"], dtype = object),
-            "LastUpdate": np.array(["2024-03-04"], dtype = object),
+            RLCN.YEARS: np.array(["1"], dtype = object),
+            RLCN.BOOKS: np.array(["14"], dtype = object),
+            RLCN.PAGES: np.array(["5573"], dtype = object),
+            RLCN.TOTALSPEND: np.array(["$587.57"], dtype = object),
+            RLCN.LASTUPDATE: np.array(["2024-03-04"], dtype = object),
         }, index = pd.Index([0], dtype = "int64")) 
 
         now : datetime = datetime(2024, 3, 4)
@@ -159,29 +159,29 @@ class ObjectMother():
     def get_rls_by_kbsize_df() -> DataFrame:
 
         return pd.DataFrame({
-            "Title": np.array(["ProxMox VE Administration Guide - Release 7.2"], dtype = object),
-            "ReadYear": np.array(["2024"], dtype = int32),
-            "Topic": np.array(["Development Tools"], dtype = object),
-            "Publisher": np.array(["Self-Published"], dtype = object),
-            "Rating": np.array(["2"], dtype = int32),
-            "KBSize": np.array(["8"], dtype = int32),
-            "A4Sheets": np.array(["1"], dtype = np.int64),
+            RLCN.TITLE: np.array(["ProxMox VE Administration Guide - Release 7.2"], dtype = object),
+            RLCN.READYEAR: np.array(["2024"], dtype = int32),
+            RLCN.TOPIC: np.array(["Development Tools"], dtype = object),
+            RLCN.PUBLISHER: np.array(["Self-Published"], dtype = object),
+            RLCN.RATING: np.array(["2"], dtype = int32),
+            RLCN.KBSIZE: np.array(["8"], dtype = int32),
+            RLCN.A4SHEETS: np.array(["1"], dtype = np.int64),
         }, index = pd.Index([1], dtype = "int64"))   
     @staticmethod
     def get_rls_by_month_tpl() -> Tuple[DataFrame, DataFrame]:
 
         rls_by_month_df : DataFrame = DataFrame({
-            "Month": np.array([str(i) for i in range(1, 13)], dtype=np.int64),
+            RLCN.MONTH: np.array([str(i) for i in range(1, 13)], dtype=np.int64),
             "2023": np.array(["0 (0)"] * 12, dtype=object),
-            "↕": np.array(["=", "↑", "=", "=", "=", "=", "=", "=", "=", "=", "=", "="], dtype=object),
+            RLCN.TRENDSYMBOL: np.array(["=", "↑", "=", "=", "=", "=", "=", "=", "=", "=", "=", "="], dtype=object),
             "2024": np.array(["0 (0)", "14 (5573)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", 
                             "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)"], dtype=object)
         }, index=pd.Index(range(12), dtype="int64"))
 
         rls_by_month_upd_df : DataFrame = DataFrame({
-            "Month": np.array([str(i) for i in range(1, 13)], dtype=np.int64),
+            RLCN.MONTH: np.array([str(i) for i in range(1, 13)], dtype=np.int64),
             "2023": np.array(["0 (0)"] * 12, dtype=object),
-            "↕": np.array(["=", "↑", "", "", "", "", "", "", "", "", "", ""], dtype=object),
+            RLCN.TRENDSYMBOL: np.array(["=", "↑", "", "", "", "", "", "", "", "", "", ""], dtype=object),
             "2024": np.array(["0 (0)", "14 (5573)", "", "", "", "", "", "", "", "", "", ""], dtype=object)
         }, index=pd.Index(range(12), dtype="int64"))
 
@@ -191,37 +191,37 @@ class ObjectMother():
 
         return DataFrame({
             "2023": np.array(["0 (0)", "$0.00"], dtype = object),
-            "↕": np.array(["↑", "↑"], dtype = object),
+            RLCN.TRENDSYMBOL: np.array(["↑", "↑"], dtype = object),
             "2024": np.array(["14 (5573)", "$587.57"], dtype = object)
         }, index=pd.Index([0, 1], dtype="int64")) 
     @staticmethod
     def get_rls_by_topic_df() -> DataFrame:
 
         return pd.DataFrame({
-            "Topic": np.array(["Python", "Development Tools", "Software Engineering"], dtype=object),
-            "Books": np.array([12, 1, 1], dtype = np.int64),
-            "Pages": np.array([4609, 535, 429], dtype = int32),
-            "A4Sheets": np.array([0, 1, 0], dtype = np.int64)
+            RLCN.TOPIC: np.array(["Python", "Development Tools", "Software Engineering"], dtype=object),
+            RLCN.BOOKS: np.array([12, 1, 1], dtype = np.int64),
+            RLCN.PAGES: np.array([4609, 535, 429], dtype = int32),
+            RLCN.A4SHEETS: np.array([0, 1, 0], dtype = np.int64)
         }, index=pd.RangeIndex(start=0, stop=3, step=1))
     @staticmethod
     def get_rls_by_publisher_tpl() -> Tuple[DataFrame, DataFrame, str]:
 
         rls_by_publisher_df : DataFrame = DataFrame({
-            "Publisher": np.array(["Self-Published", "Packt", "CRC Press", "MLI", "Apress", "O'Reilly", "Manning", "Pearson Education", "Pragmatic Bookshelf"], dtype=object),
-            "Books": np.array([3, 2, 2, 2, 1, 1, 1, 1, 1], dtype=np.int64),
-            "A4Sheets": np.array([1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.int64),
-            "AB%": np.array([33.33, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=float64),
-            "AvgRating": np.array([1.33, 2.0, 2.5, 1.5, 1.0, 3.0, 1.0, 3.0, 3.0], dtype=float64),
-            "IsWorth": np.array(["No", "No", "No", "No", "No", "No", "No", "No", "No"], dtype=object)
+            RLCN.PUBLISHER: np.array(["Self-Published", "Packt", "CRC Press", "MLI", "Apress", "O'Reilly", "Manning", "Pearson Education", "Pragmatic Bookshelf"], dtype=object),
+            RLCN.BOOKS: np.array([3, 2, 2, 2, 1, 1, 1, 1, 1], dtype=np.int64),
+            RLCN.A4SHEETS: np.array([1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.int64),
+            RLCN.ABPERC: np.array([33.33, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=float64),
+            RLCN.AVGRATING: np.array([1.33, 2.0, 2.5, 1.5, 1.0, 3.0, 1.0, 3.0, 3.0], dtype=float64),
+            RLCN.ISWORTH: np.array(["No", "No", "No", "No", "No", "No", "No", "No", "No"], dtype=object)
         }, index=pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype="int64"))
 
         rls_by_publisher_flt_df : DataFrame = DataFrame({
-            "Publisher": np.array([], dtype=object),
-            "Books": np.array([], dtype=np.int64),
-            "A4Sheets": np.array([], dtype=np.int64),
-            "AB%": np.array([], dtype=float64),
-            "AvgRating": np.array([], dtype=float64),
-            "IsWorth": np.array([], dtype=object)
+            RLCN.PUBLISHER: np.array([], dtype=object),
+            RLCN.BOOKS: np.array([], dtype=np.int64),
+            RLCN.A4SHEETS: np.array([], dtype=np.int64),
+            RLCN.ABPERC: np.array([], dtype=float64),
+            RLCN.AVGRATING: np.array([], dtype=float64),
+            RLCN.ISWORTH: np.array([], dtype=object)
         }, index=pd.Index([], dtype="int64"))
 
         rls_by_publisher_footer : str = "'Yes' if 'Books' >= '8' & ('AvgRating' >= '100' | 'AB%' >= '2.5')"
@@ -231,28 +231,28 @@ class ObjectMother():
     def get_rls_by_rating_df() -> DataFrame:
 
         return pd.DataFrame({
-            "Rating": np.array(["★★★★☆", "★★★☆☆", "★★☆☆☆", "★☆☆☆☆"], dtype = object),
-            "Books": np.array([1, 3, 4, 6], dtype = np.int64),
+            RLCN.RATING: np.array(["★★★★☆", "★★★☆☆", "★★☆☆☆", "★☆☆☆☆"], dtype = object),
+            RLCN.BOOKS: np.array([1, 3, 4, 6], dtype = np.int64),
         }, index=pd.RangeIndex(start = 0, stop = 4, step = 1))
     @staticmethod
     def get_rls_by_topic_bt_df() -> DataFrame:
 
         return pd.DataFrame({
-            "Topic": np.array(["Development Tools", "Python", "Software Engineering"], dtype=object),
-            "Books": pd.Series([[0, 0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 12], [0, 0, 0, 0, 0, 0, 0, 0, 1]]).to_numpy(),
-            "Trend": np.array(["▁▁▁▁▁▁▁▁▂", "▁▁▁▁▁▁▁▁█", "▁▁▁▁▁▁▁▁▂"], dtype=object),
+            RLCN.TOPIC: np.array(["Development Tools", "Python", "Software Engineering"], dtype=object),
+            RLCN.BOOKS: pd.Series([[0, 0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 12], [0, 0, 0, 0, 0, 0, 0, 0, 1]]).to_numpy(),
+            RLCN.TREND: np.array(["▁▁▁▁▁▁▁▁▂", "▁▁▁▁▁▁▁▁█", "▁▁▁▁▁▁▁▁▂"], dtype=object),
         }, index=pd.RangeIndex(start=0, stop=3, step=1))
     @staticmethod
     def get_definitions_df() -> DataFrame:
 
-        columns : list[str] = ["Term", "Definition"]
+        columns : list[str] = [DEFINITIONSCN.TERM, DEFINITIONSCN.DEFINITION]
 
         definitions : dict[str, str] = {
-            "RL": "Reading List",
-            "RLS": "Reading List Summary",
-            "KBSize": "This metric is the word count of the notes I took about a given book",
-            "A4Sheets": "'KBSize' converted into amount of A4 sheets",
-            "AB%": "Calculated with the following formula: '(A4Sheets / Books) * 100'"
+            RLID.RL: "Reading List",
+            RLID.RLS: "Reading List Summary",
+            RLCN.KBSIZE: "This metric is the word count of the notes I took about a given book",
+            RLCN.A4SHEETS: f"'{RLCN.KBSIZE}' converted into amount of A4 sheets",
+            RLCN.ABPERC: f"Calculated with the following formula: '({RLCN.A4SHEETS} / {RLCN.BOOKS}) * 100'"
             }
         
         definitions_df : DataFrame = DataFrame(
@@ -266,16 +266,16 @@ class ObjectMother():
     def get_setting_bag() -> SettingBag:
 
         setting_bag : SettingBag = SettingBag(
-            options_rl = ["save"],
-            options_rls_asrt = ["display", "log"],
-            options_rls_by_kbsize = ["display", "plot"],
-            options_rls_by_books_year = ["plot"],
-            options_rls_by_month = ["display", "save"],
-            options_rls_by_publisher = ["display", "log", "save"],
-            options_rls_by_rating = ["display", "save"],
-            options_rls_by_topic = ["display", "save"],
-            options_rls_by_topic_bt = ["display", "save"],
-            options_definitions = ["display"],
+            options_rl = [OPTION.save],
+            options_rls_asrt = [OPTION.display, OPTION.logset],
+            options_rls_by_kbsize = [OPTION.display, OPTION.plot],
+            options_rls_by_books_year = [OPTION.plot],
+            options_rls_by_month = [OPTION.display, OPTION.save],
+            options_rls_by_publisher = [OPTION.display, OPTION.logset, OPTION.save],
+            options_rls_by_rating = [OPTION.display, OPTION.save],
+            options_rls_by_topic = [OPTION.display, OPTION.save],
+            options_rls_by_topic_bt = [OPTION.display, OPTION.save],
+            options_definitions = [OPTION.display],
             read_years = YearProvider().get_all_years(),
             excel_path = DefaultPathProvider().get_default_reading_list_path(),
             excel_nrows = 323
@@ -403,7 +403,7 @@ class YearProviderTestCase(unittest.TestCase):
     def test_getallyears_shouldreturnexpectedlist_wheninvoked(self):
 
         # Arrange
-        expected : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
+        expected : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
 
         # Act
         actual : list[int] = YearProvider().get_all_years()
@@ -437,16 +437,16 @@ class SettingBagTestCase(unittest.TestCase):
     def test_settingbag_shouldinitializeasexpected_wheninvoked(self):
         
         # Arrange
-        options_rl : list[Literal["display", "save"]] = ["display", "save"]
-        options_rls_asrt : list[Literal["display", "log"]] = ["display", "log"]
-        options_rls_by_kbsize : list[Literal["display", "plot"]] = ["display", "plot"]
-        options_rls_by_books_year : list[Literal["plot"]] = ["plot"]
-        options_rls_by_month : list[Literal["display", "save"]] = ["display", "save"]
-        options_rls_by_topic : list[Literal["display", "save"]] = ["display", "save"]
-        options_rls_by_publisher : list[Literal["display", "log", "save"]] = ["display", "log", "save"]
-        options_rls_by_rating : list[Literal["display", "save"]] = ["display", "save"]
-        options_rls_by_topic_bt : list[Literal["display", "save"]] = ["display", "save"]
-        options_definitions : list[Literal["display"]] = ["display"]
+        options_rl : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
+        options_rls_asrt : list[Literal[OPTION.display, OPTION.logset]] = [OPTION.display, OPTION.logset]
+        options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = [OPTION.display, OPTION.plot]
+        options_rls_by_books_year : list[Literal[OPTION.plot]] = [OPTION.plot]
+        options_rls_by_month : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
+        options_rls_by_topic : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
+        options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset, OPTION.save]] = [OPTION.display, OPTION.logset, OPTION.save]
+        options_rls_by_rating : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
+        options_rls_by_topic_bt : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
+        options_definitions : list[Literal[OPTION.display]] = [OPTION.display]
         read_years : list[int] = [2022, 2023]
         excel_path : str = "Reading List.xlsx"
         excel_nrows : int = 100
