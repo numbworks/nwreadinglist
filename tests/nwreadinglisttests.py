@@ -248,11 +248,11 @@ class ObjectMother():
         columns : list[str] = ["Term", "Definition"]
 
         definitions : dict[str, str] = {
-            "RL": "Reading List",
-            "RLS": "Reading List Summary",
-            "KBSize": "This metric is the word count of the notes I took about a given book",
-            "A4Sheets": "'KBSize' converted into amount of A4 sheets",
-            "AB%": "Calculated with the following formula: '(A4Sheets / Books) * 100'"
+            RLID.RL: "Reading List",
+            RLID.RLS: "Reading List Summary",
+            RLCN.KBSIZE: "This metric is the word count of the notes I took about a given book",
+            RLCN.A4SHEETS: f"'{RLCN.KBSIZE}' converted into amount of A4 sheets",
+            RLCN.ABPERC: f"Calculated with the following formula: '({RLCN.A4SHEETS} / {RLCN.BOOKS}) * 100'"
             }
         
         definitions_df : DataFrame = DataFrame(

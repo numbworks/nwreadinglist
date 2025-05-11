@@ -63,10 +63,11 @@ class RLID(StrEnum):
     '''Collects all the ids that identify the dataframes created by RLDataFrameFactory.'''
 
     RL = "rl"
+    RLS = "rls"    
     RLSBYMONTH = "rls_by_month"
     RLSBYPUBLISHER = "rls_by_publisher"
     RLSBYRATING = "rls_by_rating"
-    RLSBYTOPIC = "rls_by_topic"
+    RLSBYTOPIC = "rls_by_topic"  
 class OPTION(StrEnum):
 
     '''Represents a collection of options.'''
@@ -1409,11 +1410,11 @@ class RLDataFrameFactory():
         columns : list[str] = ["Term", "Definition"]
 
         definitions : dict[str, str] = {
-            "RL": "Reading List",
-            "RLS": "Reading List Summary",
-            "KBSize": "This metric is the word count of the notes I took about a given book",
-            "A4Sheets": "'KBSize' converted into amount of A4 sheets",
-            "AB%": "Calculated with the following formula: '(A4Sheets / Books) * 100'"
+            RLID.RL: "Reading List",
+            RLID.RLS: "Reading List Summary",
+            RLCN.KBSIZE: "This metric is the word count of the notes I took about a given book",
+            RLCN.A4SHEETS: f"'{RLCN.KBSIZE}' converted into amount of A4 sheets",
+            RLCN.ABPERC: f"Calculated with the following formula: '({RLCN.A4SHEETS} / {RLCN.BOOKS}) * 100'"
             }
         
         definitions_df : DataFrame = DataFrame(
@@ -1892,7 +1893,7 @@ class ReadingListProcessor():
 
         options : list = self.__setting_bag.options_rls_by_kbsize
         df : DataFrame = self.__rl_summary.rls_by_kbsize_df
-        x_name : str = "A4Sheets"
+        x_name : str = RLCN.A4SHEETS
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df)
@@ -1911,7 +1912,7 @@ class ReadingListProcessor():
 
         options : list = self.__setting_bag.options_rls_by_books_year
         df : DataFrame = self.__rl_summary.rl_df
-        x_name : str = "Year"
+        x_name : str = RLCN.YEAR
 
         if OPTION.plot in options:
             self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)
