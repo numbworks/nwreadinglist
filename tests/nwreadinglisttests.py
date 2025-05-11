@@ -14,7 +14,7 @@ from unittest.mock import Mock, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import RLCN, RLID, _MessageCollection, MDInfo, RLSummary, DefaultPathProvider, ReadingListProcessor, YearProvider
+from nwreadinglist import RLCN, RLID, OPTION, _MessageCollection, MDInfo, RLSummary, DefaultPathProvider, ReadingListProcessor, YearProvider
 from nwreadinglist import MDInfoProvider, SettingBag, RLDataFrameHelper, RLDataFrameFactory, RLMarkdownFactory
 from nwreadinglist import RLAdapter, ComponentBag
 from nwshared import Converter, Formatter, FilePathManager, FileManager, Displayer, PlotManager
@@ -266,16 +266,16 @@ class ObjectMother():
     def get_setting_bag() -> SettingBag:
 
         setting_bag : SettingBag = SettingBag(
-            options_rl = ["save"],
-            options_rls_asrt = ["display", "log"],
-            options_rls_by_kbsize = ["display", "plot"],
-            options_rls_by_books_year = ["plot"],
-            options_rls_by_month = ["display", "save"],
-            options_rls_by_publisher = ["display", "log", "save"],
-            options_rls_by_rating = ["display", "save"],
-            options_rls_by_topic = ["display", "save"],
-            options_rls_by_topic_bt = ["display", "save"],
-            options_definitions = ["display"],
+            options_rl = [OPTION.save],
+            options_rls_asrt = [OPTION.display, OPTION.logset],
+            options_rls_by_kbsize = [OPTION.display, OPTION.plot],
+            options_rls_by_books_year = [OPTION.plot],
+            options_rls_by_month = [OPTION.display, OPTION.save],
+            options_rls_by_publisher = [OPTION.display, OPTION.logset, OPTION.save],
+            options_rls_by_rating = [OPTION.display, OPTION.save],
+            options_rls_by_topic = [OPTION.display, OPTION.save],
+            options_rls_by_topic_bt = [OPTION.display, OPTION.save],
+            options_definitions = [OPTION.display],
             read_years = YearProvider().get_all_years(),
             excel_path = DefaultPathProvider().get_default_reading_list_path(),
             excel_nrows = 323
@@ -437,16 +437,16 @@ class SettingBagTestCase(unittest.TestCase):
     def test_settingbag_shouldinitializeasexpected_wheninvoked(self):
         
         # Arrange
-        options_rl : list[Literal["display", "save"]] = ["display", "save"]
-        options_rls_asrt : list[Literal["display", "log"]] = ["display", "log"]
-        options_rls_by_kbsize : list[Literal["display", "plot"]] = ["display", "plot"]
-        options_rls_by_books_year : list[Literal["plot"]] = ["plot"]
-        options_rls_by_month : list[Literal["display", "save"]] = ["display", "save"]
-        options_rls_by_topic : list[Literal["display", "save"]] = ["display", "save"]
-        options_rls_by_publisher : list[Literal["display", "log", "save"]] = ["display", "log", "save"]
-        options_rls_by_rating : list[Literal["display", "save"]] = ["display", "save"]
-        options_rls_by_topic_bt : list[Literal["display", "save"]] = ["display", "save"]
-        options_definitions : list[Literal["display"]] = ["display"]
+        options_rl : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
+        options_rls_asrt : list[Literal[OPTION.display, OPTION.logset]] = [OPTION.display, OPTION.logset]
+        options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = [OPTION.display, OPTION.plot]
+        options_rls_by_books_year : list[Literal[OPTION.plot]] = [OPTION.plot]
+        options_rls_by_month : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
+        options_rls_by_topic : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
+        options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset, OPTION.save]] = [OPTION.display, OPTION.logset, OPTION.save]
+        options_rls_by_rating : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
+        options_rls_by_topic_bt : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
+        options_definitions : list[Literal[OPTION.display]] = [OPTION.display]
         read_years : list[int] = [2022, 2023]
         excel_path : str = "Reading List.xlsx"
         excel_nrows : int = 100

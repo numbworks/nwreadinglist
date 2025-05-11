@@ -11,7 +11,7 @@ import os
 import pandas as pd
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import StrEnum
+from enum import StrEnum, auto
 from numpy import float64
 from pandas import DataFrame
 from pandas import Series
@@ -67,6 +67,17 @@ class RLID(StrEnum):
     RLSBYPUBLISHER = "rls_by_publisher"
     RLSBYRATING = "rls_by_rating"
     RLSBYTOPIC = "rls_by_topic"
+class OPTION(StrEnum):
+
+    '''Represents a collection of options.'''
+
+    display = auto()
+    display_c = auto()
+    save = auto()
+    plot = auto()
+    logdef = auto()
+    logterm = auto()
+    logset = auto()
 
 # STATIC CLASSES
 class _MessageCollection():
@@ -165,16 +176,16 @@ class SettingBag():
     '''Represents a collection of settings.'''
 
 	# Without Defaults
-    options_rl : list[Literal["display", "save"]]
-    options_rls_asrt : list[Literal["display", "log"]]
-    options_rls_by_books_year : list[Literal["plot"]]
-    options_rls_by_kbsize : list[Literal["display", "plot"]]
-    options_rls_by_month : list[Literal["display", "save"]]
-    options_rls_by_publisher : list[Literal["display", "log", "save"]]
-    options_rls_by_rating : list[Literal["display", "save"]]
-    options_rls_by_topic : list[Literal["display", "save"]]
-    options_rls_by_topic_bt : list[Literal["display", "save"]]
-    options_definitions : list[Literal["display"]]
+    options_rl : list[Literal[OPTION.display, OPTION.save]]
+    options_rls_asrt : list[Literal[OPTION.display, OPTION.logset]]
+    options_rls_by_books_year : list[Literal[OPTION.plot]]
+    options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]]
+    options_rls_by_month : list[Literal[OPTION.display, OPTION.save]]
+    options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset, OPTION.save]]
+    options_rls_by_rating : list[Literal[OPTION.display, OPTION.save]]
+    options_rls_by_topic : list[Literal[OPTION.display, OPTION.save]]
+    options_rls_by_topic_bt : list[Literal[OPTION.display, OPTION.save]]
+    options_definitions : list[Literal[OPTION.display]]
     read_years : list[int]
     excel_path : str
     excel_nrows : int
@@ -1845,10 +1856,10 @@ class ReadingListProcessor():
         content : str = self.__rl_summary.rl_md
         id : RLID = RLID.RL
 
-        if "display" in options:
-            self.__component_bag.displayer.display(df = df)
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df)
 
-        if "save" in options:
+        if OPTION.save in options:
             self.__save_and_log(id = id, content = content)
     def process_rls_asrt(self) -> None:
 
@@ -1864,10 +1875,10 @@ class ReadingListProcessor():
         df : DataFrame = self.__rl_summary.rls_asrt_df
         content : str = self.__rl_summary.rls_asrt_md
 
-        if "display" in options:
-            self.__component_bag.displayer.display(df = df)
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df)
 
-        if "log" in options:
+        if OPTION.logset in options:
             self.__component_bag.logging_function(content)
     def process_rls_by_kbsize(self) -> None:
 
@@ -1883,10 +1894,10 @@ class ReadingListProcessor():
         df : DataFrame = self.__rl_summary.rls_by_kbsize_df
         x_name : str = "A4Sheets"
 
-        if "display" in options:
-            self.__component_bag.displayer.display(df = df)
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df)
 
-        if "plot" in options:
+        if OPTION.plot in options:
             self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)            
     def process_rls_by_books_year(self) -> None:
 
@@ -1902,7 +1913,7 @@ class ReadingListProcessor():
         df : DataFrame = self.__rl_summary.rl_df
         x_name : str = "Year"
 
-        if "plot" in options:
+        if OPTION.plot in options:
             self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)
     def process_rls_by_month(self) -> None:
 
@@ -1920,11 +1931,11 @@ class ReadingListProcessor():
         content : str = self.__rl_summary.rls_by_month_md     
         id : RLID = RLID.RLSBYMONTH
 
-        if "display" in options:
-            self.__component_bag.displayer.display(df = df_1)
-            self.__component_bag.displayer.display(df = df_2)
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df_1)
+            self.__component_bag.displayer.display(obj = df_2)
 
-        if "save" in self.__setting_bag.options_rls_by_month:
+        if OPTION.save in self.__setting_bag.options_rls_by_month:
             self.__save_and_log(id = id, content = content)
     def process_rls_by_publisher(self) -> None:
 
@@ -1943,13 +1954,13 @@ class ReadingListProcessor():
         content : str = self.__rl_summary.rls_by_publisher_md
         id : RLID = RLID.RLSBYPUBLISHER
 
-        if "display" in options:
-            self.__component_bag.displayer.display(df = df, formatters = formatters)
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df, formatters = formatters)
 
-        if "log" in options:
+        if OPTION.logset in options:
             self.__component_bag.logging_function(footer)
 
-        if "save" in options:
+        if OPTION.save in options:
             self.__save_and_log(id = id, content = content)
     def process_rls_by_rating(self) -> None:
 
@@ -1966,10 +1977,10 @@ class ReadingListProcessor():
         content : str = self.__rl_summary.rls_by_rating_md
         id : RLID = RLID.RLSBYRATING      
 
-        if "display" in options:
-            self.__component_bag.displayer.display(df = df)
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df)
 
-        if "save" in options:
+        if OPTION.save in options:
             self.__save_and_log(id = id, content = content)
     def process_rls_by_topic(self) -> None:
 
@@ -1987,11 +1998,11 @@ class ReadingListProcessor():
         content : str = self.__rl_summary.rls_by_topic_md
         id : RLID = RLID.RLSBYTOPIC
 
-        if "display" in options:
-            self.__component_bag.displayer.display(df = df_1)
-            self.__component_bag.displayer.display(df = df_2)
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df_1)
+            self.__component_bag.displayer.display(obj = df_2)
 
-        if "save" in options:
+        if OPTION.save in options:
             self.__save_and_log(id = id, content = content)
     def process_definitions(self) -> None:
 
@@ -2006,8 +2017,8 @@ class ReadingListProcessor():
         options : list = self.__setting_bag.options_definitions
         df : DataFrame = self.__rl_summary.definitions_df
 
-        if "display" in options:
-            self.__component_bag.displayer.display(df = df)
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df)
     def get_summary(self) -> RLSummary:
 
         '''Returns __rl_summary.'''
