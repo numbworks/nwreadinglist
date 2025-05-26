@@ -13,7 +13,7 @@ RUN pip install 'git+https://github.com/numbworks/nwshared.git@v1.8.1#egg=nwshar
 
 # JUPYTER NOTEBOOK
 RUN pip install ipykernel==6.29.5 ipython==7.23.1
-RUN pip install jupyter==1.1.1
+RUN pip install jupyter==1.1.0
 
 # UNIT TESTING
 RUN pip install coverage==7.6.4
@@ -30,6 +30,8 @@ RUN pip install types-requests==2.32.0.20241016
 RUN pip install radon==6.0.1
 RUN pip install pylint==3.3.3
 RUN pip install 'git+https://github.com/numbworks/nwpackageversions.git@v1.8.1#egg=nwpackageversions&subdirectory=src'
+RUN pip install 'git+https://github.com/numbworks/nwcommitaverages.git@v1.0.0#egg=nwcommitaverages&subdirectory=src'
+RUN pip install 'git+https://github.com/numbworks/nwdocstringchecking.git@v1.0.0#egg=nwdocstringchecking&subdirectory=src'
 
 # OTHERS
-RUN pip install --upgrade pip==24.3.1
+RUN pip install --upgrade pip==25.1.1
