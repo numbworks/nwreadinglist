@@ -6,7 +6,7 @@ from setuptools import setup
 # INFORMATION
 MODULE_ALIAS : str = "nwrl"
 MODULE_NAME : str = "nwreadinglist"
-MODULE_VERSION : str = "4.3.0"
+MODULE_VERSION : str = "4.3.2"
 
 # SETUP
 if __name__ == "__main__":
