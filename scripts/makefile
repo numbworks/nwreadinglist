@@ -5,7 +5,7 @@
 SHELL := /bin/bash
 ROOT_DIR := $(shell cd .. && pwd)
 MODULE_NAME = "nwreadinglist"
-MODULE_VERSION = "4.3.0"
+MODULE_VERSION = "4.3.2"
 COVERAGE_THRESHOLD = 70
 
 # TARGETS (VERBOSE)

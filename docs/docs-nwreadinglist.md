@@ -19,6 +19,7 @@ Contact: numbworks@gmail.com
 | 2024-12-01 | numbworks | Updated to v4.1.0. |
 | 2024-12-09 | numbworks | Updated to v4.2.0. |
 | 2025-05-09 | numbworks | Updated to v4.3.0. |
+| 2025-05-26 | numbworks | Updated to v4.3.2. |
 
 ## Introduction
 
@@ -166,7 +167,7 @@ The expected outcome for `all-concise` is:
 
 ```
 MODULE_NAME: nwreadinglist
-MODULE_VERSION: 4.3.0
+MODULE_VERSION: 4.3.2
 COVERAGE_THRESHOLD: 70%
 [OK] type-concise: passed!
 [OK] changelog-concise: 'CHANGELOG' updated to current version!
@@ -204,7 +205,6 @@ FROM python:3.12.5-bookworm
 
 # ...
 RUN pip install ipykernel==6.29.5 ipython==7.23.1
-RUN pip install jupyter==1.1.0
 # ...
 ```
 
