@@ -1425,7 +1425,7 @@ class RLDataFrameFactory():
             RLCN.KBSIZE: "This metric is the word count of the notes I took about a given book",
             RLCN.A4SHEETS: f"'{RLCN.KBSIZE}' converted into amount of A4 sheets",
             RLCN.ABPERC: f"Calculated with the following formula: '({RLCN.A4SHEETS} / {RLCN.BOOKS}) * 100'",
-            RLCN.UNDERLINES: "Underlines are sentences that express a fundamental concept that can be understood as-is.",
+            RLCN.UNDERLINES: "Underlines are sentences that express a fundamental concept that can be understood as-is",
             RLCN.UPERC: f"Calculated with the following formula: '({RLCN.UNDERLINES} / Average of Underlines) * 100'"
         }
         
