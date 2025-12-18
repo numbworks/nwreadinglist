@@ -57,7 +57,9 @@ class RLCN(StrEnum):
     LASTUPDATE = "LastUpdate"
     MONTH = "Month"
     TREND = "Trend"
-    TRENDSYMBOL = "↕"    
+    TRENDSYMBOL = "↕"
+    UNDERLINES = "Underlines"
+    UPERC = "U%"
 class RLID(StrEnum):
     
     '''Collects all the ids that identify the dataframes created by RLDataFrameFactory.'''
@@ -411,6 +413,7 @@ class RLDataFrameFactory():
         column_names.append(RLCN.ONGOODREADS)       # [17], str
         column_names.append(RLCN.COMMENTLENGHT)     # [18], int
         column_names.append(RLCN.KBSIZE)            # [19], int
+        column_names.append(RLCN.UNDERLINES)        # [20], int
 
         rl_df = rl_df[column_names]
         rl_df = rl_df.replace(to_replace = excel_null_value, value = np.nan)
@@ -438,6 +441,7 @@ class RLDataFrameFactory():
         rl_df = rl_df.astype({column_names[17]: str})
         rl_df = rl_df.astype({column_names[18]: int})
         rl_df = rl_df.astype({column_names[19]: int})
+        rl_df = rl_df.astype({column_names[20]: int})
 
         return rl_df
     def __try_complete_sa_by_year(self, sa_by_year_df : DataFrame, read_year : int) -> DataFrame:
@@ -1420,8 +1424,10 @@ class RLDataFrameFactory():
             RLID.RLS: "Reading List Summary",
             RLCN.KBSIZE: "This metric is the word count of the notes I took about a given book",
             RLCN.A4SHEETS: f"'{RLCN.KBSIZE}' converted into amount of A4 sheets",
-            RLCN.ABPERC: f"Calculated with the following formula: '({RLCN.A4SHEETS} / {RLCN.BOOKS}) * 100'"
-            }
+            RLCN.ABPERC: f"Calculated with the following formula: '({RLCN.A4SHEETS} / {RLCN.BOOKS}) * 100'",
+            RLCN.UNDERLINES: "Underlines are sentences that express a fundamental concept that can be understood as-is.",
+            RLCN.UPERC: f"Calculated with the following formula: '({RLCN.UNDERLINES} / Average of Underlines) * 100'"
+        }
         
         definitions_df : DataFrame = DataFrame(
             data = definitions.items(), 

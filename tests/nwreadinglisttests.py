@@ -80,7 +80,8 @@ class ObjectMother():
             RLCN.TOPIC: np.array(["Development Tools", "Software Engineering", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python"], dtype=object),
             RLCN.ONGOODREADS: np.array(["No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No"], dtype=object),
             RLCN.COMMENTLENGHT: np.array([52, 128, 181, 134, 80, 121, 105, 142, 138, 90, 75, 125, 59, 140], dtype=int32),
-            RLCN.KBSIZE: np.array([8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=int32)
+            RLCN.KBSIZE: np.array([8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=int32),
+            RLCN.UNDERLINES: np.array([1, 0, 2, 0, 4, 0, 0, 0, 2, 0, 0, 15, 0, 0], dtype=int32),
         }, index=pd.RangeIndex(start=260, stop=274, step=1))
 
         read_years : list[int] = [ 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 ]
@@ -110,6 +111,7 @@ class ObjectMother():
         column_names.append(RLCN.ONGOODREADS)       # [17], str
         column_names.append(RLCN.COMMENTLENGHT)     # [18], int
         column_names.append(RLCN.KBSIZE)            # [19], int
+        column_names.append(RLCN.UNDERLINES)        # [20], int
 
         return column_names
     @staticmethod
@@ -136,6 +138,7 @@ class ObjectMother():
             "string",
             "string",
             "string",
+            "Int64",
             "Int64",
             "Int64"
         ]
@@ -252,8 +255,10 @@ class ObjectMother():
             RLID.RLS: "Reading List Summary",
             RLCN.KBSIZE: "This metric is the word count of the notes I took about a given book",
             RLCN.A4SHEETS: f"'{RLCN.KBSIZE}' converted into amount of A4 sheets",
-            RLCN.ABPERC: f"Calculated with the following formula: '({RLCN.A4SHEETS} / {RLCN.BOOKS}) * 100'"
-            }
+            RLCN.ABPERC: f"Calculated with the following formula: '({RLCN.A4SHEETS} / {RLCN.BOOKS}) * 100'",
+            RLCN.UNDERLINES: "Underlines are sentences that express a fundamental concept that can be understood as-is.",
+            RLCN.UPERC: f"Calculated with the following formula: '({RLCN.UNDERLINES} / Average of Underlines) * 100'"
+        }
         
         definitions_df : DataFrame = DataFrame(
             data = definitions.items(), 
