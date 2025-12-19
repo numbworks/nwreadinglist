@@ -20,7 +20,7 @@ from typing import Any, Callable, Literal, Optional, Tuple
 
 # LOCAL/NW MODULES
 from nwshared import Formatter, Converter, FilePathManager, FileManager
-from nwshared import LambdaProvider, MarkdownHelper, Displayer, PlotManager
+from nwshared import LambdaProvider, Displayer, PlotManager
 
 # CONSTANTS
 class RLCN(StrEnum):
@@ -95,25 +95,10 @@ class _MessageCollection():
     '''Collects all the messages used for logging and for the exceptions.'''
 
     @staticmethod
-    def no_mdinfo_found(id : RLID) -> str:
-        return f"No MDInfo object found for id='{id}'."
-    @staticmethod
     def please_run_initialize_first() -> str:
         return "Please run the 'initialize' method first."
 
-    @staticmethod
-    def this_content_successfully_saved_as(id : RLID, file_path : str) -> str:
-        return f"This content (id: '{id}') has been successfully saved as '{file_path}'."
-
 # DTOs
-@dataclass(frozen=True)
-class MDInfo():
-
-    '''Represents a collection of information related to a Markdown file.'''
-
-    id : RLID
-    file_name : str
-    paragraph_title : str
 @dataclass(frozen=True)
 class RLSummary():
 
@@ -132,13 +117,6 @@ class RLSummary():
     rls_by_topic_bt_df : DataFrame
 
     definitions_df : DataFrame
-
-    rl_md : str
-    rls_asrt_md : str
-    rls_by_month_md : str
-    rls_by_publisher_md : str
-    rls_by_rating_md : str
-    rls_by_topic_md : str
 
 # CLASSES
 class DefaultPathProvider():
@@ -166,40 +144,23 @@ class YearProvider():
         years : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
 
         return years
-class MDInfoProvider():
-
-    '''Collects all the logic related to the retrieval of MDInfo objects.'''
-
-    def get_all(self) -> list[MDInfo]:
-
-        '''Returns a list of MDInfo objects.'''
-
-        md_infos : list[MDInfo] = [
-                MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List"),
-                MDInfo(id = RLID.RLSBYMONTH, file_name = "READINGLISTBYMONTH.md", paragraph_title = "Reading List By Month"),
-                MDInfo(id = RLID.RLSBYPUBLISHER, file_name = "READINGLISTBYPUBLISHER.md", paragraph_title = "Reading List By Publisher"),
-                MDInfo(id = RLID.RLSBYRATING, file_name = "READINGLISTBYRATING.md", paragraph_title = "Reading List By Rating"),
-                MDInfo(id = RLID.RLSBYTOPIC, file_name = "READINGLISTBYTOPIC.md", paragraph_title = "Reading List By Topic")
-            ]
-        
-        return md_infos
 @dataclass(frozen=True)
 class SettingBag():
 
     '''Represents a collection of settings.'''
 
 	# Without Defaults
-    options_rl : list[Literal[OPTION.display, OPTION.save]]
-    options_rls_by_month : list[Literal[OPTION.display, OPTION.save]]
+    options_rl : list[Literal[OPTION.display]]
+    options_rls_by_month : list[Literal[OPTION.display]]
     options_rls_by_year : list[Literal[OPTION.display]]
-    options_rls_by_range : list[Literal[OPTION.display, OPTION.logset]]
+    options_rls_by_range : list[Literal[OPTION.display]]
 
     options_rls_by_books_year : list[Literal[OPTION.plot]]
     options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]]
-    options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset, OPTION.save]]
-    options_rls_by_rating : list[Literal[OPTION.display, OPTION.save]]
-    options_rls_by_topic : list[Literal[OPTION.display, OPTION.save]]
-    options_rls_by_topic_bt : list[Literal[OPTION.display, OPTION.save]]
+    options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]]
+    options_rls_by_rating : list[Literal[OPTION.display]]
+    options_rls_by_topic : list[Literal[OPTION.display]]
+    options_rls_by_topic_bt : list[Literal[OPTION.display]]
     options_definitions : list[Literal[OPTION.display]]
     read_years : list[int]
     excel_path : str
@@ -222,9 +183,7 @@ class SettingBag():
     rls_by_publisher_min_avgrating : float = field(default = 2.50)
     rls_by_publisher_criteria : Literal["Yes", "No"] = field(default = "Yes")    
     rls_by_rating_number_as_stars : bool = field(default = True)
-    rls_by_topic_bt_sparklines_maximum : bool = field(default = False)    
-    md_last_update : datetime = field(default = datetime.now())
-    md_infos : list[MDInfo] = field(default_factory = lambda : MDInfoProvider().get_all())
+    rls_by_topic_bt_sparklines_maximum : bool = field(default = False)
 class RLDataFrameHelper():
 
     '''Collects helper functions for RLDataFrameFactory.'''
@@ -1542,170 +1501,16 @@ class RLDataFrameFactory():
         )
 
         return definitions_df
-class RLMarkdownFactory():
-
-    '''Collects all the logic related to Markdown creation out of Reading List dataframes.'''
-
-    __markdown_helper : MarkdownHelper
-    __formatter : Formatter
-
-    def __init__(self, markdown_helper : MarkdownHelper, formatter : Formatter) -> None:
-
-        self.__markdown_helper = markdown_helper
-        self.__formatter = formatter
-
-    def __format(self, rl_df : DataFrame) -> DataFrame:
-
-        '''
-                Id	    Title	            Year	Pages	ReadDate	Publisher	    Rating    Topic
-            0	0	    Writing Solid Code	1993	288	    2016-05-28	Microsoft Press	★★☆☆☆  Software Engineering
-            1	1	    Git Essentials	    2015	168	    2016-06-05	Packt	        ★★☆☆☆  Git
-            ...    
-        '''
-
-        formatted_rl_df : DataFrame = pd.DataFrame()
-
-        cn_id : str = "Id"
-        cn_title : str = "Title"
-        cn_year : str = "Year"
-        cn_language : str = "Language"
-        cn_pages : str = "Pages"
-        cn_read_date : str = "ReadDate"
-        cn_publisher : str = "Publisher"
-        cn_rating : str = "Rating"
-        cn_topic : str = "Topic"
-
-        formatted_rl_df[cn_id] = rl_df.index + 1
-        formatted_rl_df[cn_title] = rl_df[cn_title]
-        formatted_rl_df[cn_year] = rl_df[cn_year]
-        formatted_rl_df[cn_language] = rl_df[cn_language]
-        formatted_rl_df[cn_pages] = rl_df[cn_pages]
-        formatted_rl_df[cn_read_date] = rl_df[cn_read_date]   
-        formatted_rl_df[cn_publisher] = rl_df[cn_publisher]   
-        formatted_rl_df[cn_rating] = rl_df[cn_rating].apply(lambda x : self.__formatter.format_rating(rating = x))
-        formatted_rl_df[cn_topic] = rl_df[cn_topic]   
-
-        return formatted_rl_df
-
-    def create_rl_md(self, paragraph_title : str, last_update : datetime, rl_df : DataFrame) -> str:
-
-        '''Creates the expected Markdown content for the provided arguments.'''
-
-        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
-        rl_md : str = self.__format(rl_df = rl_df).to_markdown(index = False)
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += rl_md
-        md_content += "\n"
-
-        return md_content
-    def create_rl_asrt_md(self, rl_asrt_df : DataFrame) -> str:
-
-        '''Creates the expected Markdown content for the provided arguments.'''
-
-        rl_asrt_md : str = rl_asrt_df.to_markdown(index = False)
-
-        md_content : str = rl_asrt_md
-        md_content += "\n"
-
-        return md_content
-    def create_rls_by_month_md(self, paragraph_title : str, last_update : datetime, rls_by_month_df : DataFrame, rls_by_year_street_price_df : DataFrame) -> str:
-
-        '''Creates the expected Markdown content for the provided arguments.'''
-
-        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
-        sas_by_month_md : str = rls_by_month_df.to_markdown(index = False)
-        sas_by_year_street_price_md  : str = rls_by_year_street_price_df.to_markdown(index = False)
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += sas_by_month_md
-        md_content += "\n"
-        md_content += ""
-        md_content += "\n"
-        md_content += sas_by_year_street_price_md
-        md_content += "\n"
-        md_content += ""
-
-        return md_content
-    def create_rls_by_publisher_md(self, paragraph_title : str, last_update : datetime, rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]) -> str:
-
-        '''Creates the expected Markdown content for the provided arguments.'''
-
-        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
-        sas_by_publisher_flt_md : str = rls_by_publisher_tpl[1].to_markdown(index = False)
-        sas_by_publisher_md : str = rls_by_publisher_tpl[0].to_markdown(index = False)
-        sas_by_publisher_footer : str = rls_by_publisher_tpl[2]
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += sas_by_publisher_flt_md
-        md_content += "\n"
-        md_content += ""
-        md_content += "\n"
-        md_content += sas_by_publisher_md
-        md_content += "\n"
-        md_content += ""
-        md_content += "\n"        
-        md_content += sas_by_publisher_footer
-        md_content += "\n"
-        md_content += ""
-
-        return md_content
-    def create_rls_by_rating_md(self, paragraph_title : str, last_update : datetime, rls_by_rating_df : DataFrame) -> str:
-
-        '''Creates the expected Markdown content for the provided arguments.'''
-
-        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
-        sas_by_rating_md : str = rls_by_rating_df.to_markdown(index = False)
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += sas_by_rating_md
-        md_content += "\n"
-
-        return md_content
-    def create_rls_by_topic_md(self, paragraph_title : str, last_update : datetime, rls_by_topic_df : DataFrame, rls_by_ytt_df : DataFrame) -> str:
-
-        '''Creates the expected Markdown content for the provided arguments.'''
-
-        markdown_header : str = self.__markdown_helper.get_markdown_header(last_update = last_update, paragraph_title = paragraph_title)
-        sas_by_topic_md : str = rls_by_topic_df.to_markdown(index = False)
-        trend_by_year_topic_md : str = rls_by_ytt_df.to_markdown(index = False)
-
-        md_content : str = markdown_header
-        md_content += "\n"
-        md_content += sas_by_topic_md
-        md_content += "\n"
-        md_content += ""
-        md_content += "\n"
-        md_content += trend_by_year_topic_md
-        md_content += "\n"
-        md_content += ""        
-
-        return md_content
 class RLAdapter():
 
     '''Adapts SettingBag properties for use in RL*Factory methods.'''
 
     __df_factory : RLDataFrameFactory
-    __md_factory : RLMarkdownFactory
 
-    def __init__(self, df_factory : RLDataFrameFactory, md_factory : RLMarkdownFactory) -> None:
+    def __init__(self, df_factory : RLDataFrameFactory) -> None:
         
         self.__df_factory = df_factory
-        self.__md_factory = md_factory
 
-    def extract_file_name_and_paragraph_title(self, id : RLID, setting_bag : SettingBag) -> Tuple[str, str]: 
-    
-        '''Returns (file_name, paragraph_title) for the provided id or raise an Exception.'''
-
-        for md_info in setting_bag.md_infos:
-            if md_info.id == id: 
-                return (md_info.file_name, md_info.paragraph_title)
-
-        raise Exception(_MessageCollection.no_mdinfo_found(id = id)) 
     def create_rl_df(self, setting_bag : SettingBag) -> DataFrame:
 
         '''Creates the expected dataframe using setting_bag.'''
@@ -1719,7 +1524,6 @@ class RLAdapter():
             )
 
         return rl_df   
-
     def create_rls_by_month_tpl(self, rl_df : DataFrame, setting_bag : SettingBag) -> Tuple[DataFrame, DataFrame]:
 
         '''Creates the expected dataframe using setting_bag and the provided arguments.'''
@@ -1801,65 +1605,6 @@ class RLAdapter():
         )
 
         return rls_by_topic_bt_df
-    def create_rl_md(self, rl_df : DataFrame, setting_bag : SettingBag) -> str:
-
-        '''Creates the expected Markdown content using setting_bag and the provided arguments.'''
-
-        rl_md : str = self.__md_factory.create_rl_md(
-            paragraph_title = self.extract_file_name_and_paragraph_title(id = RLID.RL, setting_bag = setting_bag)[1],
-            last_update = setting_bag.md_last_update,
-            rl_df = rl_df
-        )
-
-        return rl_md
-    def create_rls_by_month_md(self, rls_by_month_tpl : Tuple[DataFrame, DataFrame], rls_by_year_street_price_df : DataFrame, setting_bag : SettingBag) -> str:
-
-        '''Creates the expected Markdown content using setting_bag and the provided arguments.'''
-
-        rls_by_month_md : str = self.__md_factory.create_rls_by_month_md(
-            paragraph_title = self.extract_file_name_and_paragraph_title(id = RLID.RLSBYMONTH, setting_bag = setting_bag)[1],
-            last_update = setting_bag.md_last_update,
-            rls_by_month_df = rls_by_month_tpl[1],
-            rls_by_year_street_price_df = rls_by_year_street_price_df
-        )
-
-        return rls_by_month_md
-    def create_rls_by_topic_md(self, rls_by_topic_df : DataFrame, rls_by_ytt_df : DataFrame, setting_bag : SettingBag) -> str:
-
-        '''Creates the expected Markdown content using setting_bag and the provided arguments.'''
-
-        rls_by_topic_md : str = self.__md_factory.create_rls_by_topic_md(
-            paragraph_title = self.extract_file_name_and_paragraph_title(id = RLID.RLSBYTOPIC, setting_bag = setting_bag)[1],
-            last_update = setting_bag.md_last_update,
-            rls_by_topic_df = rls_by_topic_df,
-            rls_by_ytt_df = rls_by_ytt_df
-        )
-
-        return rls_by_topic_md
-    def create_rls_by_publisher_md(self, rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str], setting_bag : SettingBag) -> str:
-
-        '''Creates the expected Markdown content using setting_bag and the provided arguments.'''
-
-        rls_by_publisher_md : str = self.__md_factory.create_rls_by_publisher_md(
-            paragraph_title = self.extract_file_name_and_paragraph_title(id = RLID.RLSBYPUBLISHER, setting_bag = setting_bag)[1],
-            last_update = setting_bag.md_last_update,
-            rls_by_publisher_tpl = rls_by_publisher_tpl
-        )
-
-        return rls_by_publisher_md
-    def create_rls_by_rating_md(self, rls_by_rating_df : DataFrame, setting_bag : SettingBag) -> str:
-
-        '''Creates the expected Markdown content using setting_bag and the provided arguments.'''
-
-        rls_by_rating_md : str = self.__md_factory.create_rls_by_rating_md(
-            paragraph_title = self.extract_file_name_and_paragraph_title(id = RLID.RLSBYRATING, setting_bag = setting_bag)[1],
-            last_update = setting_bag.md_last_update,
-            rls_by_rating_df = rls_by_rating_df
-        )
-
-        return rls_by_rating_md
- 
-    
     def create_summary(self, setting_bag : SettingBag) -> RLSummary:
 
         '''Creates a RLSummary object out of setting_bag.'''
@@ -1875,13 +1620,6 @@ class RLAdapter():
         rls_by_year_street_price_df : DataFrame = self.create_rls_by_year_df(rls_by_month_tpl = rls_by_month_tpl, rl_df = rl_df, setting_bag = setting_bag)
         definitions_df : DataFrame = self.__df_factory.create_definitions_df()
 
-        rl_md : str = self.create_rl_md(rl_df = rl_df, setting_bag = setting_bag)
-        rls_asrt_md : str = self.__md_factory.create_rl_asrt_md(rl_asrt_df = rls_asrt_df)
-        rls_by_month_md : str = self.create_rls_by_month_md(rls_by_month_tpl = rls_by_month_tpl, rls_by_year_street_price_df = rls_by_year_street_price_df, setting_bag = setting_bag)
-        rls_by_publisher_md : str = self.create_rls_by_publisher_md(rls_by_publisher_tpl = rls_by_publisher_tpl, setting_bag = setting_bag)
-        rls_by_rating_md : str = self.create_rls_by_rating_md(rls_by_rating_df = rls_by_rating_df, setting_bag = setting_bag)
-        rls_by_topic_md : str = self.create_rls_by_topic_md(rls_by_topic_df = rls_by_topic_df, rls_by_ytt_df = rls_by_topic_bt_df, setting_bag = setting_bag)
-
         rl_summary : RLSummary = RLSummary(
             rl_df = rl_df,
             rls_by_range_df = rls_asrt_df,
@@ -1892,13 +1630,7 @@ class RLAdapter():
             rls_by_topic_df = rls_by_topic_df,
             rls_by_topic_bt_df = rls_by_topic_bt_df,
             rls_by_year_df = rls_by_year_street_price_df,
-            definitions_df = definitions_df,
-            rl_md = rl_md,
-            rls_asrt_md = rls_asrt_md,
-            rls_by_month_md = rls_by_month_md,
-            rls_by_publisher_md = rls_by_publisher_md,
-            rls_by_rating_md = rls_by_rating_md,
-            rls_by_topic_md = rls_by_topic_md
+            definitions_df = definitions_df
         )
 
         return rl_summary
@@ -1912,15 +1644,9 @@ class ComponentBag():
 	
     rl_adapter : RLAdapter = field(default = RLAdapter(
         df_factory = RLDataFrameFactory(
-                    converter = Converter(),
-                    formatter = Formatter(),
-                    df_helper = RLDataFrameHelper()
-                    ),
-        md_factory = RLMarkdownFactory(
-                    markdown_helper = MarkdownHelper(formatter = Formatter()),
-                    formatter = Formatter()
-                )
-        ))
+                        converter = Converter(),
+                        formatter = Formatter(),
+                        df_helper = RLDataFrameHelper())))
 
     displayer : Displayer = field(default = Displayer())
     plot_manager : PlotManager = field(default = PlotManager())
@@ -1944,19 +1670,6 @@ class ReadingListProcessor():
 
         if not hasattr(self, '_ReadingListProcessor__rl_summary'):
             raise Exception(_MessageCollection.please_run_initialize_first())
-    def __save_and_log(self, id : RLID, content : str) -> None:
-
-        '''Creates the provided Markdown content using __setting_bag.'''
-
-        file_path : str = self.__component_bag.file_path_manager.create_file_path(
-            folder_path = self.__setting_bag.working_folder_path,
-            file_name = self.__component_bag.rl_adapter.extract_file_name_and_paragraph_title(id = id, setting_bag = self.__setting_bag)[0]
-        )
-        
-        self.__component_bag.file_manager.save_content(content = content, file_path = file_path)
-
-        message : str = _MessageCollection.this_content_successfully_saved_as(id = id, file_path = file_path)
-        self.__component_bag.logging_function(message)
 
     def initialize(self) -> None:
 
@@ -1975,15 +1688,9 @@ class ReadingListProcessor():
 
         options : list = self.__setting_bag.options_rl
         df : DataFrame = self.__rl_summary.rl_df
-        content : str = self.__rl_summary.rl_md
-        id : RLID = RLID.RL
 
         if OPTION.display in options:
-            self.__component_bag.displayer.display(obj = df)
-
-        if OPTION.save in options:
-            self.__save_and_log(id = id, content = content)
-    
+            self.__component_bag.displayer.display(obj = df)    
     def process_rls_by_month(self) -> None:
 
         '''
@@ -1996,14 +1703,9 @@ class ReadingListProcessor():
 
         options : list = self.__setting_bag.options_rls_by_month
         df : DataFrame = self.__rl_summary.rls_by_month_tpl[1]
-        content : str = self.__rl_summary.rls_by_month_md     
-        id : RLID = RLID.RLSBYMONTH
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df)
-
-        if OPTION.save in self.__setting_bag.options_rls_by_month:
-            self.__save_and_log(id = id, content = content)
     def process_rls_by_year(self) -> None:
 
         '''
@@ -2031,13 +1733,9 @@ class ReadingListProcessor():
 
         options : list = self.__setting_bag.options_rls_by_range
         df : DataFrame = self.__rl_summary.rls_by_range_df
-        content : str = self.__rl_summary.rls_asrt_md
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df)
-
-        if OPTION.logset in options:
-            self.__component_bag.logging_function(content)
 
     def process_rls_by_kbsize(self) -> None:
 
@@ -2088,17 +1786,12 @@ class ReadingListProcessor():
         df : DataFrame = self.__rl_summary.rls_by_publisher_tpl[0].head(n = self.__setting_bag.rls_by_publisher_n)
         formatters : dict = self.__setting_bag.rls_by_publisher_formatters
         footer : str = self.__rl_summary.rls_by_publisher_tpl[2] + "\n"
-        content : str = self.__rl_summary.rls_by_publisher_md
-        id : RLID = RLID.RLSBYPUBLISHER
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df, formatters = formatters)
 
         if OPTION.logset in options:
             self.__component_bag.logging_function(footer)
-
-        if OPTION.save in options:
-            self.__save_and_log(id = id, content = content)
     def process_rls_by_rating(self) -> None:
 
         '''
@@ -2111,14 +1804,9 @@ class ReadingListProcessor():
 
         options : list = self.__setting_bag.options_rls_by_rating
         df : DataFrame = self.__rl_summary.rls_by_rating_df
-        content : str = self.__rl_summary.rls_by_rating_md
-        id : RLID = RLID.RLSBYRATING      
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df)
-
-        if OPTION.save in options:
-            self.__save_and_log(id = id, content = content)
     def process_rls_by_topic(self) -> None:
 
         '''
@@ -2132,15 +1820,10 @@ class ReadingListProcessor():
         options : list = self.__setting_bag.options_rls_by_topic
         df_1 : DataFrame = self.__rl_summary.rls_by_topic_df
         df_2 : DataFrame = self.__rl_summary.rls_by_topic_bt_df
-        content : str = self.__rl_summary.rls_by_topic_md
-        id : RLID = RLID.RLSBYTOPIC
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df_1)
             self.__component_bag.displayer.display(obj = df_2)
-
-        if OPTION.save in options:
-            self.__save_and_log(id = id, content = content)
     def process_definitions(self) -> None:
 
         '''

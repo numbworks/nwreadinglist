@@ -14,9 +14,9 @@ from unittest.mock import Mock, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import RLCN, RLID, DEFINITIONSCN, OPTION, _MessageCollection, MDInfo, RLSummary, DefaultPathProvider
-from nwreadinglist import MDInfoProvider, SettingBag, RLDataFrameHelper, RLDataFrameFactory, RLMarkdownFactory
-from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor, YearProvider
+from nwreadinglist import RLCN, RLID, DEFINITIONSCN, OPTION, _MessageCollection, RLSummary, DefaultPathProvider
+from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
+from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor
 from nwshared import Converter, Formatter, FilePathManager, FileManager, Displayer, PlotManager
 
 # SUPPORT METHODS
@@ -270,17 +270,17 @@ class ObjectMother():
     def get_setting_bag() -> SettingBag:
 
         setting_bag : SettingBag = SettingBag(
-            options_rl = [OPTION.save],
-            options_rls_by_month = [OPTION.display, OPTION.save],
+            options_rl = [],
+            options_rls_by_month = [OPTION.display],
             options_rls_by_year = [OPTION.display],
-            options_rls_by_range = [OPTION.display, OPTION.logset],
+            options_rls_by_range = [OPTION.display],
 
             options_rls_by_kbsize = [OPTION.display, OPTION.plot],
             options_rls_by_books_year = [OPTION.plot],
-            options_rls_by_publisher = [OPTION.display, OPTION.logset, OPTION.save],
-            options_rls_by_rating = [OPTION.display, OPTION.save],
-            options_rls_by_topic = [OPTION.display, OPTION.save],
-            options_rls_by_topic_bt = [OPTION.display, OPTION.save],
+            options_rls_by_publisher = [OPTION.display, OPTION.logset],
+            options_rls_by_rating = [OPTION.display],
+            options_rls_by_topic = [OPTION.display],
+            options_rls_by_topic_bt = [OPTION.display],
             options_definitions = [OPTION.display],
             read_years = YearProvider().get_all_years(),
             excel_path = DefaultPathProvider().get_default_reading_list_path(),
@@ -292,16 +292,6 @@ class ObjectMother():
 # TEST CLASSES
 class MessageCollectionTestCase(unittest.TestCase):
 
-    def test_nomdinfofound_shouldreturnexpectedmessage_wheninvoked(self):
-        
-        # Arrange
-        expected : str = "No MDInfo object found for id='rl'."
-        
-        # Act
-        actual : str = _MessageCollection.no_mdinfo_found(id = RLID.RL)
-        
-        # Assert
-        self.assertEqual(actual, expected)
     def test_pleaseruninitializefirst_shouldreturnexpectedmessage_wheninvoked(self):
         
         # Arrange
@@ -312,32 +302,6 @@ class MessageCollectionTestCase(unittest.TestCase):
         
         # Assert
         self.assertEqual(actual, expected)
-    def test_thiscontentsuccessfullysaved_shouldreturnexpectedmessage_wheninvoked(self):
-
-        # Arrange
-        expected : str = "This content (id: 'rl') has been successfully saved as '/home/nwreadinglist/READINGLIST.md'."
-        
-        # Act
-        actual : str = _MessageCollection.this_content_successfully_saved_as(id = RLID.RL, file_path = "/home/nwreadinglist/READINGLIST.md")
-        
-        # Assert
-        self.assertEqual(actual, expected)
-class MDInfoTestCase(unittest.TestCase):
-    
-    def test_mdinfo_shouldinitializeasexpected_wheninvoked(self):
-        
-        # Arrange
-        # Act
-        md_info : MDInfo = MDInfo(
-            id = RLID.RL,
-            file_name = "READINGLIST.md",
-            paragraph_title = "Reading List"
-        )
-
-        # Assert
-        self.assertEqual(md_info.id, RLID.RL)
-        self.assertEqual(md_info.file_name, "READINGLIST.md")
-        self.assertEqual(md_info.paragraph_title, "Reading List")
 class RLSummaryTestCase(unittest.TestCase):
 
     def test_rlsummary_shouldinitializeasexpected_wheninvoked(self):
@@ -347,7 +311,6 @@ class RLSummaryTestCase(unittest.TestCase):
         tpl : Tuple[DataFrame, DataFrame] = (df, df)
         footer : str = "Some Markdown footer."
         tpl_footer: Tuple[DataFrame, DataFrame, str] = (df, df, footer)
-        content : str = "Some Markdown content."
 
         # Act
         rl_summary : RLSummary = RLSummary(
@@ -360,13 +323,7 @@ class RLSummaryTestCase(unittest.TestCase):
             rls_by_topic_df = df,
             rls_by_topic_bt_df = df,
             rls_by_year_df = df,
-            definitions_df = df,
-            rl_md = content,
-            rls_asrt_md = content,
-            rls_by_month_md = content,
-            rls_by_publisher_md = content,
-            rls_by_rating_md = content,
-            rls_by_topic_md = content
+            definitions_df = df
         )
 
         # Assert
@@ -383,12 +340,6 @@ class RLSummaryTestCase(unittest.TestCase):
         assert_frame_equal(rl_summary.rls_by_topic_df, df)
         assert_frame_equal(rl_summary.rls_by_topic_bt_df, df)
         assert_frame_equal(rl_summary.definitions_df, df)
-        self.assertEqual(rl_summary.rl_md, content)
-        self.assertEqual(rl_summary.rls_asrt_md, content)
-        self.assertEqual(rl_summary.rls_by_month_md, content)
-        self.assertEqual(rl_summary.rls_by_publisher_md, content)
-        self.assertEqual(rl_summary.rls_by_rating_md, content)
-        self.assertEqual(rl_summary.rls_by_topic_md, content)
 class DefaultPathProviderTestCase(unittest.TestCase):
 
     def test_getdefaultreadinglistpath_shouldreturnexpectedpath_wheninvoked(self):
@@ -416,45 +367,23 @@ class YearProviderTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(expected, actual)
-class MDInfoProviderTestCase(unittest.TestCase):
-    
-    def test_getall_shouldreturnexpectedlist_wheninvoked(self):
-        
-        # Arrange
-        expected : list[MDInfo] = [
-                MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List"),
-                MDInfo(id = RLID.RLSBYMONTH, file_name = "READINGLISTBYMONTH.md", paragraph_title = "Reading List By Month"),
-                MDInfo(id = RLID.RLSBYPUBLISHER, file_name = "READINGLISTBYPUBLISHER.md", paragraph_title = "Reading List By Publisher"),
-                MDInfo(id = RLID.RLSBYRATING, file_name = "READINGLISTBYRATING.md", paragraph_title = "Reading List By Rating"),
-                MDInfo(id = RLID.RLSBYTOPIC, file_name = "READINGLISTBYTOPIC.md", paragraph_title = "Reading List By Topic")
-            ]
-
-        # Act
-        actual : list[MDInfo] = MDInfoProvider().get_all()
-
-        # Assert
-        self.assertEqual(len(expected), len(actual))
-        for i in range(len(expected)):
-            self.assertEqual(expected[i].id, actual[i].id)
-            self.assertEqual(expected[i].file_name, actual[i].file_name)
-            self.assertEqual(expected[i].paragraph_title, actual[i].paragraph_title)
 class SettingBagTestCase(unittest.TestCase):
 
     def test_settingbag_shouldinitializeasexpected_wheninvoked(self):
         
         # Arrange
-        options_rl : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
+        options_rl : list[Literal[OPTION.display]] = [OPTION.display]
 
-        options_rls_by_month : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
+        options_rls_by_month : list[Literal[OPTION.display]] = [OPTION.display]
         options_rls_by_year : list[Literal[OPTION.display]] = [OPTION.display]
-        options_rls_by_range : list[Literal[OPTION.display, OPTION.logset]] = [OPTION.display, OPTION.logset]
+        options_rls_by_range : list[Literal[OPTION.display]] = [OPTION.display]
 
         options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = [OPTION.display, OPTION.plot]
         options_rls_by_books_year : list[Literal[OPTION.plot]] = [OPTION.plot]
-        options_rls_by_topic : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
-        options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset, OPTION.save]] = [OPTION.display, OPTION.logset, OPTION.save]
-        options_rls_by_rating : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
-        options_rls_by_topic_bt : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
+        options_rls_by_topic : list[Literal[OPTION.display]] = [OPTION.display]
+        options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]] = [OPTION.display, OPTION.logset]
+        options_rls_by_rating : list[Literal[OPTION.display]] = [OPTION.display]
+        options_rls_by_topic_bt : list[Literal[OPTION.display]] = [OPTION.display]
         options_definitions : list[Literal[OPTION.display]] = [OPTION.display]
         read_years : list[int] = [2022, 2023]
         excel_path : str = "Reading List.xlsx"
@@ -466,8 +395,6 @@ class SettingBagTestCase(unittest.TestCase):
         rls_by_kbsize_remove_if_zero : bool = True
         rls_by_kbsize_n : int = 10
         rls_by_rating_number_as_stars : bool = True
-        md_last_update : datetime = datetime.now()
-        md_infos : list[MDInfo] = [ MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List") ]
         rls_by_publisher_n : int = 10
         rls_by_publisher_formatters : dict[str, str] = {"AvgRating": "{:.2f}", "AB%": "{:.2f}"}
         rls_by_publisher_min_books : int = 8
@@ -513,9 +440,7 @@ class SettingBagTestCase(unittest.TestCase):
             rls_by_publisher_min_ab_perc = rls_by_publisher_min_ab_perc,
             rls_by_publisher_criteria = rls_by_publisher_criteria,
             rls_by_rating_number_as_stars = rls_by_rating_number_as_stars,
-            rls_by_topic_bt_sparklines_maximum = rls_by_topic_bt_sparklines_maximum,
-            md_last_update = md_last_update,
-            md_infos = md_infos
+            rls_by_topic_bt_sparklines_maximum = rls_by_topic_bt_sparklines_maximum
         )
 
         # Assert
@@ -552,10 +477,6 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.rls_by_publisher_criteria, rls_by_publisher_criteria)
         self.assertEqual(setting_bag.rls_by_rating_number_as_stars, rls_by_rating_number_as_stars)
         self.assertEqual(setting_bag.rls_by_topic_bt_sparklines_maximum, rls_by_topic_bt_sparklines_maximum)
-        self.assertEqual(setting_bag.md_last_update, md_last_update)
-        self.assertEqual(setting_bag.md_infos[0].id, md_infos[0].id)
-        self.assertEqual(setting_bag.md_infos[0].file_name, md_infos[0].file_name)
-        self.assertEqual(setting_bag.md_infos[0].paragraph_title, md_infos[0].paragraph_title)
 class RLDataFrameHelperTestCase(unittest.TestCase):
 
     @parameterized.expand([
@@ -958,17 +879,12 @@ class RLAdapterTestCase(unittest.TestCase):
         self.rls_by_publisher_min_avgrating : float = 2.50
         self.rls_by_publisher_criteria : str = "Yes"
         self.rls_by_rating_number_as_stars = True
-        self.md_infos : list[MDInfo] = [
-            MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List")
-        ]
-        self.md_last_update : datetime = datetime(2024, 1, 1)
 
     def test_createrldf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
 
         setting_bag : SettingBag = Mock()
         setting_bag.excel_path = self.excel_path
@@ -992,8 +908,7 @@ class RLAdapterTestCase(unittest.TestCase):
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
 
         setting_bag : SettingBag = Mock()
         setting_bag.read_years = self.read_years
@@ -1014,8 +929,7 @@ class RLAdapterTestCase(unittest.TestCase):
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
 
         setting_bag : SettingBag = Mock()
         setting_bag.read_years = self.read_years
@@ -1042,8 +956,7 @@ class RLAdapterTestCase(unittest.TestCase):
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
 
         setting_bag : SettingBag = Mock()
         setting_bag.rounding_digits = self.rounding_digits
@@ -1064,8 +977,7 @@ class RLAdapterTestCase(unittest.TestCase):
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
 
         setting_bag : SettingBag = Mock()
         setting_bag.rls_by_kbsize_n = self.rls_by_kbsize_n
@@ -1088,8 +1000,7 @@ class RLAdapterTestCase(unittest.TestCase):
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
 
         setting_bag : SettingBag = Mock()
         setting_bag.rounding_digits = self.rounding_digits
@@ -1116,8 +1027,7 @@ class RLAdapterTestCase(unittest.TestCase):
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
 
         setting_bag : SettingBag = Mock()
         setting_bag.rls_by_rating_number_as_stars = self.rls_by_rating_number_as_stars
@@ -1147,12 +1057,6 @@ class RLAdapterTestCase(unittest.TestCase):
         rls_by_topic_df : DataFrame = ObjectMother.get_rls_by_topic_df()
         rls_by_topic_bt_df : DataFrame = ObjectMother.get_rls_by_topic_bt_df()
         definitions_df : DataFrame = ObjectMother.get_definitions_df()
-        rl_md : str = "Sample RL Markdown"
-        rls_asrt_md : str = "Sample Assertion Markdown"
-        rls_by_month_md : str = "Sample Month Markdown"
-        rls_by_publisher_md : str = "Sample Publisher Markdown"
-        rls_by_rating_md : str = "Sample Rating Markdown"
-        rls_by_topic_md : str = "Sample Topic Markdown"
 
         df_factory : RLDataFrameFactory = Mock()
         df_factory.create_rl_df = Mock(return_value = rl_df)
@@ -1167,15 +1071,7 @@ class RLAdapterTestCase(unittest.TestCase):
         df_factory.create_rls_by_topic_bt_df = Mock(return_value = rls_by_topic_bt_df)
         df_factory.create_definitions_df.return_value = definitions_df
 
-        md_factory : RLMarkdownFactory = Mock()
-        md_factory.create_rl_asrt_md.return_value = rls_asrt_md
-        md_factory.create_rl_md = Mock(return_value = rl_md)
-        md_factory.create_rls_by_month_md = Mock(return_value = rls_by_month_md)
-        md_factory.create_rls_by_publisher_md = Mock(return_value = rls_by_publisher_md)
-        md_factory.create_rls_by_rating_md = Mock(return_value = rls_by_rating_md)
-        md_factory.create_rls_by_topic_md = Mock(return_value = rls_by_topic_md)
-
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
         setting_bag : SettingBag = ObjectMother.get_setting_bag()
 
         # Act
@@ -1196,51 +1092,6 @@ class RLAdapterTestCase(unittest.TestCase):
         assert_frame_equal(actual.rls_by_topic_df, rls_by_topic_df)
         assert_frame_equal(actual.rls_by_topic_bt_df, rls_by_topic_bt_df)
         assert_frame_equal(actual.definitions_df, definitions_df)
-
-        self.assertEqual(actual.rl_md, rl_md)
-        self.assertEqual(actual.rls_asrt_md, rls_asrt_md)
-        self.assertEqual(actual.rls_by_month_md, rls_by_month_md)
-        self.assertEqual(actual.rls_by_publisher_md, rls_by_publisher_md)
-        self.assertEqual(actual.rls_by_rating_md, rls_by_rating_md)
-        self.assertEqual(actual.rls_by_topic_md, rls_by_topic_md)
-    def test_extractfilenameandparagraphtitle_shouldreturnexpectedvalues_whenidexists(self) -> None:
-        
-        # Arrange
-        df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
-
-        setting_bag : SettingBag = Mock()
-        setting_bag.md_infos = self.md_infos
-
-        # Act
-        actual : Tuple[str, str] = rl_adapter.extract_file_name_and_paragraph_title(
-            id = self.md_infos[0].id, 
-            setting_bag = setting_bag
-        )
-
-        # Assert
-        self.assertEqual(actual, (self.md_infos[0].file_name, self.md_infos[0].paragraph_title))
-    def test_extractfilenameandparagraphtitle_shouldraiseexception_wheniddoesnotexist(self) -> None:
-        
-        # Arrange
-        df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
-        
-        id : RLID = RLID.RL
-
-        md_infos : list[MDInfo] = [
-            MDInfo(id = Mock(id = "other_id"), file_name = "OTHERFILE.md", paragraph_title = "Other Title")
-        ]
-        setting_bag : SettingBag = Mock(md_infos = md_infos)
-
-        # Act
-        with self.assertRaises(Exception) as context:
-            rl_adapter.extract_file_name_and_paragraph_title(id = id, setting_bag = setting_bag)
-        
-        # Assert
-        self.assertEqual(str(context.exception), _MessageCollection.no_mdinfo_found(id = id)) 
 class ReadingListProcessorTestCase(unittest.TestCase):
 
     @parameterized.expand([
