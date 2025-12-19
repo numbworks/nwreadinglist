@@ -1150,21 +1150,23 @@ class RLDataFrameFactory():
     def create_rls_by_month_tpl(self, rl_df : DataFrame, read_years : list[int], now : datetime) -> Tuple[DataFrame, DataFrame]:
 
         '''
-            The method returns a tuple of dataframes (sas_by_month_df, sas_by_month_upd_df), 
-            where the first item contains the pristine dataset while the second one has all 
-            the future reading statuses replaced with empty strings ("0 (0)" => "") according 
-            to setting_bag.now.
+            The method returns a tuple of dataframes (sas_by_month_df, sas_by_month_upd_df):
 
-            Example:
+            Item 0 (sas_by_month_df) contains the pristine dataset:
 
-                    Month	2016	↕1	2017	    ↕2	2018
+                    Month	2016	↕	2017	    ↕	2018
                 0	1	    0 (0)	↑	13 (5157)	↓	0 (0)
                 1	2	    0 (0)	↑	1 (106)	    ↓	0 (0)
                 ...
 
-                    Month	2016	↕   2017	    ↕	2018
-                0	1	    0 (0)	↑	13 (5157)	↓	0 (0)
-                1	2	    0 (0)	↑	1 (106)	    ↓	0 (0)
+            Item 1 (sas_by_month_upd_df) contains the same dataset optimized for visual representation:
+                
+                - Future reading statuses replaced with empty strings ("0 (0)" => "") according to setting_bag.now.
+                - The "Month" column is removed.
+
+                    2016	↕   2017	    ↕	2018
+                0	0 (0)	↑	13 (5157)	↓	0 (0)
+                1	0 (0)	↑	1 (106)	    ↓	
                 ...
         '''
 
@@ -1190,6 +1192,8 @@ class RLDataFrameFactory():
         sas_by_month_upd_df : DataFrame = self.__update_future_rs_to_empty(
             rls_by_month_df = sas_by_month_df, 
             now = now)
+
+        sas_by_month_upd_df.drop(columns = [RLCN.MONTH], inplace = True)
 
         return (sas_by_month_df, sas_by_month_upd_df)
     def create_rls_by_year_street_price_df(self, rls_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame, read_years : list[int], rounding_digits : int) -> DataFrame:
