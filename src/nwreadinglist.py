@@ -123,7 +123,7 @@ class RLSummary():
 
     rls_by_month_tpl : Tuple[DataFrame, DataFrame]
     rls_by_year_df : DataFrame
-    rls_asrt_df : DataFrame
+    rls_by_range_df : DataFrame
 
     rls_by_kbsize_df : DataFrame
     rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]
@@ -189,11 +189,11 @@ class SettingBag():
     '''Represents a collection of settings.'''
 
 	# Without Defaults
+    options_rl : list[Literal[OPTION.display, OPTION.save]]
     options_rls_by_month : list[Literal[OPTION.display, OPTION.save]]
     options_rls_by_year : list[Literal[OPTION.display]]
+    options_rls_by_range : list[Literal[OPTION.display, OPTION.logset]]
 
-    options_rl : list[Literal[OPTION.display, OPTION.save]]
-    options_rls_asrt : list[Literal[OPTION.display, OPTION.logset]]
     options_rls_by_books_year : list[Literal[OPTION.plot]]
     options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]]
     options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset, OPTION.save]]
@@ -1341,7 +1341,7 @@ class RLDataFrameFactory():
         rls_by_year_df.reset_index(drop = True, inplace = True)
 
         return rls_by_year_df
-    def create_rls_asrt_df(self, rl_df : DataFrame, rounding_digits : int) -> DataFrame:
+    def create_rls_by_range_df(self, rl_df : DataFrame, rounding_digits : int) -> DataFrame:
 
         '''
                 8 Years
@@ -1365,9 +1365,9 @@ class RLDataFrameFactory():
             total_spend_str
         ]
 
-        rl_asrt_df : DataFrame = pd.DataFrame(values, columns = [col_name])
+        rl_by_range_df : DataFrame = pd.DataFrame(values, columns = [col_name])
 
-        return rl_asrt_df
+        return rl_by_range_df
 
     def create_rls_by_kbsize_df(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool, n : int) -> DataFrame:
         
@@ -1743,17 +1743,16 @@ class RLAdapter():
         )
 
         return rls_by_year_df    
-    
-    def create_rls_asrt_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+    def create_rls_by_range_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
 
         '''Creates the expected dataframe using setting_bag and the provided arguments.'''
 
-        rls_asrt_df : DataFrame = self.__df_factory.create_rls_asrt_df(
+        rls_by_range_df : DataFrame = self.__df_factory.create_rls_by_range_df(
             rl_df = rl_df, 
             rounding_digits = setting_bag.rounding_digits
             )
 
-        return rls_asrt_df  
+        return rls_by_range_df  
     
     def create_rls_by_kbsize_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
 
@@ -1866,7 +1865,7 @@ class RLAdapter():
         '''Creates a RLSummary object out of setting_bag.'''
 
         rl_df : DataFrame = self.create_rl_df(setting_bag = setting_bag)
-        rls_asrt_df : DataFrame = self.create_rls_asrt_df(rl_df = rl_df, setting_bag = setting_bag)
+        rls_asrt_df : DataFrame = self.create_rls_by_range_df(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_kbsize_df : DataFrame = self.create_rls_by_kbsize_df(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_month_tpl : Tuple[DataFrame, DataFrame] = self.create_rls_by_month_tpl(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.create_rls_by_publisher_tpl(rl_df = rl_df, setting_bag = setting_bag)
@@ -1885,7 +1884,7 @@ class RLAdapter():
 
         rl_summary : RLSummary = RLSummary(
             rl_df = rl_df,
-            rls_asrt_df = rls_asrt_df,
+            rls_by_range_df = rls_asrt_df,
             rls_by_kbsize_df = rls_by_kbsize_df,
             rls_by_month_tpl = rls_by_month_tpl,
             rls_by_publisher_tpl = rls_by_publisher_tpl,
@@ -2020,8 +2019,7 @@ class ReadingListProcessor():
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df)
-
-    def process_rls_asrt(self) -> None:
+    def process_rls_by_range(self) -> None:
 
         '''
             Performs all the actions listed in __setting_bag.options_rl_asrt.
@@ -2031,8 +2029,8 @@ class ReadingListProcessor():
 
         self.__validate_summary()
 
-        options : list = self.__setting_bag.options_rls_asrt
-        df : DataFrame = self.__rl_summary.rls_asrt_df
+        options : list = self.__setting_bag.options_rls_by_range
+        df : DataFrame = self.__rl_summary.rls_by_range_df
         content : str = self.__rl_summary.rls_asrt_md
 
         if OPTION.display in options:
@@ -2040,6 +2038,7 @@ class ReadingListProcessor():
 
         if OPTION.logset in options:
             self.__component_bag.logging_function(content)
+
     def process_rls_by_kbsize(self) -> None:
 
         '''
@@ -2075,7 +2074,6 @@ class ReadingListProcessor():
 
         if OPTION.plot in options:
             self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)
-
     def process_rls_by_publisher(self) -> None:
 
         '''
