@@ -120,14 +120,17 @@ class RLSummary():
     '''Collects all the dataframes and markdowns.'''
 
     rl_df : DataFrame
-    rls_asrt_df : DataFrame
+
     rls_by_month_tpl : Tuple[DataFrame, DataFrame]
+    rls_by_year_df : DataFrame
+    rls_asrt_df : DataFrame
+
     rls_by_kbsize_df : DataFrame
     rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]
     rls_by_rating_df : DataFrame
     rls_by_topic_df : DataFrame
     rls_by_topic_bt_df : DataFrame
-    rls_by_year_street_price_df : DataFrame
+
     definitions_df : DataFrame
 
     rl_md : str
@@ -186,11 +189,13 @@ class SettingBag():
     '''Represents a collection of settings.'''
 
 	# Without Defaults
+    options_rls_by_month : list[Literal[OPTION.display, OPTION.save]]
+    options_rls_by_year : list[Literal[OPTION.display]]
+
     options_rl : list[Literal[OPTION.display, OPTION.save]]
     options_rls_asrt : list[Literal[OPTION.display, OPTION.logset]]
     options_rls_by_books_year : list[Literal[OPTION.plot]]
     options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]]
-    options_rls_by_month : list[Literal[OPTION.display, OPTION.save]]
     options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset, OPTION.save]]
     options_rls_by_rating : list[Literal[OPTION.display, OPTION.save]]
     options_rls_by_topic : list[Literal[OPTION.display, OPTION.save]]
@@ -1267,51 +1272,7 @@ class RLDataFrameFactory():
             excel_null_value = excel_null_value)
 
         return rl_df
-    def create_rls_asrt_df(self, rl_df : DataFrame, rounding_digits : int) -> DataFrame:
-
-        '''
-                8 Years
-            0	234 (62648)
-            1	$6332.01
-        '''
-
-        count_years : int = rl_df[RLCN.READYEAR].nunique()
-        count_books : int = rl_df[RLCN.TITLE].size
-        sum_pages : int = rl_df[RLCN.PAGES].sum()
-        sum_street_price : float64 = rl_df[RLCN.STREETPRICE].sum()
-
-        total_spend_str: str = self.__formatter.format_usd_amount(
-            amount = sum_street_price,
-            rounding_digits = rounding_digits
-        )
-
-        col_name = f"{count_years} {RLCN.YEARS}"
-        values = [
-            f"{count_books} ({sum_pages})",
-            total_spend_str
-        ]
-
-        rl_asrt_df : DataFrame = pd.DataFrame(values, columns = [col_name])
-
-        return rl_asrt_df
-    def create_rls_by_kbsize_df(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool, n : int) -> DataFrame:
-        
-        '''
-            Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
-            1	    Machine Learning For Dummies	                2017	Data Analysis, Data Science, ML	Wiley	4	    3732	8
-            2	    Machine Learning Projects for .NET Developers	2017	Data Analysis, Data Science, ML	Apress	4	    3272	7        
-            ...
-        '''
-
-        rl_by_kbsize_df : DataFrame = self.__slice_by_kbsize(
-            rl_df = rl_df, 
-            ascending = ascending, 
-            remove_if_zero = remove_if_zero)
-        
-        rl_by_kbsize_df = self.__converter.convert_index_to_one_based(df = rl_by_kbsize_df)
-        rl_by_kbsize_df = rl_by_kbsize_df.head(n = n)
-
-        return rl_by_kbsize_df   
+    
     def create_rls_by_month_tpl(self, rl_df : DataFrame, read_years : list[int], now : datetime) -> Tuple[DataFrame, DataFrame]:
 
         '''
@@ -1360,8 +1321,8 @@ class RLDataFrameFactory():
 
         sas_by_month_upd_df.drop(columns = [RLCN.MONTH], inplace = True)
 
-        return (sas_by_month_df, sas_by_month_upd_df)
-    def create_rls_by_year_street_price_df(self, rls_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame, read_years : list[int], rounding_digits : int) -> DataFrame:
+        return (sas_by_month_df, sas_by_month_upd_df)    
+    def create_rls_by_year_df(self, rls_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame, read_years : list[int], rounding_digits : int) -> DataFrame:
 
         '''
                 2016	    ↕	2017	    ↕	2018	    ↕	2019	    ↕	2020	    ↕	2021	    ↕	2022	↕	2023
@@ -1370,15 +1331,62 @@ class RLDataFrameFactory():
         '''
 
         sas_by_year_df : DataFrame = self.__create_rls_by_year_df(rls_by_month_df = rls_by_month_tpl[0])
+        
         sas_by_street_price_df : DataFrame = self.__create_rls_by_street_price_df(
             rl_df = rl_df, 
             read_years = read_years,
             rounding_digits = rounding_digits)
 
-        sas_by_year_street_price_df : DataFrame = pd.concat(objs = [sas_by_year_df, sas_by_street_price_df])
-        sas_by_year_street_price_df.reset_index(drop = True, inplace = True)
+        rls_by_year_df : DataFrame = pd.concat(objs = [sas_by_year_df, sas_by_street_price_df])
+        rls_by_year_df.reset_index(drop = True, inplace = True)
 
-        return sas_by_year_street_price_df      
+        return rls_by_year_df
+    def create_rls_asrt_df(self, rl_df : DataFrame, rounding_digits : int) -> DataFrame:
+
+        '''
+                8 Years
+            0	234 (62648)
+            1	$6332.01
+        '''
+
+        count_years : int = rl_df[RLCN.READYEAR].nunique()
+        count_books : int = rl_df[RLCN.TITLE].size
+        sum_pages : int = rl_df[RLCN.PAGES].sum()
+        sum_street_price : float64 = rl_df[RLCN.STREETPRICE].sum()
+
+        total_spend_str: str = self.__formatter.format_usd_amount(
+            amount = sum_street_price,
+            rounding_digits = rounding_digits
+        )
+
+        col_name = f"{count_years} {RLCN.YEARS}"
+        values = [
+            f"{count_books} ({sum_pages})",
+            total_spend_str
+        ]
+
+        rl_asrt_df : DataFrame = pd.DataFrame(values, columns = [col_name])
+
+        return rl_asrt_df
+
+    def create_rls_by_kbsize_df(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool, n : int) -> DataFrame:
+        
+        '''
+            Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
+            1	    Machine Learning For Dummies	                2017	Data Analysis, Data Science, ML	Wiley	4	    3732	8
+            2	    Machine Learning Projects for .NET Developers	2017	Data Analysis, Data Science, ML	Apress	4	    3272	7        
+            ...
+        '''
+
+        rl_by_kbsize_df : DataFrame = self.__slice_by_kbsize(
+            rl_df = rl_df, 
+            ascending = ascending, 
+            remove_if_zero = remove_if_zero)
+        
+        rl_by_kbsize_df = self.__converter.convert_index_to_one_based(df = rl_by_kbsize_df)
+        rl_by_kbsize_df = rl_by_kbsize_df.head(n = n)
+
+        return rl_by_kbsize_df   
     def create_rls_by_topic_df(self, rl_df : DataFrame) -> DataFrame:
 
         """
@@ -1698,7 +1706,6 @@ class RLAdapter():
                 return (md_info.file_name, md_info.paragraph_title)
 
         raise Exception(_MessageCollection.no_mdinfo_found(id = id)) 
-
     def create_rl_df(self, setting_bag : SettingBag) -> DataFrame:
 
         '''Creates the expected dataframe using setting_bag.'''
@@ -1711,7 +1718,32 @@ class RLAdapter():
             excel_null_value = setting_bag.excel_null_value
             )
 
-        return rl_df
+        return rl_df   
+
+    def create_rls_by_month_tpl(self, rl_df : DataFrame, setting_bag : SettingBag) -> Tuple[DataFrame, DataFrame]:
+
+        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
+
+        rls_by_month_tpl : Tuple[DataFrame, DataFrame] = self.__df_factory.create_rls_by_month_tpl(
+            rl_df = rl_df,
+            read_years = setting_bag.read_years,
+            now = setting_bag.now
+        )
+
+        return rls_by_month_tpl    
+    def create_rls_by_year_df(self, rls_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+
+        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
+
+        rls_by_year_df : DataFrame = self.__df_factory.create_rls_by_year_df(
+            rls_by_month_tpl = rls_by_month_tpl,
+            rl_df = rl_df,
+            read_years = setting_bag.read_years,
+            rounding_digits = setting_bag.rounding_digits
+        )
+
+        return rls_by_year_df    
+    
     def create_rls_asrt_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
 
         '''Creates the expected dataframe using setting_bag and the provided arguments.'''
@@ -1722,6 +1754,7 @@ class RLAdapter():
             )
 
         return rls_asrt_df  
+    
     def create_rls_by_kbsize_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
 
         '''Creates the expected dataframe using setting_bag and the provided arguments.'''
@@ -1734,29 +1767,6 @@ class RLAdapter():
         )
 
         return rls_by_kbsize_df
-    def create_rls_by_month_tpl(self, rl_df : DataFrame, setting_bag : SettingBag) -> Tuple[DataFrame, DataFrame]:
-
-        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
-
-        rls_by_month_tpl : Tuple[DataFrame, DataFrame] = self.__df_factory.create_rls_by_month_tpl(
-            rl_df = rl_df,
-            read_years = setting_bag.read_years,
-            now = setting_bag.now
-        )
-
-        return rls_by_month_tpl
-    def create_rls_by_year_street_price_df(self, rls_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
-
-        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
-
-        rls_by_year_street_price_df : DataFrame = self.__df_factory.create_rls_by_year_street_price_df(
-            rls_by_month_tpl = rls_by_month_tpl,
-            rl_df = rl_df,
-            read_years = setting_bag.read_years,
-            rounding_digits = setting_bag.rounding_digits
-        )
-
-        return rls_by_year_street_price_df
     def create_rls_by_publisher_tpl(self, rl_df : DataFrame, setting_bag : SettingBag) -> Tuple[DataFrame, DataFrame, str]:
 
         '''Creates the expected dataframe using setting_bag and the provided arguments.'''
@@ -1849,6 +1859,8 @@ class RLAdapter():
         )
 
         return rls_by_rating_md
+ 
+    
     def create_summary(self, setting_bag : SettingBag) -> RLSummary:
 
         '''Creates a RLSummary object out of setting_bag.'''
@@ -1861,7 +1873,7 @@ class RLAdapter():
         rls_by_rating_df : DataFrame = self.create_rls_by_rating_df(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_topic_df : DataFrame = self.__df_factory.create_rls_by_topic_df(rl_df = rl_df)
         rls_by_topic_bt_df : DataFrame = self.create_rls_by_topic_bt_df(rl_df = rl_df, setting_bag = setting_bag)
-        rls_by_year_street_price_df : DataFrame = self.create_rls_by_year_street_price_df(rls_by_month_tpl = rls_by_month_tpl, rl_df = rl_df, setting_bag = setting_bag)
+        rls_by_year_street_price_df : DataFrame = self.create_rls_by_year_df(rls_by_month_tpl = rls_by_month_tpl, rl_df = rl_df, setting_bag = setting_bag)
         definitions_df : DataFrame = self.__df_factory.create_definitions_df()
 
         rl_md : str = self.create_rl_md(rl_df = rl_df, setting_bag = setting_bag)
@@ -1880,7 +1892,7 @@ class RLAdapter():
             rls_by_rating_df = rls_by_rating_df,
             rls_by_topic_df = rls_by_topic_df,
             rls_by_topic_bt_df = rls_by_topic_bt_df,
-            rls_by_year_street_price_df = rls_by_year_street_price_df,
+            rls_by_year_df = rls_by_year_street_price_df,
             definitions_df = definitions_df,
             rl_md = rl_md,
             rls_asrt_md = rls_asrt_md,
@@ -1972,6 +1984,43 @@ class ReadingListProcessor():
 
         if OPTION.save in options:
             self.__save_and_log(id = id, content = content)
+    
+    def process_rls_by_month(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rls_by_month.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_rls_by_month
+        df : DataFrame = self.__rl_summary.rls_by_month_tpl[1]
+        content : str = self.__rl_summary.rls_by_month_md     
+        id : RLID = RLID.RLSBYMONTH
+
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df)
+
+        if OPTION.save in self.__setting_bag.options_rls_by_month:
+            self.__save_and_log(id = id, content = content)
+    def process_rls_by_year(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rls_by_year.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_rls_by_month
+        df : DataFrame = self.__rl_summary.rls_by_year_df
+
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df)
+
     def process_rls_asrt(self) -> None:
 
         '''
@@ -2026,28 +2075,7 @@ class ReadingListProcessor():
 
         if OPTION.plot in options:
             self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)
-    def process_rls_by_month(self) -> None:
 
-        '''
-            Performs all the actions listed in __setting_bag.options_sas.
-            
-            It raises an exception if the 'initialize' method has not been run yet.
-        '''
-
-        self.__validate_summary()
-
-        options : list = self.__setting_bag.options_rls_by_month
-        df_1 : DataFrame = self.__rl_summary.rls_by_month_tpl[1]
-        df_2 : DataFrame = self.__rl_summary.rls_by_year_street_price_df
-        content : str = self.__rl_summary.rls_by_month_md     
-        id : RLID = RLID.RLSBYMONTH
-
-        if OPTION.display in options:
-            self.__component_bag.displayer.display(obj = df_1)
-            self.__component_bag.displayer.display(obj = df_2)
-
-        if OPTION.save in self.__setting_bag.options_rls_by_month:
-            self.__save_and_log(id = id, content = content)
     def process_rls_by_publisher(self) -> None:
 
         '''
