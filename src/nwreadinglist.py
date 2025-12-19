@@ -1100,35 +1100,33 @@ class RLDataFrameFactory():
             excel_null_value = excel_null_value)
 
         return rl_df
-    def create_rls_asrt_df(self, rl_df : DataFrame, rounding_digits : int, now : datetime) -> DataFrame:
+    def create_rls_asrt_df(self, rl_df : DataFrame, rounding_digits : int) -> DataFrame:
 
         '''
-                Years	Books	Pages	TotalSpend  LastUpdate
-            0	8	    234	    62648	$6332.01    2023-09-23
+                8 Years
+            0	234 (62648)
+            1	$6332.01
         '''
 
-        count_years : int = rl_df[RLCN.READYEAR].unique().size
+        count_years : int = rl_df[RLCN.READYEAR].nunique()
         count_books : int = rl_df[RLCN.TITLE].size
         sum_pages : int = rl_df[RLCN.PAGES].sum()
         sum_street_price : float64 = rl_df[RLCN.STREETPRICE].sum()
 
-        total_spend_str : str = self.__formatter.format_usd_amount(
-            amount = sum_street_price, 
-            rounding_digits = rounding_digits)
-        
-        last_update_str : str = self.__formatter.format_to_iso_8601(dt = now)
+        total_spend_str: str = self.__formatter.format_usd_amount(
+            amount = sum_street_price,
+            rounding_digits = rounding_digits
+        )
 
-        rl_asrt_dict : dict = {
-            f"{RLCN.YEARS}": f"{str(count_years)}",
-            f"{RLCN.BOOKS}": f"{str(count_books)}",
-            f"{RLCN.PAGES}": f"{str(sum_pages)}",
-            f"{RLCN.TOTALSPEND}": f"{total_spend_str}",
-            f"{RLCN.LASTUPDATE}": f"{last_update_str}"
-            }
+        col_name = f"{count_years} {RLCN.YEARS}"
+        values = [
+            f"{count_books} ({sum_pages})",
+            total_spend_str
+        ]
 
-        rl_asrt_df : DataFrame = pd.DataFrame(rl_asrt_dict, index=[0])
-        
-        return rl_asrt_df        
+        rl_asrt_df : DataFrame = pd.DataFrame(values, columns = [col_name])
+
+        return rl_asrt_df
     def create_rls_by_kbsize_df(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool, n : int) -> DataFrame:
         
         '''
@@ -1623,8 +1621,7 @@ class RLAdapter():
 
         rls_asrt_df : DataFrame = self.__df_factory.create_rls_asrt_df(
             rl_df = rl_df, 
-            rounding_digits = setting_bag.rounding_digits,
-            now = setting_bag.now
+            rounding_digits = setting_bag.rounding_digits
             )
 
         return rls_asrt_df  
