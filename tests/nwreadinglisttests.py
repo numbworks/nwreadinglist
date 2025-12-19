@@ -237,7 +237,7 @@ class ObjectMother():
             RLCN.BOOKS: np.array([1, 3, 4, 6], dtype = np.int64),
         }, index=pd.RangeIndex(start = 0, stop = 4, step = 1))
     @staticmethod
-    def get_rls_by_topic_bt_df() -> DataFrame:
+    def get_rls_by_topic_trend_df() -> DataFrame:
 
         return pd.DataFrame({
             RLCN.TOPIC: np.array(["Development Tools", "Python", "Software Engineering"], dtype=object),
@@ -280,7 +280,7 @@ class ObjectMother():
             options_rls_by_publisher = [OPTION.display, OPTION.logset],
             options_rls_by_rating = [OPTION.display],
             options_rls_by_topic = [OPTION.display],
-            options_rls_by_topic_bt = [OPTION.display],
+            options_rls_by_topic_trend = [OPTION.display],
             options_definitions = [OPTION.display],
             read_years = YearProvider().get_all_years(),
             excel_path = DefaultPathProvider().get_default_reading_list_path(),
@@ -321,7 +321,7 @@ class RLSummaryTestCase(unittest.TestCase):
             rls_by_publisher_tpl = tpl_footer,
             rls_by_rating_df = df,
             rls_by_topic_df = df,
-            rls_by_topic_bt_df = df,
+            rls_by_topic_trend_df = df,
             rls_by_year_df = df,
             definitions_df = df
         )
@@ -338,7 +338,7 @@ class RLSummaryTestCase(unittest.TestCase):
         assert_frame_equal(rl_summary.rls_by_rating_df, df)
         assert_frame_equal(rl_summary.rls_by_year_df, df)
         assert_frame_equal(rl_summary.rls_by_topic_df, df)
-        assert_frame_equal(rl_summary.rls_by_topic_bt_df, df)
+        assert_frame_equal(rl_summary.rls_by_topic_trend_df, df)
         assert_frame_equal(rl_summary.definitions_df, df)
 class DefaultPathProviderTestCase(unittest.TestCase):
 
@@ -419,7 +419,7 @@ class SettingBagTestCase(unittest.TestCase):
             options_rls_by_topic = options_rls_by_topic,
             options_rls_by_publisher = options_rls_by_publisher,
             options_rls_by_rating = options_rls_by_rating,
-            options_rls_by_topic_bt = options_rls_by_topic_bt,
+            options_rls_by_topic_trend = options_rls_by_topic_bt,
             options_definitions = options_definitions,
             read_years = read_years,
             excel_path = excel_path,
@@ -440,7 +440,7 @@ class SettingBagTestCase(unittest.TestCase):
             rls_by_publisher_min_ab_perc = rls_by_publisher_min_ab_perc,
             rls_by_publisher_criteria = rls_by_publisher_criteria,
             rls_by_rating_number_as_stars = rls_by_rating_number_as_stars,
-            rls_by_topic_bt_sparklines_maximum = rls_by_topic_bt_sparklines_maximum
+            rls_by_topic_trend_sparklines_maximum = rls_by_topic_bt_sparklines_maximum
         )
 
         # Assert
@@ -455,7 +455,7 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.options_rls_by_publisher, options_rls_by_publisher)
         self.assertEqual(setting_bag.options_rls_by_rating, options_rls_by_rating)
         self.assertEqual(setting_bag.options_rls_by_topic, options_rls_by_topic)
-        self.assertEqual(setting_bag.options_rls_by_topic_bt, options_rls_by_topic_bt)
+        self.assertEqual(setting_bag.options_rls_by_topic_trend, options_rls_by_topic_bt)
         self.assertEqual(setting_bag.options_definitions, options_definitions)
         self.assertEqual(setting_bag.read_years, read_years)
         self.assertEqual(setting_bag.excel_path, excel_path)
@@ -476,7 +476,7 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.rls_by_publisher_min_ab_perc, rls_by_publisher_min_ab_perc)
         self.assertEqual(setting_bag.rls_by_publisher_criteria, rls_by_publisher_criteria)
         self.assertEqual(setting_bag.rls_by_rating_number_as_stars, rls_by_rating_number_as_stars)
-        self.assertEqual(setting_bag.rls_by_topic_bt_sparklines_maximum, rls_by_topic_bt_sparklines_maximum)
+        self.assertEqual(setting_bag.rls_by_topic_trend_sparklines_maximum, rls_by_topic_bt_sparklines_maximum)
 class RLDataFrameHelperTestCase(unittest.TestCase):
 
     @parameterized.expand([
@@ -805,10 +805,10 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         
         # Arrange
         (rl_df, read_years) = ObjectMother().get_rl_tpl()
-        expected : DataFrame = ObjectMother().get_rls_by_topic_bt_df()
+        expected : DataFrame = ObjectMother().get_rls_by_topic_trend_df()
 
         # Act
-        actual : DataFrame = self.df_factory.create_rls_by_topic_bt_df(
+        actual : DataFrame = self.df_factory.create_rls_by_topic_trend_df(
             rl_df = rl_df,
             read_years = read_years,
             sparklines_maximum = self.trend_sparklines_maximum
@@ -1050,12 +1050,12 @@ class RLAdapterTestCase(unittest.TestCase):
         rls_by_month_tpl : Tuple[DataFrame, DataFrame] = ObjectMother.get_rls_by_month_tpl()
         rls_by_year_df : DataFrame = ObjectMother.get_rls_by_year_df()
         rls_by_range_df : DataFrame = ObjectMother.get_rls_by_range_df()
+        rls_by_topic_df : DataFrame = ObjectMother.get_rls_by_topic_df()
+        rls_by_topic_trend_df : DataFrame = ObjectMother.get_rls_by_topic_trend_df()
+        rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = ObjectMother.get_rls_by_publisher_tpl()
 
         rls_by_kbsize_df : DataFrame = ObjectMother.get_rls_by_kbsize_df()
-        rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = ObjectMother.get_rls_by_publisher_tpl()
         rls_by_rating_df : DataFrame = ObjectMother.get_rls_by_rating_df()
-        rls_by_topic_df : DataFrame = ObjectMother.get_rls_by_topic_df()
-        rls_by_topic_bt_df : DataFrame = ObjectMother.get_rls_by_topic_bt_df()
         definitions_df : DataFrame = ObjectMother.get_definitions_df()
 
         df_factory : RLDataFrameFactory = Mock()
@@ -1063,12 +1063,12 @@ class RLAdapterTestCase(unittest.TestCase):
         df_factory.create_rls_by_month_tpl = Mock(return_value = rls_by_month_tpl)
         df_factory.create_rls_by_year_df = Mock(return_value = rls_by_year_df)
         df_factory.create_rls_by_range_df = Mock(return_value = rls_by_range_df)
-
         df_factory.create_rls_by_topic_df.return_value = rls_by_topic_df
-        df_factory.create_rls_by_kbsize_df = Mock(return_value = rls_by_kbsize_df)
+        df_factory.create_rls_by_topic_trend_df = Mock(return_value = rls_by_topic_trend_df)
         df_factory.create_rls_by_publisher_tpl = Mock(return_value = rls_by_publisher_tpl)
+
+        df_factory.create_rls_by_kbsize_df = Mock(return_value = rls_by_kbsize_df)
         df_factory.create_rls_by_rating_df = Mock(return_value = rls_by_rating_df)
-        df_factory.create_rls_by_topic_bt_df = Mock(return_value = rls_by_topic_bt_df)
         df_factory.create_definitions_df.return_value = definitions_df
 
         rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
@@ -1083,14 +1083,14 @@ class RLAdapterTestCase(unittest.TestCase):
         assert_frame_equal(actual.rls_by_month_tpl[1], rls_by_month_tpl[1])
         assert_frame_equal(actual.rls_by_year_df, rls_by_year_df)        
         assert_frame_equal(actual.rls_by_range_df, rls_by_range_df)
-
-        assert_frame_equal(actual.rls_by_kbsize_df, rls_by_kbsize_df)
+        assert_frame_equal(actual.rls_by_topic_df, rls_by_topic_df)
+        assert_frame_equal(actual.rls_by_topic_trend_df, rls_by_topic_trend_df)
         assert_frame_equal(actual.rls_by_publisher_tpl[0], rls_by_publisher_tpl[0])
         assert_frame_equal(actual.rls_by_publisher_tpl[1], rls_by_publisher_tpl[1])
         self.assertEqual(actual.rls_by_publisher_tpl[2], rls_by_publisher_tpl[2])
+        
+        assert_frame_equal(actual.rls_by_kbsize_df, rls_by_kbsize_df)
         assert_frame_equal(actual.rls_by_rating_df, rls_by_rating_df)
-        assert_frame_equal(actual.rls_by_topic_df, rls_by_topic_df)
-        assert_frame_equal(actual.rls_by_topic_bt_df, rls_by_topic_bt_df)
         assert_frame_equal(actual.definitions_df, definitions_df)
 class ReadingListProcessorTestCase(unittest.TestCase):
 
@@ -1099,11 +1099,12 @@ class ReadingListProcessorTestCase(unittest.TestCase):
         ["process_rls_by_month"],
         ["process_rls_by_year"],        
         ["process_rls_by_range"],
+        ["process_rls_by_topic"],
+        ["process_rls_by_topic_trend"],        
+        ["process_rls_by_publisher"],
         ["process_rls_by_kbsize"],
         ["process_rls_by_books_year"],
-        ["process_rls_by_publisher"],
         ["process_rls_by_rating"],
-        ["process_rls_by_topic"],
         ["process_definitions"],
         ["get_summary"]
     ])
