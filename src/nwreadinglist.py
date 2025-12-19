@@ -59,6 +59,7 @@ class RLCN(StrEnum):
     TREND = "Trend"
     TRENDSYMBOL = "↕"
     UNDERLINES = "Underlines"
+    AVGUNDERLINES = "AvgUnderlines"
     UPERC = "U%"
 class RLID(StrEnum):
     
@@ -210,7 +211,7 @@ class SettingBag():
     rls_by_kbsize_ascending : bool = field(default = False)
     rls_by_kbsize_remove_if_zero : bool = field(default = True)
     rls_by_publisher_n : int = field(default = 10)
-    rls_by_publisher_formatters : dict = field(default_factory = lambda : { "AvgRating" : "{:.2f}", "AB%" : "{:.2f}" })
+    rls_by_publisher_formatters : dict = field(default_factory = lambda : { RLCN.AVGRATING : "{:.2f}", RLCN.ABPERC : "{:.2f}", RLCN.AVGUNDERLINES : "{:.2f}" })
     rls_by_publisher_min_books : int = field(default = 8)
     rls_by_publisher_min_ab_perc : float = field(default = 100)
     rls_by_publisher_min_avgrating : float = field(default = 2.50)
@@ -1054,6 +1055,172 @@ class RLDataFrameFactory():
                         amount = float64(x), rounding_digits = rounding_digits))
 
         return rls_by_street_price_df
+    def __create_rls_by_publisher_step_1(self, rl_df : DataFrame) -> Tuple[DataFrame, DataFrame]:
+
+        """
+            by_books_df:
+
+                    Publisher	Books
+                0	Syncfusion	38
+                1	O'Reilly	34
+                ... ...         ...
+
+            by_kbsize_df:
+
+                    Publisher	KBSize
+                0	Syncfusion	1254
+                1	O'Reilly	987
+                ... ...         ...
+        """
+
+        by_books_df : DataFrame = rl_df.groupby([RLCN.PUBLISHER])[RLCN.TITLE].size().sort_values(ascending = [False]).reset_index(name = RLCN.BOOKS)
+        by_kbsize_df : DataFrame = rl_df.groupby([RLCN.PUBLISHER])[RLCN.KBSIZE].sum().sort_values(ascending = False).reset_index(name = RLCN.KBSIZE)
+
+        return (by_books_df, by_kbsize_df)
+    def __create_rls_by_publisher_step_2(self, by_books_df : DataFrame, by_kbsize_df : DataFrame, rounding_digits : int) -> DataFrame:
+
+        """
+            sas_by_publisher_df:
+
+                    Publisher	Books	KBSize	A4Sheets
+                0	Syncfusion	38	    1254	7
+                1	O'Reilly	34	    987	    4
+                ... ...         ...     ...     ...
+
+                    Publisher	Books	A4Sheets
+                0	Syncfusion	38	    7
+                1	O'Reilly	34	    4
+                ... ...         ...     ...
+
+                    Publisher	Books	A4Sheets    AB%
+                0	Syncfusion	38	    7           34.00
+                1	O'Reilly	34	    4           9.43
+                ... ...         ...     ...         ...
+        """
+        
+        sas_by_publisher_df : DataFrame = pd.merge(
+            left = by_books_df, 
+            right = by_kbsize_df, 
+            how = "inner", 
+            left_on = RLCN.PUBLISHER, 
+            right_on = RLCN.PUBLISHER)
+        sas_by_publisher_df = self.__add_a4sheets_column(df = sas_by_publisher_df)
+        
+        sas_by_publisher_df = sas_by_publisher_df[[RLCN.PUBLISHER, RLCN.BOOKS, RLCN.A4SHEETS]]
+        sas_by_publisher_df[RLCN.ABPERC] = round(((sas_by_publisher_df[RLCN.A4SHEETS] / sas_by_publisher_df[RLCN.BOOKS]) * 100), rounding_digits)
+
+        return sas_by_publisher_df
+    def __create_rls_by_publisher_step_3(self, rl_df : DataFrame, rounding_digits : int) -> DataFrame:
+
+        """
+            by_avgrating_df:
+
+                    Publisher	        AvgRating
+                0	Maker Media, Inc	4.00
+                1	Manning	            3.11
+                ... ...     
+        """
+
+        by_avgrating_df : DataFrame = rl_df.groupby([RLCN.PUBLISHER])[RLCN.RATING].mean().sort_values(ascending = [False]).reset_index(name = RLCN.AVGRATING)
+        
+        by_avgrating_df[RLCN.AVGRATING] = by_avgrating_df[RLCN.AVGRATING].apply(
+            lambda x : round(number = x, ndigits = rounding_digits))
+
+        return by_avgrating_df
+    def __create_rls_by_publisher_step_4(self, sas_by_publisher_df : DataFrame, by_avgrating_df: DataFrame) -> DataFrame:
+        
+        """
+            sas_by_publisher_df:
+
+                    Publisher	Books	A4Sheets    AB%     AvgRating
+                0	Syncfusion	38	    7           34.00   2.55
+                1	O'Reilly	34	    4           9.43    2.18
+                ... ...         ...     ...         ...     ...
+        """
+        
+        sas_by_publisher_df = pd.merge(
+            left = sas_by_publisher_df, 
+            right = by_avgrating_df, 
+            how = "inner", 
+            left_on = RLCN.PUBLISHER, 
+            right_on = RLCN.PUBLISHER)
+            
+        return sas_by_publisher_df
+    def __create_rls_by_publisher_step_5(self, rl_df : DataFrame, rounding_digits : int) -> DataFrame:
+
+        """
+            by_avgunderlines_df:
+
+                    Publisher	        AvgUnderlines
+                0	Maker Media, Inc	1.20
+                1	Manning	            1.11
+                ... ...     
+        """
+
+        by_avgunderlines_df : DataFrame = rl_df.groupby([RLCN.PUBLISHER])[RLCN.UNDERLINES].mean().sort_values(ascending = [False]).reset_index(name = RLCN.AVGUNDERLINES)
+        by_avgunderlines_df[RLCN.AVGUNDERLINES] = by_avgunderlines_df[RLCN.AVGUNDERLINES].apply(
+            lambda x : round(number = x, ndigits = rounding_digits))
+
+        return by_avgunderlines_df
+    def __create_rls_by_publisher_step_6(self, sas_by_publisher_df : DataFrame, by_avgunderlines_df : DataFrame) -> DataFrame:
+        
+        """
+            sas_by_publisher_df:
+
+                    Publisher	Books	A4Sheets    AB%     AvgRating   AvgUnderlines
+                0	Syncfusion	38	    7           34.00   2.55        1.20
+                1	O'Reilly	34	    4           9.43    2.18        1.11
+                ... ...         ...     ...         ...     ...
+        """
+        
+        sas_by_publisher_df = pd.merge(
+            left = sas_by_publisher_df, 
+            right = by_avgunderlines_df, 
+            how = "inner", 
+            left_on = RLCN.PUBLISHER, 
+            right_on = RLCN.PUBLISHER)
+            
+        return sas_by_publisher_df
+    def __create_rls_by_publisher_step_7(self, sas_by_publisher_df : DataFrame, min_books : int, min_ab_perc : float, min_avgrating : float) -> DataFrame:
+
+        """
+                Publisher	Books	A4Sheets    AB%     AvgRating	AvgUnderlines   IsWorth
+            0	Syncfusion	38	    7           34.00   2.55	    1.20            Yes
+            1	O'Reilly	34	    4           9.43    2.18	    1.11            No
+            ... ...         ...     ...         ...     ...         ...
+        """
+
+        sas_by_publisher_df[RLCN.ISWORTH] = np.where(
+            np.logical_and(
+                sas_by_publisher_df[RLCN.BOOKS] >= min_books,
+                np.logical_or(
+                    (sas_by_publisher_df[RLCN.AVGRATING] >= min_avgrating), 
+                    (sas_by_publisher_df[RLCN.ABPERC] >= min_ab_perc))
+                ), "Yes", "No")
+        
+        return sas_by_publisher_df
+    def __create_rls_by_publisher_step_8(self, sas_by_publisher_df : DataFrame) -> DataFrame:
+
+        """
+                Publisher	Books	AvgRating	A4Sheets    AB%     AvgUnderlines   IsWorth
+            0	Syncfusion	38	    2.55	    7           34.00   1.20            Yes
+            1	O'Reilly	34	    2.18	    4           9.43    1.11            No
+            ... ...         ...     ...         ...         ...     ...             ...
+        """
+
+        reordered_cns : list[str] = [
+            RLCN.PUBLISHER,
+            RLCN.BOOKS,
+            RLCN.AVGRATING,
+            RLCN.A4SHEETS,
+            RLCN.ABPERC,
+            RLCN.AVGUNDERLINES,
+            RLCN.ISWORTH
+        ]
+
+        sas_by_publisher_df = sas_by_publisher_df[reordered_cns]
+        
+        return sas_by_publisher_df  
     def __create_rls_by_publisher_footer(self, publisher_min_books : int, publisher_min_ab_perc : float, publisher_min_avgrating : float) -> str:
         
         '''Creates a footer message for sas_by_publisher.'''
@@ -1281,90 +1448,20 @@ class RLDataFrameFactory():
             min_avgrating : float, 
             criteria : str) -> Tuple[DataFrame, DataFrame, str]:
         
-        """
-            The method returns (sas_by_publisher_df, sas_by_publisher_flt_df, sas_by_publisher_footer).
-
-            Data Pipeline:
-
-                by_books_df:
-
-                        Publisher	Books
-                    0	Syncfusion	38
-                    1	O'Reilly	34
-                    ... ...         ...
-
-                by_kbsize_df:
-
-                        Publisher	KBSize
-                    0	Syncfusion	1254
-                    1	O'Reilly	987
-                    ... ...         ...
-
-                sas_by_publisher_df:
-
-                        Publisher	Books	KBSize	A4Sheets
-                    0	Syncfusion	38	    1254	7
-                    1	O'Reilly	34	    987	    4
-                    ... ...         ...     ...     ...
-
-                        Publisher	Books	A4Sheets
-                    0	Syncfusion	38	    7
-                    1	O'Reilly	34	    4
-                    ... ...         ...     ...
-
-                        Publisher	Books	A4Sheets    AB%
-                    0	Syncfusion	38	    7           34.00
-                    1	O'Reilly	34	    4           9.43
-                    ... ...         ...     ...         ...
-
-                by_avgrating_df:
-
-                        Publisher	        AvgRating
-                    0	Maker Media, Inc	4.00
-                    1	Manning	            3.11
-                    ... ...                 ...
-
-                sas_by_publisher_df:
-
-                        Publisher	Books	A4Sheets    AB%     AvgRating	IsWorth
-                    0	Syncfusion	38	    7           34.00   2.55	    Yes
-                    1	O'Reilly	34	    4           9.43    2.18	    No
-                    ... ...         ...     ...         ...     ...         ...
-        """
+        """The method returns (sas_by_publisher_df, sas_by_publisher_flt_df, sas_by_publisher_footer)."""
   
-        by_books_df : DataFrame = rl_df.groupby([RLCN.PUBLISHER])[RLCN.TITLE].size().sort_values(ascending = [False]).reset_index(name = RLCN.BOOKS)
-        by_kbsize_df : DataFrame = rl_df.groupby([RLCN.PUBLISHER])[RLCN.KBSIZE].sum().sort_values(ascending = False).reset_index(name = RLCN.KBSIZE)
-
-        sas_by_publisher_df : DataFrame = pd.merge(
-            left = by_books_df, 
-            right = by_kbsize_df, 
-            how = "inner", 
-            left_on = RLCN.PUBLISHER, 
-            right_on = RLCN.PUBLISHER)
-        sas_by_publisher_df = self.__add_a4sheets_column(df = sas_by_publisher_df)
-        
-        sas_by_publisher_df = sas_by_publisher_df[[RLCN.PUBLISHER, RLCN.BOOKS, RLCN.A4SHEETS]]
-        sas_by_publisher_df[RLCN.ABPERC] = round(((sas_by_publisher_df[RLCN.A4SHEETS] / sas_by_publisher_df[RLCN.BOOKS]) * 100), rounding_digits)
+        by_books_df, by_kbsize_df = self.__create_rls_by_publisher_step_1(rl_df)
+        sas_by_publisher_df : DataFrame = self.__create_rls_by_publisher_step_2(by_books_df, by_kbsize_df, rounding_digits)
   
-        by_avgrating_df : DataFrame = rl_df.groupby([RLCN.PUBLISHER])[RLCN.RATING].mean().sort_values(ascending = [False]).reset_index(name = RLCN.AVGRATING)
-        by_avgrating_df[RLCN.AVGRATING] = by_avgrating_df[RLCN.AVGRATING].apply(
-            lambda x : round(number = x, ndigits = rounding_digits)) # 2.5671 => 2.57
+        by_avgrating_df : DataFrame = self.__create_rls_by_publisher_step_3(rl_df, rounding_digits)
+        sas_by_publisher_df = self.__create_rls_by_publisher_step_4(sas_by_publisher_df, by_avgrating_df)
 
-        sas_by_publisher_df = pd.merge(
-            left = sas_by_publisher_df, 
-            right = by_avgrating_df, 
-            how = "inner", 
-            left_on = RLCN.PUBLISHER, 
-            right_on = RLCN.PUBLISHER)
+        by_avgunderlines_df : DataFrame = self.__create_rls_by_publisher_step_5(rl_df, rounding_digits)
+        sas_by_publisher_df = self.__create_rls_by_publisher_step_6(sas_by_publisher_df, by_avgunderlines_df)
 
-        sas_by_publisher_df[RLCN.ISWORTH] = np.where(
-            np.logical_and(
-                sas_by_publisher_df[RLCN.BOOKS] >= min_books,
-                np.logical_or(
-                    (sas_by_publisher_df[RLCN.AVGRATING] >= min_avgrating), 
-                    (sas_by_publisher_df[RLCN.ABPERC] >= min_ab_perc))
-                ), "Yes", "No")
-        
+        sas_by_publisher_df = self.__create_rls_by_publisher_step_7(sas_by_publisher_df, min_books, min_ab_perc, min_avgrating)
+        sas_by_publisher_df = self.__create_rls_by_publisher_step_8(sas_by_publisher_df)
+
         sas_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(rls_by_publisher_df = sas_by_publisher_df, publisher_criteria = criteria)
 
         sas_by_publisher_footer : str = self.__create_rls_by_publisher_footer(
@@ -1373,7 +1470,7 @@ class RLDataFrameFactory():
             publisher_min_avgrating = min_avgrating
         )
 
-        return (sas_by_publisher_df, sas_by_publisher_flt_df, sas_by_publisher_footer)       
+        return (sas_by_publisher_df, sas_by_publisher_flt_df, sas_by_publisher_footer)
     def create_rls_by_rating_df(self, rl_df : DataFrame, number_as_stars : bool) -> DataFrame:
 
         '''
