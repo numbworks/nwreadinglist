@@ -116,6 +116,7 @@ class RLSummary():
     rls_by_topic_trend_df : DataFrame
     rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]
     rls_by_rating_df : DataFrame
+    rls_by_underlines_df : DataFrame
 
     rls_by_kbsize_df : DataFrame
     definitions_df : DataFrame
@@ -162,6 +163,7 @@ class SettingBag():
     options_rls_by_topic_trend : list[Literal[OPTION.display]]
     options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]]
     options_rls_by_rating : list[Literal[OPTION.display]]
+    options_rls_by_underlines : list[Literal[OPTION.display]]
 
     options_rls_by_books_year : list[Literal[OPTION.plot]]
     options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]]
@@ -1554,6 +1556,35 @@ class RLDataFrameFactory():
                 lambda x : self.__formatter.format_rating(rating = x))
 
         return rls_by_rating_df    
+    def create_rls_by_underlines_df(self, rl_enriched_df : DataFrame) -> DataFrame:
+
+        '''
+                Underlines  Books
+            0   0           208
+            1   1-2         108
+            2   3-10        51
+            3   11-15       4
+            4   15+         0        
+        '''
+
+        rls_by_underlines_df : DataFrame = rl_enriched_df.copy(deep = True)
+
+        bins : list[float] = [-0.1, 0, 2, 11, 15, float("inf")]
+        labels : list[str] = ["0", "1-2", "3-10", "11-15", "15+"]
+
+        rls_by_underlines_df[RLCN.UNDERLINES] = pd.cut(
+            rls_by_underlines_df[RLCN.UNDERLINES],
+            bins = bins,
+            labels = labels,
+            include_lowest = True)
+
+        rls_by_underlines_df = (
+            rls_by_underlines_df
+                .groupby(RLCN.UNDERLINES, observed = False)[RLCN.TITLE]
+                .nunique()
+                .reset_index(name = RLCN.BOOKS))
+
+        return rls_by_underlines_df
 
     def create_rls_by_kbsize_df(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool, n : int) -> DataFrame:
         
@@ -1744,6 +1775,7 @@ class RLAdapter():
         rls_by_topic_trend_df : DataFrame = self.create_rls_by_topic_trend_df(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.create_rls_by_publisher_tpl(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_rating_df : DataFrame = self.create_rls_by_rating_df(rl_df = rl_df, setting_bag = setting_bag)
+        rls_by_underlines_df : DataFrame = self.__df_factory.create_rls_by_underlines_df(rl_enriched_df = rl_enriched_df)
         
         rls_by_kbsize_df : DataFrame = self.create_rls_by_kbsize_df(rl_df = rl_df, setting_bag = setting_bag)
         definitions_df : DataFrame = self.__df_factory.create_definitions_df()
@@ -1761,6 +1793,7 @@ class RLAdapter():
             rls_by_topic_trend_df = rls_by_topic_trend_df,
             rls_by_publisher_tpl = rls_by_publisher_tpl,
             rls_by_rating_df = rls_by_rating_df,
+            rls_by_underlines_df = rls_by_underlines_df,
             
             rls_by_kbsize_df = rls_by_kbsize_df,
             definitions_df = definitions_df
@@ -1981,6 +2014,21 @@ class ReadingListProcessor():
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df)
+    def process_rls_by_underlines(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rls_by_underlines.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_rls_by_underlines
+        df : DataFrame = self.__rl_summary.rls_by_underlines_df
+
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df)
 
     def process_rls_by_kbsize(self) -> None:
 
@@ -2057,11 +2105,9 @@ if __name__ == "__main__":
         excel_null_value = "-"
     )
 
-    # rl_most_underlines_df
-
     rl_enriched_df : DataFrame = rldf_factory.create_rl_enriched_df(rl_df = rl_df)
-    rl_most_underlines_df : DataFrame = rldf_factory.create_rl_most_underlines_df(rl_enriched_df, True)
+    rls_by_underlines : DataFrame = rldf_factory.create_rls_by_underlines_df(rl_enriched_df = rl_enriched_df)
 
-    print(rl_most_underlines_df)
+    print(rls_by_underlines)
 
     # pass

@@ -279,10 +279,11 @@ class ObjectMother():
             options_rls_by_topic = [OPTION.display],
             options_rls_by_topic_trend = [OPTION.display],
             options_rls_by_publisher = [OPTION.display, OPTION.logset],
-            
+            options_rls_by_rating = [OPTION.display],
+            options_rls_by_underlines = [OPTION.display],
+
             options_rls_by_kbsize = [OPTION.display, OPTION.plot],
             options_rls_by_books_year = [OPTION.plot],
-            options_rls_by_rating = [OPTION.display],
             options_definitions = [OPTION.display],
             read_years = YearProvider().get_all_years(),
             excel_path = DefaultPathProvider().get_default_reading_list_path(),
@@ -328,6 +329,7 @@ class RLSummaryTestCase(unittest.TestCase):
             rls_by_topic_trend_df = df,
             rls_by_publisher_tpl = tpl_footer,
             rls_by_rating_df = df,
+            rls_by_underlines_df = df,
 
             rls_by_kbsize_df = df,
             definitions_df = df
@@ -391,6 +393,7 @@ class SettingBagTestCase(unittest.TestCase):
         options_rls_by_topic_trend : list[Literal[OPTION.display]] = [OPTION.display]
         options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]] = [OPTION.display, OPTION.logset]
         options_rls_by_rating : list[Literal[OPTION.display]] = [OPTION.display]
+        options_rls_by_underlines : list[Literal[OPTION.display]] = [OPTION.display]
 
         options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = [OPTION.display, OPTION.plot]
         options_rls_by_books_year : list[Literal[OPTION.plot]] = [OPTION.plot]
@@ -431,6 +434,7 @@ class SettingBagTestCase(unittest.TestCase):
             options_rls_by_topic_trend = options_rls_by_topic_trend,
             options_rls_by_publisher = options_rls_by_publisher,
             options_rls_by_rating = options_rls_by_rating,
+            options_rls_by_underlines = options_rls_by_underlines,
 
             options_rls_by_kbsize = options_rls_by_kbsize,
             options_rls_by_books_year = options_rls_by_books_year,
