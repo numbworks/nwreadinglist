@@ -105,6 +105,9 @@ class RLSummary():
     '''Collects all the dataframes and markdowns.'''
 
     rl_df : DataFrame
+    rl_enriched_df : DataFrame
+    rl_rating_five_df : DataFrame
+    rl_most_underlines_df : DataFrame
 
     rls_by_month_tpl : Tuple[DataFrame, DataFrame]
     rls_by_year_df : DataFrame
@@ -113,7 +116,6 @@ class RLSummary():
     rls_by_topic_trend_df : DataFrame
     rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]
     rls_by_rating_df : DataFrame
-    rl_rating_five_df : DataFrame
 
     rls_by_kbsize_df : DataFrame
     definitions_df : DataFrame
@@ -150,7 +152,9 @@ class SettingBag():
     '''Represents a collection of settings.'''
 
 	# Without Defaults
-    options_rl : list[Literal[OPTION.display]]
+    options_rl_rating_five : list[Literal[OPTION.display]]
+    options_rl_most_underlines : list[Literal[OPTION.display]]
+
     options_rls_by_month : list[Literal[OPTION.display]]
     options_rls_by_year : list[Literal[OPTION.display]]
     options_rls_by_range : list[Literal[OPTION.display]]
@@ -158,7 +162,6 @@ class SettingBag():
     options_rls_by_topic_trend : list[Literal[OPTION.display]]
     options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]]
     options_rls_by_rating : list[Literal[OPTION.display]]
-    options_rl_rating_five : list[Literal[OPTION.display]]
 
     options_rls_by_books_year : list[Literal[OPTION.plot]]
     options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]]
@@ -168,12 +171,15 @@ class SettingBag():
     excel_nrows : int
 	
 	# With Defaults
+    options_rl : list[Literal[OPTION.display]] = field(default_factory = list)
+    options_rl_enriched : list[Literal[OPTION.display]] = field(default_factory = list)
     excel_skiprows : int = field(default = 0)
     excel_tabname : str = field(default = "Books")
     excel_null_value : str = field(default = "-")
     working_folder_path : str = field(default = "/home/nwreadinglist/")
     rounding_digits : int = field(default = 2)
     now : datetime = field(default = datetime.now())
+    rl_most_underlines_formatters : dict = field(default_factory = lambda : { RLCN.AVGUNDERLINES : "{:.2f}", RLCN.UPERC : "{:.2f}" })
     rls_by_kbsize_n : int = field(default = 10)
     rls_by_kbsize_ascending : bool = field(default = False)
     rls_by_kbsize_remove_if_zero : bool = field(default = True)
@@ -1063,18 +1069,18 @@ class RLDataFrameFactory():
                 ... ...         ...     ...         ...
         """
         
-        sas_by_publisher_df : DataFrame = pd.merge(
+        rls_by_publisher_df : DataFrame = pd.merge(
             left = by_books_df, 
             right = by_kbsize_df, 
             how = "inner", 
             left_on = RLCN.PUBLISHER, 
             right_on = RLCN.PUBLISHER)
-        sas_by_publisher_df = self.__add_a4sheets_column(df = sas_by_publisher_df)
+        rls_by_publisher_df = self.__add_a4sheets_column(df = rls_by_publisher_df)
         
-        sas_by_publisher_df = sas_by_publisher_df[[RLCN.PUBLISHER, RLCN.BOOKS, RLCN.A4SHEETS]]
-        sas_by_publisher_df[RLCN.ABPERC] = round(((sas_by_publisher_df[RLCN.A4SHEETS] / sas_by_publisher_df[RLCN.BOOKS]) * 100), rounding_digits)
+        rls_by_publisher_df = rls_by_publisher_df[[RLCN.PUBLISHER, RLCN.BOOKS, RLCN.A4SHEETS]]
+        rls_by_publisher_df[RLCN.ABPERC] = round(((rls_by_publisher_df[RLCN.A4SHEETS] / rls_by_publisher_df[RLCN.BOOKS]) * 100), rounding_digits)
 
-        return sas_by_publisher_df
+        return rls_by_publisher_df
     def __create_rls_by_publisher_step_3(self, rl_df : DataFrame, rounding_digits : int) -> DataFrame:
 
         """
@@ -1232,19 +1238,107 @@ class RLDataFrameFactory():
             excel_null_value = excel_null_value)
 
         return rl_df
+    def create_rl_enriched_df(self, rl_df : DataFrame) -> DataFrame:
+
+        '''
+                ... A4Sheets    AvgUnderlines   U%
+            0   ... 1           1.2             250.00
+            1   ... 1           1.2             0.00
+            ...            
+        '''
+
+        rl_enriched_df : DataFrame = rl_df.copy(deep = True)
+
+        rl_enriched_df[RLCN.A4SHEETS] = rl_enriched_df[RLCN.KBSIZE].apply(
+            lambda x : self.__converter.convert_word_count_to_A4_sheets(word_count = x))
+        
+        avg_underlines : float = rl_df[RLCN.UNDERLINES].mean()
+
+        rl_enriched_df[RLCN.AVGUNDERLINES] = avg_underlines
+        rl_enriched_df[RLCN.AVGUNDERLINES] = rl_enriched_df[RLCN.AVGUNDERLINES].round(2)
+
+        rl_enriched_df[RLCN.UPERC] = (rl_enriched_df[RLCN.UNDERLINES] / rl_enriched_df[RLCN.AVGUNDERLINES]) * 100
+        rl_enriched_df[RLCN.UPERC] = rl_enriched_df[RLCN.UPERC].round(2)
+
+        return rl_enriched_df
+    def create_rl_rating_five_df(self, rl_df : DataFrame, number_as_stars : bool) -> DataFrame:
+
+        """
+                Title	                                    Year	ReadDate	Topic	                Publisher	A4Sheets	Rating
+            0   Machine Learning Using CSharp Succinctly	2014	2016-11-19	Data Analysis & ML	    Syncfusion	3	        ★★★★★
+            1   Head First Design Patterns	                2004	2017-03-17	Software Engineering	O'Reilly	4	        ★★★★★
+            ...
+        """
+
+        rl_rating_five_df : DataFrame = rl_df.copy(deep = True)
+        rl_rating_five_df = rl_rating_five_df[rl_rating_five_df[RLCN.RATING] == 5]
+
+        rl_rating_five_df[RLCN.A4SHEETS] = rl_rating_five_df[RLCN.KBSIZE].apply(
+            lambda x : self.__converter.convert_word_count_to_A4_sheets(word_count = x))
+
+        cns : list[str] = [
+            RLCN.TITLE,
+            RLCN.YEAR,
+            RLCN.READDATE,
+            RLCN.TOPIC,
+            RLCN.PUBLISHER,
+            RLCN.A4SHEETS,
+            RLCN.RATING
+        ]
+        rl_rating_five_df = rl_rating_five_df[cns]
+
+        if number_as_stars:
+            rl_rating_five_df[RLCN.RATING] = rl_rating_five_df[RLCN.RATING].apply(
+                lambda x : self.__formatter.format_rating(rating = x))
+
+        return rl_rating_five_df
+    def create_rl_most_underlines_df(self, rl_enriched_df : DataFrame, number_as_stars : bool) -> DataFrame:
+
+        '''
+                Title                               Year    ReadDate    Topic                   A4Sheets    Rating  Underlines  AvgUnderlines   U%
+            0   A Philosophy of Software Design     2018    2024-07-16  Software Engineering    2           4       15          1.2             1250.00
+            1   Microservices in .NET Core          2017    2019-07-24  C#                      4           2       14          1.2             1166.67
+            ...        
+        '''
+
+        rl_most_underlines_df : DataFrame = rl_enriched_df.copy(deep = True)
+
+        cns : list[str] = [
+                RLCN.TITLE,
+                RLCN.YEAR,
+                RLCN.READDATE,
+                RLCN.TOPIC,
+                RLCN.A4SHEETS,
+                RLCN.RATING,
+                RLCN.UNDERLINES,
+                RLCN.AVGUNDERLINES,
+                RLCN.UPERC
+            ]
+        rl_most_underlines_df = rl_most_underlines_df[cns]
+
+        rl_most_underlines_df = rl_most_underlines_df.sort_values(by = RLCN.UPERC, ascending = [False])
+        rl_most_underlines_df = rl_most_underlines_df.reset_index(drop = True)
+        rl_most_underlines_df = rl_most_underlines_df.head(10)
+
+        if number_as_stars:
+            rl_most_underlines_df[RLCN.RATING] = rl_most_underlines_df[RLCN.RATING].apply(
+                lambda x : self.__formatter.format_rating(rating = x))
+
+        return rl_most_underlines_df
+
     def create_rls_by_month_tpl(self, rl_df : DataFrame, read_years : list[int], now : datetime) -> Tuple[DataFrame, DataFrame]:
 
         '''
-            The method returns a tuple of dataframes (sas_by_month_df, sas_by_month_upd_df):
+            The method returns a tuple of dataframes (rls_by_month_df, rls_by_month_upd_df):
 
-            Item 0 (sas_by_month_df) contains the pristine dataset:
+            Item 0 (rls_by_month_df) contains the pristine dataset:
 
                     Month	2016	↕	2017	    ↕	2018
                 0	1	    0 (0)	↑	13 (5157)	↓	0 (0)
                 1	2	    0 (0)	↑	1 (106)	    ↓	0 (0)
                 ...
 
-            Item 1 (sas_by_month_upd_df) contains the same dataset optimized for visual representation:
+            Item 1 (rls_by_month_upd_df) contains the same dataset optimized for visual representation:
                 
                 - Future reading statuses replaced with empty strings ("0 (0)" => "") according to setting_bag.now.
                 - The "Month" column is removed.
@@ -1255,32 +1349,32 @@ class RLDataFrameFactory():
                 ...
         '''
 
-        sas_by_month_df : DataFrame = pd.DataFrame()
+        rls_by_month_df : DataFrame = pd.DataFrame()
         add_trend : bool = True
 
         for i in range(len(read_years)):
 
             if i == 0:
-                sas_by_month_df = self.__create_sa_by_year(rl_df = rl_df, read_year = read_years[i])
+                rls_by_month_df = self.__create_sa_by_year(rl_df = rl_df, read_year = read_years[i])
             else:
-                sas_by_month_df = self.__expand_sa_by_year(
+                rls_by_month_df = self.__expand_sa_by_year(
                     rl_df = rl_df, 
                     read_years = read_years, 
-                    rls_by_month_df = sas_by_month_df, 
+                    rls_by_month_df = rls_by_month_df, 
                     i = i, 
                     add_trend = add_trend)
 
-        sas_by_month_df.rename(
+        rls_by_month_df.rename(
             columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)), 
             inplace = True)
         
-        sas_by_month_upd_df : DataFrame = self.__update_future_rs_to_empty(
-            rls_by_month_df = sas_by_month_df, 
+        rls_by_month_upd_df : DataFrame = self.__update_future_rs_to_empty(
+            rls_by_month_df = rls_by_month_df, 
             now = now)
 
-        sas_by_month_upd_df.drop(columns = [RLCN.MONTH], inplace = True)
+        rls_by_month_upd_df.drop(columns = [RLCN.MONTH], inplace = True)
 
-        return (sas_by_month_df, sas_by_month_upd_df)    
+        return (rls_by_month_df, rls_by_month_upd_df)    
     def create_rls_by_year_df(self, rls_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame, read_years : list[int], rounding_digits : int) -> DataFrame:
 
         '''
@@ -1289,14 +1383,14 @@ class RLDataFrameFactory():
             1	$1447.14	↑	$2123.36	↓	$1249.15	↓	$748.70	    ↓	$538.75	    ↓	$169.92	    ↓	$49.99	↓	$5.00
         '''
 
-        sas_by_year_df : DataFrame = self.__create_rls_by_year_df(rls_by_month_df = rls_by_month_tpl[0])
+        rls_by_year_df : DataFrame = self.__create_rls_by_year_df(rls_by_month_df = rls_by_month_tpl[0])
         
-        sas_by_street_price_df : DataFrame = self.__create_rls_by_street_price_df(
+        rls_by_street_price_df : DataFrame = self.__create_rls_by_street_price_df(
             rl_df = rl_df, 
             read_years = read_years,
             rounding_digits = rounding_digits)
 
-        rls_by_year_df : DataFrame = pd.concat(objs = [sas_by_year_df, sas_by_street_price_df])
+        rls_by_year_df : DataFrame = pd.concat(objs = [rls_by_year_df, rls_by_street_price_df])
         rls_by_year_df.reset_index(drop = True, inplace = True)
 
         return rls_by_year_df
@@ -1324,9 +1418,9 @@ class RLDataFrameFactory():
             total_spend_str
         ]
 
-        rl_by_range_df : DataFrame = pd.DataFrame(values, columns = [col_name])
+        rls_by_range_df : DataFrame = pd.DataFrame(values, columns = [col_name])
 
-        return rl_by_range_df
+        return rls_by_range_df
     def create_rls_by_topic_df(self, rl_df : DataFrame) -> DataFrame:
 
         """
@@ -1460,38 +1554,6 @@ class RLDataFrameFactory():
                 lambda x : self.__formatter.format_rating(rating = x))
 
         return rls_by_rating_df    
-    def create_rl_rating_five_df(self, rl_df : DataFrame, number_as_stars : bool) -> DataFrame:
-
-        """
-                Title	                                    Year	ReadDate	Topic	                Publisher	A4Sheets	Rating
-            0   Machine Learning Using CSharp Succinctly	2014	2016-11-19	Data Analysis & ML	    Syncfusion	3	        ★★★★★
-            1   Head First Design Patterns	                2004	2017-03-17	Software Engineering	O'Reilly	4	        ★★★★★
-            ...
-        """
-
-        rl_rating_five_df : DataFrame = rl_df.copy(deep = True)
-        rl_rating_five_df = rl_rating_five_df[rl_rating_five_df[RLCN.RATING] == 5]
-
-        rl_rating_five_df[RLCN.A4SHEETS] = rl_rating_five_df[RLCN.KBSIZE].apply(
-            lambda x : self.__converter.convert_word_count_to_A4_sheets(word_count = x))
-
-        if number_as_stars:
-            rl_rating_five_df[RLCN.RATING] = rl_rating_five_df[RLCN.RATING].apply(
-                lambda x : self.__formatter.format_rating(rating = x))
-
-        cns : list[str] = [
-            RLCN.TITLE,
-            RLCN.YEAR,
-            RLCN.READDATE,
-            RLCN.TOPIC,
-            RLCN.PUBLISHER,
-            RLCN.A4SHEETS,
-            RLCN.RATING
-        ]
-
-        rl_rating_five_df = rl_rating_five_df[cns]
-
-        return rl_rating_five_df
 
     def create_rls_by_kbsize_df(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool, n : int) -> DataFrame:
         
@@ -1556,6 +1618,34 @@ class RLAdapter():
             )
 
         return rl_df   
+    def create_rl_enriched_df(self, rl_df : DataFrame) -> DataFrame:
+
+        '''Creates the expected dataframe.'''
+
+        rl_enriched_df : DataFrame = self.__df_factory.create_rl_enriched_df(rl_df = rl_df)
+
+        return rl_enriched_df     
+    def create_rl_rating_five_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+
+        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
+
+        rl_rating_five_df : DataFrame = self.__df_factory.create_rl_rating_five_df(
+            rl_df = rl_df,
+            number_as_stars = setting_bag.rls_by_rating_number_as_stars
+        )
+
+        return rl_rating_five_df 
+    def create_rl_most_underlines_df(self, rl_enriched_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+
+        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
+
+        rl_most_underlines_df : DataFrame = self.__df_factory.create_rl_most_underlines_df(
+            rl_enriched_df = rl_enriched_df,
+            number_as_stars = setting_bag.rls_by_rating_number_as_stars
+        )
+
+        return rl_most_underlines_df 
+    
     def create_rls_by_month_tpl(self, rl_df : DataFrame, setting_bag : SettingBag) -> Tuple[DataFrame, DataFrame]:
 
         '''Creates the expected dataframe using setting_bag and the provided arguments.'''
@@ -1624,17 +1714,6 @@ class RLAdapter():
         )
 
         return rls_by_rating_df     
-    def create_rl_rating_five_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
-
-        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
-
-        rl_rating_five_df : DataFrame = self.__df_factory.create_rl_rating_five_df(
-            rl_df = rl_df,
-            number_as_stars = setting_bag.rls_by_rating_number_as_stars
-        )
-
-        return rl_rating_five_df 
-
 
     def create_rls_by_kbsize_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
 
@@ -1654,6 +1733,10 @@ class RLAdapter():
         '''Creates a RLSummary object out of setting_bag.'''
 
         rl_df : DataFrame = self.create_rl_df(setting_bag = setting_bag)
+        rl_enriched_df : DataFrame = self.create_rl_enriched_df(rl_df = rl_df)
+        rl_rating_five_df : DataFrame = self.create_rl_rating_five_df(rl_df = rl_df, setting_bag = setting_bag)
+        rl_most_underlines_df : DataFrame = self.create_rl_most_underlines_df(rl_enriched_df = rl_enriched_df, setting_bag = setting_bag)
+
         rls_by_month_tpl : Tuple[DataFrame, DataFrame] = self.create_rls_by_month_tpl(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_year_df : DataFrame = self.create_rls_by_year_df(rls_by_month_tpl = rls_by_month_tpl, rl_df = rl_df, setting_bag = setting_bag)
         rls_by_range_df : DataFrame = self.create_rls_by_range_df(rl_df = rl_df, setting_bag = setting_bag)
@@ -1661,13 +1744,16 @@ class RLAdapter():
         rls_by_topic_trend_df : DataFrame = self.create_rls_by_topic_trend_df(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.create_rls_by_publisher_tpl(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_rating_df : DataFrame = self.create_rls_by_rating_df(rl_df = rl_df, setting_bag = setting_bag)
-        rl_rating_five_df : DataFrame = self.create_rl_rating_five_df(rl_df = rl_df, setting_bag = setting_bag)
-
+        
         rls_by_kbsize_df : DataFrame = self.create_rls_by_kbsize_df(rl_df = rl_df, setting_bag = setting_bag)
         definitions_df : DataFrame = self.__df_factory.create_definitions_df()
 
         rl_summary : RLSummary = RLSummary(
             rl_df = rl_df,
+            rl_enriched_df = rl_enriched_df,
+            rl_rating_five_df = rl_rating_five_df,
+            rl_most_underlines_df = rl_most_underlines_df,
+            
             rls_by_month_tpl = rls_by_month_tpl,
             rls_by_year_df = rls_by_year_df,
             rls_by_range_df = rls_by_range_df,
@@ -1675,8 +1761,7 @@ class RLAdapter():
             rls_by_topic_trend_df = rls_by_topic_trend_df,
             rls_by_publisher_tpl = rls_by_publisher_tpl,
             rls_by_rating_df = rls_by_rating_df,
-            rl_rating_five_df = rl_rating_five_df,
-
+            
             rls_by_kbsize_df = rls_by_kbsize_df,
             definitions_df = definitions_df
         )
@@ -1739,6 +1824,53 @@ class ReadingListProcessor():
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df)    
+    def process_rl_enriched(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rl.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_rl_enriched
+        df : DataFrame = self.__rl_summary.rl_enriched_df
+
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df)       
+    def process_rl_rating_five(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rl_rating_five.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_rl_rating_five
+        df : DataFrame = self.__rl_summary.rl_rating_five_df
+
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df)
+    def process_rl_most_underlines(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rl_most_underlines.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_rl_most_underlines
+        df : DataFrame = self.__rl_summary.rl_most_underlines_df
+        formatters : dict = self.__setting_bag.rl_most_underlines_formatters
+
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df, formatters = formatters)
+
     def process_rls_by_month(self) -> None:
 
         '''
@@ -1849,21 +1981,6 @@ class ReadingListProcessor():
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df)
-    def process_rl_rating_five(self) -> None:
-
-        '''
-            Performs all the actions listed in __setting_bag.options_rl_rating_five.
-            
-            It raises an exception if the 'initialize' method has not been run yet.
-        '''
-
-        self.__validate_summary()
-
-        options : list = self.__setting_bag.options_rl_rating_five
-        df : DataFrame = self.__rl_summary.rl_rating_five_df
-
-        if OPTION.display in options:
-            self.__component_bag.displayer.display(obj = df)
 
     def process_rls_by_kbsize(self) -> None:
 
@@ -1925,4 +2042,26 @@ class ReadingListProcessor():
 
 # MAIN
 if __name__ == "__main__":
-    pass
+
+    rldf_factory : RLDataFrameFactory = RLDataFrameFactory(
+        converter = Converter(),
+        formatter = Formatter(),
+        df_helper = RLDataFrameHelper()
+    )
+  
+    rl_df : DataFrame = rldf_factory.create_rl_df(
+        excel_path = DefaultPathProvider().get_default_reading_list_path(),
+        excel_skiprows = 0,
+        excel_nrows = 372,
+        excel_tabname = "Books",
+        excel_null_value = "-"
+    )
+
+    # rl_most_underlines_df
+
+    rl_enriched_df : DataFrame = rldf_factory.create_rl_enriched_df(rl_df = rl_df)
+    rl_most_underlines_df : DataFrame = rldf_factory.create_rl_most_underlines_df(rl_enriched_df, True)
+
+    print(rl_most_underlines_df)
+
+    # pass

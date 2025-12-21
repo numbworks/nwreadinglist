@@ -270,15 +270,16 @@ class ObjectMother():
     def get_setting_bag() -> SettingBag:
 
         setting_bag : SettingBag = SettingBag(
-            options_rl = [],
+            options_rl_rating_five = [OPTION.display],            
+            options_rl_most_underlines = [OPTION.display],
+
             options_rls_by_month = [OPTION.display],
             options_rls_by_year = [OPTION.display],
             options_rls_by_range = [OPTION.display],
             options_rls_by_topic = [OPTION.display],
             options_rls_by_topic_trend = [OPTION.display],
             options_rls_by_publisher = [OPTION.display, OPTION.logset],
-            options_rl_rating_five = [OPTION.display],            
-
+            
             options_rls_by_kbsize = [OPTION.display, OPTION.plot],
             options_rls_by_books_year = [OPTION.plot],
             options_rls_by_rating = [OPTION.display],
@@ -316,13 +317,16 @@ class RLSummaryTestCase(unittest.TestCase):
         # Act
         rl_summary : RLSummary = RLSummary(
             rl_df = df,
+            rl_enriched_df = df,
+            rl_rating_five_df = df,
+            rl_most_underlines_df = df,
+
             rls_by_month_tpl = tpl,
             rls_by_year_df = df,
             rls_by_range_df = df,
             rls_by_topic_df = df,
             rls_by_topic_trend_df = df,
             rls_by_publisher_tpl = tpl_footer,
-            rl_rating_five_df = df,
             rls_by_rating_df = df,
 
             rls_by_kbsize_df = df,
@@ -376,14 +380,16 @@ class SettingBagTestCase(unittest.TestCase):
         
         # Arrange
         options_rl : list[Literal[OPTION.display]] = [OPTION.display]
+        options_rl_enriched : list[Literal[OPTION.display]] = [OPTION.display]
+        options_rl_rating_five : list[Literal[OPTION.display]] = [OPTION.display]
+        options_rl_most_underlines : list[Literal[OPTION.display]] = [OPTION.display]
 
         options_rls_by_month : list[Literal[OPTION.display]] = [OPTION.display]
         options_rls_by_year : list[Literal[OPTION.display]] = [OPTION.display]
         options_rls_by_range : list[Literal[OPTION.display]] = [OPTION.display]
         options_rls_by_topic : list[Literal[OPTION.display]] = [OPTION.display]
-        options_rls_by_topic_bt : list[Literal[OPTION.display]] = [OPTION.display]
+        options_rls_by_topic_trend : list[Literal[OPTION.display]] = [OPTION.display]
         options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]] = [OPTION.display, OPTION.logset]
-        options_rl_rating_five : list[Literal[OPTION.display]] = [OPTION.display]
         options_rls_by_rating : list[Literal[OPTION.display]] = [OPTION.display]
 
         options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = [OPTION.display, OPTION.plot]
@@ -395,12 +401,13 @@ class SettingBagTestCase(unittest.TestCase):
         excel_skiprows : int = 0
         excel_tabname : str = "Books"
         excel_null_value : str = "-"
+        rl_most_underlines_formatters : dict[str, str] = {"AvgRating": "{:.2f}", "AB%": "{:.2f}", "AvgUnderlines": "{:.2f}"}
         rls_by_kbsize_ascending : bool = False
         rls_by_kbsize_remove_if_zero : bool = True
         rls_by_kbsize_n : int = 10
         rls_by_rating_number_as_stars : bool = True
         rls_by_publisher_n : int = 10
-        rls_by_publisher_formatters : dict[str, str] = {"AvgRating": "{:.2f}", "AB%": "{:.2f}"}
+        rls_by_publisher_formatters : dict[str, str] = {"AvgUnderlines": "{:.2f}", "U%": "{:.2f}"}
         rls_by_publisher_min_books : int = 8
         rls_by_publisher_min_avgrating : float = 2.5
         rls_by_publisher_min_ab_perc : float = 100.0
@@ -413,14 +420,16 @@ class SettingBagTestCase(unittest.TestCase):
         # Act
         setting_bag : SettingBag = SettingBag(
             options_rl = options_rl,
+            options_rl_enriched = options_rl_enriched,
+            options_rl_rating_five = options_rl_rating_five,
+            options_rl_most_underlines = options_rl_most_underlines,
 
             options_rls_by_month = options_rls_by_month,
             options_rls_by_year = options_rls_by_year,
             options_rls_by_range = options_rls_by_range,
             options_rls_by_topic = options_rls_by_topic,
-            options_rls_by_topic_trend = options_rls_by_topic_bt,
+            options_rls_by_topic_trend = options_rls_by_topic_trend,
             options_rls_by_publisher = options_rls_by_publisher,
-            options_rl_rating_five = options_rl_rating_five,
             options_rls_by_rating = options_rls_by_rating,
 
             options_rls_by_kbsize = options_rls_by_kbsize,
@@ -434,7 +443,8 @@ class SettingBagTestCase(unittest.TestCase):
             excel_null_value = excel_null_value,
             working_folder_path = working_folder_path,
             rounding_digits = rounding_digits,
-            now = now,            
+            now = now,
+            rl_most_underlines_formatters = rl_most_underlines_formatters,
             rls_by_kbsize_ascending = rls_by_kbsize_ascending,
             rls_by_kbsize_remove_if_zero = rls_by_kbsize_remove_if_zero,
             rls_by_kbsize_n = rls_by_kbsize_n,
@@ -450,17 +460,20 @@ class SettingBagTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(setting_bag.options_rl, options_rl)
+        self.assertEqual(setting_bag.options_rl_enriched, options_rl_enriched)
+        self.assertEqual(setting_bag.options_rl_rating_five, options_rl_rating_five)
+        self.assertEqual(setting_bag.options_rl_most_underlines, options_rl_most_underlines)
 
         self.assertEqual(setting_bag.options_rls_by_month, options_rls_by_month)
         self.assertEqual(setting_bag.options_rls_by_year, options_rls_by_year)        
         self.assertEqual(setting_bag.options_rls_by_range, options_rls_by_range)
+        self.assertEqual(setting_bag.options_rls_by_topic, options_rls_by_topic)
+        self.assertEqual(setting_bag.options_rls_by_topic_trend, options_rls_by_topic_trend)
+        self.assertEqual(setting_bag.options_rls_by_publisher, options_rls_by_publisher)
+        self.assertEqual(setting_bag.options_rls_by_rating, options_rls_by_rating)
 
         self.assertEqual(setting_bag.options_rls_by_books_year, options_rls_by_books_year)
         self.assertEqual(setting_bag.options_rls_by_kbsize, options_rls_by_kbsize)
-        self.assertEqual(setting_bag.options_rls_by_publisher, options_rls_by_publisher)
-        self.assertEqual(setting_bag.options_rls_by_rating, options_rls_by_rating)
-        self.assertEqual(setting_bag.options_rls_by_topic, options_rls_by_topic)
-        self.assertEqual(setting_bag.options_rls_by_topic_trend, options_rls_by_topic_bt)
         self.assertEqual(setting_bag.options_definitions, options_definitions)
         self.assertEqual(setting_bag.read_years, read_years)
         self.assertEqual(setting_bag.excel_path, excel_path)
@@ -471,6 +484,7 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.working_folder_path, working_folder_path)
         self.assertEqual(setting_bag.rounding_digits, rounding_digits)
         self.assertEqual(setting_bag.now, now)
+        self.assertEqual(setting_bag.rl_most_underlines_formatters, rl_most_underlines_formatters)
         self.assertEqual(setting_bag.rls_by_kbsize_ascending, rls_by_kbsize_ascending)
         self.assertEqual(setting_bag.rls_by_kbsize_remove_if_zero, rls_by_kbsize_remove_if_zero)
         self.assertEqual(setting_bag.rls_by_kbsize_n, rls_by_kbsize_n)
