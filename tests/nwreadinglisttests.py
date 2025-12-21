@@ -274,13 +274,14 @@ class ObjectMother():
             options_rls_by_month = [OPTION.display],
             options_rls_by_year = [OPTION.display],
             options_rls_by_range = [OPTION.display],
+            options_rls_by_topic = [OPTION.display],
+            options_rls_by_topic_trend = [OPTION.display],
+            options_rls_by_publisher = [OPTION.display, OPTION.logset],
+            options_rl_rating_five = [OPTION.display],            
 
             options_rls_by_kbsize = [OPTION.display, OPTION.plot],
             options_rls_by_books_year = [OPTION.plot],
-            options_rls_by_publisher = [OPTION.display, OPTION.logset],
             options_rls_by_rating = [OPTION.display],
-            options_rls_by_topic = [OPTION.display],
-            options_rls_by_topic_trend = [OPTION.display],
             options_definitions = [OPTION.display],
             read_years = YearProvider().get_all_years(),
             excel_path = DefaultPathProvider().get_default_reading_list_path(),
@@ -315,14 +316,16 @@ class RLSummaryTestCase(unittest.TestCase):
         # Act
         rl_summary : RLSummary = RLSummary(
             rl_df = df,
-            rls_by_range_df = df,
-            rls_by_kbsize_df = df,
             rls_by_month_tpl = tpl,
-            rls_by_publisher_tpl = tpl_footer,
-            rls_by_rating_df = df,
+            rls_by_year_df = df,
+            rls_by_range_df = df,
             rls_by_topic_df = df,
             rls_by_topic_trend_df = df,
-            rls_by_year_df = df,
+            rls_by_publisher_tpl = tpl_footer,
+            rl_rating_five_df = df,
+            rls_by_rating_df = df,
+
+            rls_by_kbsize_df = df,
             definitions_df = df
         )
 
@@ -377,13 +380,14 @@ class SettingBagTestCase(unittest.TestCase):
         options_rls_by_month : list[Literal[OPTION.display]] = [OPTION.display]
         options_rls_by_year : list[Literal[OPTION.display]] = [OPTION.display]
         options_rls_by_range : list[Literal[OPTION.display]] = [OPTION.display]
+        options_rls_by_topic : list[Literal[OPTION.display]] = [OPTION.display]
+        options_rls_by_topic_bt : list[Literal[OPTION.display]] = [OPTION.display]
+        options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]] = [OPTION.display, OPTION.logset]
+        options_rl_rating_five : list[Literal[OPTION.display]] = [OPTION.display]
+        options_rls_by_rating : list[Literal[OPTION.display]] = [OPTION.display]
 
         options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = [OPTION.display, OPTION.plot]
         options_rls_by_books_year : list[Literal[OPTION.plot]] = [OPTION.plot]
-        options_rls_by_topic : list[Literal[OPTION.display]] = [OPTION.display]
-        options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]] = [OPTION.display, OPTION.logset]
-        options_rls_by_rating : list[Literal[OPTION.display]] = [OPTION.display]
-        options_rls_by_topic_bt : list[Literal[OPTION.display]] = [OPTION.display]
         options_definitions : list[Literal[OPTION.display]] = [OPTION.display]
         read_years : list[int] = [2022, 2023]
         excel_path : str = "Reading List.xlsx"
@@ -413,13 +417,14 @@ class SettingBagTestCase(unittest.TestCase):
             options_rls_by_month = options_rls_by_month,
             options_rls_by_year = options_rls_by_year,
             options_rls_by_range = options_rls_by_range,
+            options_rls_by_topic = options_rls_by_topic,
+            options_rls_by_topic_trend = options_rls_by_topic_bt,
+            options_rls_by_publisher = options_rls_by_publisher,
+            options_rl_rating_five = options_rl_rating_five,
+            options_rls_by_rating = options_rls_by_rating,
 
             options_rls_by_kbsize = options_rls_by_kbsize,
             options_rls_by_books_year = options_rls_by_books_year,
-            options_rls_by_topic = options_rls_by_topic,
-            options_rls_by_publisher = options_rls_by_publisher,
-            options_rls_by_rating = options_rls_by_rating,
-            options_rls_by_topic_trend = options_rls_by_topic_bt,
             options_definitions = options_definitions,
             read_years = read_years,
             excel_path = excel_path,
@@ -1088,7 +1093,7 @@ class RLAdapterTestCase(unittest.TestCase):
         assert_frame_equal(actual.rls_by_publisher_tpl[0], rls_by_publisher_tpl[0])
         assert_frame_equal(actual.rls_by_publisher_tpl[1], rls_by_publisher_tpl[1])
         self.assertEqual(actual.rls_by_publisher_tpl[2], rls_by_publisher_tpl[2])
-        
+
         assert_frame_equal(actual.rls_by_kbsize_df, rls_by_kbsize_df)
         assert_frame_equal(actual.rls_by_rating_df, rls_by_rating_df)
         assert_frame_equal(actual.definitions_df, definitions_df)

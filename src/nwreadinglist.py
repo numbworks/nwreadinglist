@@ -109,13 +109,13 @@ class RLSummary():
     rls_by_month_tpl : Tuple[DataFrame, DataFrame]
     rls_by_year_df : DataFrame
     rls_by_range_df : DataFrame
-
-    rls_by_kbsize_df : DataFrame
-    rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]
-    rls_by_rating_df : DataFrame
     rls_by_topic_df : DataFrame
     rls_by_topic_trend_df : DataFrame
+    rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]
+    rls_by_rating_df : DataFrame
+    rl_rating_five_df : DataFrame
 
+    rls_by_kbsize_df : DataFrame
     definitions_df : DataFrame
 
 # CLASSES
@@ -156,11 +156,12 @@ class SettingBag():
     options_rls_by_range : list[Literal[OPTION.display]]
     options_rls_by_topic : list[Literal[OPTION.display]]
     options_rls_by_topic_trend : list[Literal[OPTION.display]]
+    options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]]
+    options_rls_by_rating : list[Literal[OPTION.display]]
+    options_rl_rating_five : list[Literal[OPTION.display]]
 
     options_rls_by_books_year : list[Literal[OPTION.plot]]
     options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]]
-    options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]]
-    options_rls_by_rating : list[Literal[OPTION.display]]
     options_definitions : list[Literal[OPTION.display]]
     read_years : list[int]
     excel_path : str
@@ -1441,6 +1442,56 @@ class RLDataFrameFactory():
         )
 
         return (rls_by_publisher_df, rls_by_publisher_flt_df, rls_by_publisher_footer)
+    def create_rls_by_rating_df(self, rl_df : DataFrame, number_as_stars : bool) -> DataFrame:
+
+        '''
+                Rating  Books
+            0	★★★★★  9
+            1	★★★★☆  18
+            ...
+        '''
+
+        rls_by_rating_df : DataFrame = self.__group_books_by_single_column(rl_df = rl_df, column_name = RLCN.RATING)
+        rls_by_rating_df.sort_values(by = RLCN.RATING, ascending = False, inplace = True)
+        rls_by_rating_df.reset_index(drop = True, inplace = True)
+
+        if number_as_stars:
+            rls_by_rating_df[RLCN.RATING] = rls_by_rating_df[RLCN.RATING].apply(
+                lambda x : self.__formatter.format_rating(rating = x))
+
+        return rls_by_rating_df    
+    def create_rl_rating_five_df(self, rl_df : DataFrame, number_as_stars : bool) -> DataFrame:
+
+        """
+                Title	                                    Year	ReadDate	Topic	                Publisher	A4Sheets	Rating
+            0   Machine Learning Using CSharp Succinctly	2014	2016-11-19	Data Analysis & ML	    Syncfusion	3	        ★★★★★
+            1   Head First Design Patterns	                2004	2017-03-17	Software Engineering	O'Reilly	4	        ★★★★★
+            ...
+        """
+
+        rl_rating_five_df : DataFrame = rl_df.copy(deep = True)
+        rl_rating_five_df = rl_rating_five_df[rl_rating_five_df[RLCN.RATING] == 5]
+
+        rl_rating_five_df[RLCN.A4SHEETS] = rl_rating_five_df[RLCN.KBSIZE].apply(
+            lambda x : self.__converter.convert_word_count_to_A4_sheets(word_count = x))
+
+        if number_as_stars:
+            rl_rating_five_df[RLCN.RATING] = rl_rating_five_df[RLCN.RATING].apply(
+                lambda x : self.__formatter.format_rating(rating = x))
+
+        cns : list[str] = [
+            RLCN.TITLE,
+            RLCN.YEAR,
+            RLCN.READDATE,
+            RLCN.TOPIC,
+            RLCN.PUBLISHER,
+            RLCN.A4SHEETS,
+            RLCN.RATING
+        ]
+
+        rl_rating_five_df = rl_rating_five_df[cns]
+
+        return rl_rating_five_df
 
     def create_rls_by_kbsize_df(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool, n : int) -> DataFrame:
         
@@ -1460,27 +1511,6 @@ class RLDataFrameFactory():
         rl_by_kbsize_df = rl_by_kbsize_df.head(n = n)
 
         return rl_by_kbsize_df   
-
-
-    def create_rls_by_rating_df(self, rl_df : DataFrame, number_as_stars : bool) -> DataFrame:
-
-        '''
-                Rating  Books
-            0	★★★★★  9
-            1	★★★★☆  18
-            ...
-        '''
-
-        sas_by_rating_df : DataFrame = self.__group_books_by_single_column(rl_df = rl_df, column_name = RLCN.RATING)
-        sas_by_rating_df.sort_values(by = RLCN.RATING, ascending = False, inplace = True)
-        sas_by_rating_df.reset_index(drop = True, inplace = True)
-
-        if number_as_stars:
-            sas_by_rating_df[RLCN.RATING] = sas_by_rating_df[RLCN.RATING].apply(
-                lambda x : self.__formatter.format_rating(rating = x))
-
-        return sas_by_rating_df    
-
     def create_definitions_df(self) -> DataFrame:
 
         '''Creates a dataframe containing all the definitions in use in this application.'''
@@ -1584,6 +1614,27 @@ class RLAdapter():
         )
 
         return rls_by_publisher_tpl
+    def create_rls_by_rating_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+
+        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
+
+        rls_by_rating_df : DataFrame = self.__df_factory.create_rls_by_rating_df(
+            rl_df = rl_df,
+            number_as_stars = setting_bag.rls_by_rating_number_as_stars
+        )
+
+        return rls_by_rating_df     
+    def create_rl_rating_five_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+
+        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
+
+        rl_rating_five_df : DataFrame = self.__df_factory.create_rl_rating_five_df(
+            rl_df = rl_df,
+            number_as_stars = setting_bag.rls_by_rating_number_as_stars
+        )
+
+        return rl_rating_five_df 
+
 
     def create_rls_by_kbsize_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
 
@@ -1597,16 +1648,7 @@ class RLAdapter():
         )
 
         return rls_by_kbsize_df
-    def create_rls_by_rating_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
 
-        '''Creates the expected dataframe using setting_bag and the provided arguments.'''
-
-        rls_by_rating_df : DataFrame = self.__df_factory.create_rls_by_rating_df(
-            rl_df = rl_df,
-            number_as_stars = setting_bag.rls_by_rating_number_as_stars
-        )
-
-        return rls_by_rating_df 
     def create_summary(self, setting_bag : SettingBag) -> RLSummary:
 
         '''Creates a RLSummary object out of setting_bag.'''
@@ -1618,9 +1660,10 @@ class RLAdapter():
         rls_by_topic_df : DataFrame = self.__df_factory.create_rls_by_topic_df(rl_df = rl_df)
         rls_by_topic_trend_df : DataFrame = self.create_rls_by_topic_trend_df(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.create_rls_by_publisher_tpl(rl_df = rl_df, setting_bag = setting_bag)
+        rls_by_rating_df : DataFrame = self.create_rls_by_rating_df(rl_df = rl_df, setting_bag = setting_bag)
+        rl_rating_five_df : DataFrame = self.create_rl_rating_five_df(rl_df = rl_df, setting_bag = setting_bag)
 
         rls_by_kbsize_df : DataFrame = self.create_rls_by_kbsize_df(rl_df = rl_df, setting_bag = setting_bag)
-        rls_by_rating_df : DataFrame = self.create_rls_by_rating_df(rl_df = rl_df, setting_bag = setting_bag)
         definitions_df : DataFrame = self.__df_factory.create_definitions_df()
 
         rl_summary : RLSummary = RLSummary(
@@ -1631,8 +1674,10 @@ class RLAdapter():
             rls_by_topic_df = rls_by_topic_df,
             rls_by_topic_trend_df = rls_by_topic_trend_df,
             rls_by_publisher_tpl = rls_by_publisher_tpl,
-            rls_by_kbsize_df = rls_by_kbsize_df,
             rls_by_rating_df = rls_by_rating_df,
+            rl_rating_five_df = rl_rating_five_df,
+
+            rls_by_kbsize_df = rls_by_kbsize_df,
             definitions_df = definitions_df
         )
 
@@ -1789,6 +1834,36 @@ class ReadingListProcessor():
 
         if OPTION.logset in options:
             self.__component_bag.logging_function(footer)
+    def process_rls_by_rating(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rls_by_rating.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_rls_by_rating
+        df : DataFrame = self.__rl_summary.rls_by_rating_df
+
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df)
+    def process_rl_rating_five(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rl_rating_five.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_rl_rating_five
+        df : DataFrame = self.__rl_summary.rl_rating_five_df
+
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df)
 
     def process_rls_by_kbsize(self) -> None:
 
@@ -1825,21 +1900,6 @@ class ReadingListProcessor():
 
         if OPTION.plot in options:
             self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)
-    def process_rls_by_rating(self) -> None:
-
-        '''
-            Performs all the actions listed in __setting_bag.options_rls_by_rating.
-            
-            It raises an exception if the 'initialize' method has not been run yet.
-        '''
-
-        self.__validate_summary()
-
-        options : list = self.__setting_bag.options_rls_by_rating
-        df : DataFrame = self.__rl_summary.rls_by_rating_df
-
-        if OPTION.display in options:
-            self.__component_bag.displayer.display(obj = df)
     def process_definitions(self) -> None:
 
         '''
