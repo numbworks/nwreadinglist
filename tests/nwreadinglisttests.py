@@ -14,7 +14,7 @@ from unittest.mock import Mock, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import RLCN, DEFINITIONSTR, OPTION, REPORTSTR, _MessageCollection, RLSummary, DefaultPathProvider
+from nwreadinglist import RLCN, DEFINITIONSTR, OPTION, _MessageCollection, RLSummary, DefaultPathProvider
 from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
 from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor
 from nwshared import Converter, Formatter, FilePathManager, FileManager, Displayer, PlotManager
@@ -381,23 +381,23 @@ class SettingBagTestCase(unittest.TestCase):
     def test_settingbag_shouldinitializeasexpected_wheninvoked(self):
         
         # Arrange
-        options_rl_rating_five : list[Literal[OPTION.display]] = [OPTION.display]
-        options_rl_most_underlines : list[Literal[OPTION.display]] = [OPTION.display]
-        options_rls_by_month : list[Literal[OPTION.display]] = [OPTION.display]
-        options_rls_by_year : list[Literal[OPTION.display]] = [OPTION.display]
-        options_rls_by_range : list[Literal[OPTION.display]] = [OPTION.display]
-        options_rls_by_topic : list[Literal[OPTION.display]] = [OPTION.display]
-        options_rls_by_topic_trend : list[Literal[OPTION.display]] = [OPTION.display]
-        options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]] = [OPTION.display, OPTION.logset]
-        options_rls_by_rating : list[Literal[OPTION.display]] = [OPTION.display]
-        options_rls_by_underlines : list[Literal[OPTION.display]] = [OPTION.display]
-        options_definitions : list[Literal[OPTION.display]] = [OPTION.display]
-        options_report : list[Literal[OPTION.save_html, OPTION.save_pdf]] = [OPTION.save_html, OPTION.save_pdf]
+        options_rl_rating_five : list[Literal[OPTION.display]] = [OPTION.display]                                   # type: ignore[valid-type]
+        options_rl_most_underlines : list[Literal[OPTION.display]] = [OPTION.display]                               # type: ignore[valid-type]
+        options_rls_by_month : list[Literal[OPTION.display]] = [OPTION.display]                                     # type: ignore[valid-type]
+        options_rls_by_year : list[Literal[OPTION.display]] = [OPTION.display]                                      # type: ignore[valid-type]
+        options_rls_by_range : list[Literal[OPTION.display]] = [OPTION.display]                                     # type: ignore[valid-type]
+        options_rls_by_topic : list[Literal[OPTION.display]] = [OPTION.display]                                     # type: ignore[valid-type]
+        options_rls_by_topic_trend : list[Literal[OPTION.display]] = [OPTION.display]                               # type: ignore[valid-type]
+        options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]] = [OPTION.display, OPTION.logset]   # type: ignore[valid-type]
+        options_rls_by_rating : list[Literal[OPTION.display]] = [OPTION.display]                                    # type: ignore[valid-type]
+        options_rls_by_underlines : list[Literal[OPTION.display]] = [OPTION.display]                                # type: ignore[valid-type]
+        options_definitions : list[Literal[OPTION.display]] = [OPTION.display]                                      # type: ignore[valid-type]
+        options_report : list[Literal[OPTION.save_html, OPTION.save_pdf]] = [OPTION.save_html, OPTION.save_pdf]     # type: ignore[valid-type]
 
-        options_rl : list[Literal[OPTION.display]] = [OPTION.display]
-        options_rl_enriched : list[Literal[OPTION.display]] = [OPTION.display]
-        options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = [OPTION.display, OPTION.plot]
-        options_rls_by_books_year : list[Literal[OPTION.plot]] = [OPTION.plot]
+        options_rl : list[Literal[OPTION.display]] = [OPTION.display]                                               # type: ignore[valid-type]
+        options_rl_enriched : list[Literal[OPTION.display]] = [OPTION.display]                                      # type: ignore[valid-type]
+        options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = [OPTION.display, OPTION.plot]          # type: ignore[valid-type]
+        options_rls_by_books_year : list[Literal[OPTION.plot]] = [OPTION.plot]                                      # type: ignore[valid-type]
         read_years : list[int] = [2022, 2023]
         excel_path : str = "Reading List.xlsx"
         excel_nrows : int = 100

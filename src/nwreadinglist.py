@@ -1397,7 +1397,7 @@ class RLDataFrameFactory():
             read_years = read_years,
             rounding_digits = rounding_digits)
 
-        rls_by_year_df : DataFrame = pd.concat(objs = [rls_by_year_df, rls_by_street_price_df])
+        rls_by_year_df = pd.concat(objs = [rls_by_year_df, rls_by_street_price_df])
         rls_by_year_df.reset_index(drop = True, inplace = True)
 
         return rls_by_year_df
