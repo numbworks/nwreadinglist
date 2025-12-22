@@ -14,9 +14,9 @@ from unittest.mock import Mock, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import RLCN, RLID, DEFINITIONSCN, OPTION, _MessageCollection, MDInfo, RLSummary, DefaultPathProvider
-from nwreadinglist import MDInfoProvider, SettingBag, RLDataFrameHelper, RLDataFrameFactory, RLMarkdownFactory
-from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor, YearProvider
+from nwreadinglist import RLCN, DEFINITIONSTR, OPTION, _MessageCollection, RLSummary, DefaultPathProvider
+from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
+from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor
 from nwshared import Converter, Formatter, FilePathManager, FileManager, Displayer, PlotManager
 
 # SUPPORT METHODS
@@ -80,7 +80,8 @@ class ObjectMother():
             RLCN.TOPIC: np.array(["Development Tools", "Software Engineering", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python", "Python"], dtype=object),
             RLCN.ONGOODREADS: np.array(["No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No", "No"], dtype=object),
             RLCN.COMMENTLENGHT: np.array([52, 128, 181, 134, 80, 121, 105, 142, 138, 90, 75, 125, 59, 140], dtype=int32),
-            RLCN.KBSIZE: np.array([8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=int32)
+            RLCN.KBSIZE: np.array([8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], dtype=int32),
+            RLCN.UNDERLINES: np.array([1, 0, 2, 0, 4, 0, 0, 0, 2, 0, 0, 15, 0, 0], dtype=int32),
         }, index=pd.RangeIndex(start=260, stop=274, step=1))
 
         read_years : list[int] = [ 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024 ]
@@ -110,6 +111,7 @@ class ObjectMother():
         column_names.append(RLCN.ONGOODREADS)       # [17], str
         column_names.append(RLCN.COMMENTLENGHT)     # [18], int
         column_names.append(RLCN.KBSIZE)            # [19], int
+        column_names.append(RLCN.UNDERLINES)        # [20], int
 
         return column_names
     @staticmethod
@@ -137,24 +139,23 @@ class ObjectMother():
             "string",
             "string",
             "Int64",
+            "Int64",
             "Int64"
         ]
 
         return expected_dtype_names
     @staticmethod
-    def get_rls_asrt_tpl() -> Tuple[DataFrame, datetime]:
+    def get_rls_by_range_df() -> DataFrame:
 
-        rls_asrt_df : DataFrame = pd.DataFrame({
-            RLCN.YEARS: np.array(["1"], dtype = object),
-            RLCN.BOOKS: np.array(["14"], dtype = object),
-            RLCN.PAGES: np.array(["5573"], dtype = object),
-            RLCN.TOTALSPEND: np.array(["$587.57"], dtype = object),
-            RLCN.LASTUPDATE: np.array(["2024-03-04"], dtype = object),
-        }, index = pd.Index([0], dtype = "int64")) 
+        col_name = f"1 {RLCN.YEARS}"
+        values = [
+            f"14 (5573)",
+            "$587.57"
+        ]
 
-        now : datetime = datetime(2024, 3, 4)
+        rls_by_range_df : DataFrame = pd.DataFrame(values, columns = [col_name])
 
-        return (rls_asrt_df, now)
+        return rls_by_range_df
     @staticmethod
     def get_rls_by_kbsize_df() -> DataFrame:
 
@@ -179,7 +180,6 @@ class ObjectMother():
         }, index=pd.Index(range(12), dtype="int64"))
 
         rls_by_month_upd_df : DataFrame = DataFrame({
-            RLCN.MONTH: np.array([str(i) for i in range(1, 13)], dtype=np.int64),
             "2023": np.array(["0 (0)"] * 12, dtype=object),
             RLCN.TRENDSYMBOL: np.array(["=", "↑", "", "", "", "", "", "", "", "", "", ""], dtype=object),
             "2024": np.array(["0 (0)", "14 (5573)", "", "", "", "", "", "", "", "", "", ""], dtype=object)
@@ -187,7 +187,7 @@ class ObjectMother():
 
         return (rls_by_month_df, rls_by_month_upd_df)
     @staticmethod
-    def get_rls_by_year_street_price_df() -> DataFrame:
+    def get_rls_by_year_df() -> DataFrame:
 
         return DataFrame({
             "2023": np.array(["0 (0)", "$0.00"], dtype = object),
@@ -209,18 +209,20 @@ class ObjectMother():
         rls_by_publisher_df : DataFrame = DataFrame({
             RLCN.PUBLISHER: np.array(["Self-Published", "Packt", "CRC Press", "MLI", "Apress", "O'Reilly", "Manning", "Pearson Education", "Pragmatic Bookshelf"], dtype=object),
             RLCN.BOOKS: np.array([3, 2, 2, 2, 1, 1, 1, 1, 1], dtype=np.int64),
+            RLCN.AVGRATING: np.array([1.33, 2.0, 2.5, 1.5, 1.0, 3.0, 1.0, 3.0, 3.0], dtype=float64),
             RLCN.A4SHEETS: np.array([1, 0, 0, 0, 0, 0, 0, 0, 0], dtype=np.int64),
             RLCN.ABPERC: np.array([33.33, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=float64),
-            RLCN.AVGRATING: np.array([1.33, 2.0, 2.5, 1.5, 1.0, 3.0, 1.0, 3.0, 3.0], dtype=float64),
+            RLCN.AVGUNDERLINES: np.array([0.33, 7.5, 1.0, 0.0, 4.0, 0.0, 2.0, 0.0, 0.0], dtype=float64),
             RLCN.ISWORTH: np.array(["No", "No", "No", "No", "No", "No", "No", "No", "No"], dtype=object)
         }, index=pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype="int64"))
 
         rls_by_publisher_flt_df : DataFrame = DataFrame({
             RLCN.PUBLISHER: np.array([], dtype=object),
             RLCN.BOOKS: np.array([], dtype=np.int64),
+            RLCN.AVGRATING: np.array([], dtype=float64),
             RLCN.A4SHEETS: np.array([], dtype=np.int64),
             RLCN.ABPERC: np.array([], dtype=float64),
-            RLCN.AVGRATING: np.array([], dtype=float64),
+            RLCN.AVGUNDERLINES: np.array([], dtype=float64),
             RLCN.ISWORTH: np.array([], dtype=object)
         }, index=pd.Index([], dtype="int64"))
 
@@ -235,7 +237,7 @@ class ObjectMother():
             RLCN.BOOKS: np.array([1, 3, 4, 6], dtype = np.int64),
         }, index=pd.RangeIndex(start = 0, stop = 4, step = 1))
     @staticmethod
-    def get_rls_by_topic_bt_df() -> DataFrame:
+    def get_rls_by_topic_trend_df() -> DataFrame:
 
         return pd.DataFrame({
             RLCN.TOPIC: np.array(["Development Tools", "Python", "Software Engineering"], dtype=object),
@@ -245,15 +247,17 @@ class ObjectMother():
     @staticmethod
     def get_definitions_df() -> DataFrame:
 
-        columns : list[str] = [DEFINITIONSCN.TERM, DEFINITIONSCN.DEFINITION]
+        columns : list[str] = [DEFINITIONSTR.TERM, DEFINITIONSTR.DEFINITION]
 
         definitions : dict[str, str] = {
-            RLID.RL: "Reading List",
-            RLID.RLS: "Reading List Summary",
+            DEFINITIONSTR.RL: "Reading List",
+            DEFINITIONSTR.RLS: "Reading List Summary",
             RLCN.KBSIZE: "This metric is the word count of the notes I took about a given book",
             RLCN.A4SHEETS: f"'{RLCN.KBSIZE}' converted into amount of A4 sheets",
-            RLCN.ABPERC: f"Calculated with the following formula: '({RLCN.A4SHEETS} / {RLCN.BOOKS}) * 100'"
-            }
+            RLCN.ABPERC: f"Calculated with the following formula: '({RLCN.A4SHEETS} / {RLCN.BOOKS}) * 100'",
+            RLCN.UNDERLINES: "Underlines are sentences that express a fundamental concept that can be understood as-is",
+            RLCN.UPERC: f"Calculated with the following formula: '({RLCN.UNDERLINES} / Average of Underlines) * 100'"
+        }
         
         definitions_df : DataFrame = DataFrame(
             data = definitions.items(), 
@@ -266,16 +270,18 @@ class ObjectMother():
     def get_setting_bag() -> SettingBag:
 
         setting_bag : SettingBag = SettingBag(
-            options_rl = [OPTION.save],
-            options_rls_asrt = [OPTION.display, OPTION.logset],
-            options_rls_by_kbsize = [OPTION.display, OPTION.plot],
-            options_rls_by_books_year = [OPTION.plot],
-            options_rls_by_month = [OPTION.display, OPTION.save],
-            options_rls_by_publisher = [OPTION.display, OPTION.logset, OPTION.save],
-            options_rls_by_rating = [OPTION.display, OPTION.save],
-            options_rls_by_topic = [OPTION.display, OPTION.save],
-            options_rls_by_topic_bt = [OPTION.display, OPTION.save],
+            options_rl_rating_five = [OPTION.display],            
+            options_rl_most_underlines = [OPTION.display],
+            options_rls_by_month = [OPTION.display],
+            options_rls_by_year = [OPTION.display],
+            options_rls_by_range = [OPTION.display],
+            options_rls_by_topic = [OPTION.display],
+            options_rls_by_topic_trend = [OPTION.display],
+            options_rls_by_publisher = [OPTION.display, OPTION.logset],
+            options_rls_by_rating = [OPTION.display],
+            options_rls_by_underlines = [OPTION.display],
             options_definitions = [OPTION.display],
+            options_report = [OPTION.save_html, OPTION.save_pdf],
             read_years = YearProvider().get_all_years(),
             excel_path = DefaultPathProvider().get_default_reading_list_path(),
             excel_nrows = 323
@@ -286,16 +292,6 @@ class ObjectMother():
 # TEST CLASSES
 class MessageCollectionTestCase(unittest.TestCase):
 
-    def test_nomdinfofound_shouldreturnexpectedmessage_wheninvoked(self):
-        
-        # Arrange
-        expected : str = "No MDInfo object found for id='rl'."
-        
-        # Act
-        actual : str = _MessageCollection.no_mdinfo_found(id = RLID.RL)
-        
-        # Assert
-        self.assertEqual(actual, expected)
     def test_pleaseruninitializefirst_shouldreturnexpectedmessage_wheninvoked(self):
         
         # Arrange
@@ -306,32 +302,6 @@ class MessageCollectionTestCase(unittest.TestCase):
         
         # Assert
         self.assertEqual(actual, expected)
-    def test_thiscontentsuccessfullysaved_shouldreturnexpectedmessage_wheninvoked(self):
-
-        # Arrange
-        expected : str = "This content (id: 'rl') has been successfully saved as '/home/nwreadinglist/READINGLIST.md'."
-        
-        # Act
-        actual : str = _MessageCollection.this_content_successfully_saved_as(id = RLID.RL, file_path = "/home/nwreadinglist/READINGLIST.md")
-        
-        # Assert
-        self.assertEqual(actual, expected)
-class MDInfoTestCase(unittest.TestCase):
-    
-    def test_mdinfo_shouldinitializeasexpected_wheninvoked(self):
-        
-        # Arrange
-        # Act
-        md_info : MDInfo = MDInfo(
-            id = RLID.RL,
-            file_name = "READINGLIST.md",
-            paragraph_title = "Reading List"
-        )
-
-        # Assert
-        self.assertEqual(md_info.id, RLID.RL)
-        self.assertEqual(md_info.file_name, "READINGLIST.md")
-        self.assertEqual(md_info.paragraph_title, "Reading List")
 class RLSummaryTestCase(unittest.TestCase):
 
     def test_rlsummary_shouldinitializeasexpected_wheninvoked(self):
@@ -341,48 +311,44 @@ class RLSummaryTestCase(unittest.TestCase):
         tpl : Tuple[DataFrame, DataFrame] = (df, df)
         footer : str = "Some Markdown footer."
         tpl_footer: Tuple[DataFrame, DataFrame, str] = (df, df, footer)
-        content : str = "Some Markdown content."
 
         # Act
         rl_summary : RLSummary = RLSummary(
             rl_df = df,
-            rls_asrt_df = df,
-            rls_by_kbsize_df = df,
+            rl_enriched_df = df,
+            rl_rating_five_df = df,
+            rl_most_underlines_df = df,
             rls_by_month_tpl = tpl,
+            rls_by_year_df = df,
+            rls_by_range_df = df,
+            rls_by_topic_df = df,
+            rls_by_topic_trend_df = df,
             rls_by_publisher_tpl = tpl_footer,
             rls_by_rating_df = df,
-            rls_by_topic_df = df,
-            rls_by_topic_bt_df = df,
-            rls_by_year_street_price_df = df,
+            rls_by_underlines_df = df,
             definitions_df = df,
-            rl_md = content,
-            rls_asrt_md = content,
-            rls_by_month_md = content,
-            rls_by_publisher_md = content,
-            rls_by_rating_md = content,
-            rls_by_topic_md = content
+
+            rls_by_kbsize_df = df
         )
 
         # Assert
         assert_frame_equal(rl_summary.rl_df, df)
-        assert_frame_equal(rl_summary.rls_asrt_df, df)
-        assert_frame_equal(rl_summary.rls_by_kbsize_df, df)
+        assert_frame_equal(rl_summary.rl_enriched_df, df)
+        assert_frame_equal(rl_summary.rl_rating_five_df, df)
+        assert_frame_equal(rl_summary.rl_most_underlines_df, df)        
         assert_frame_equal(rl_summary.rls_by_month_tpl[0], df)
         assert_frame_equal(rl_summary.rls_by_month_tpl[1], df)
+        assert_frame_equal(rl_summary.rls_by_year_df, df)
+        assert_frame_equal(rl_summary.rls_by_range_df, df)
+        assert_frame_equal(rl_summary.rls_by_topic_df, df)
+        assert_frame_equal(rl_summary.rls_by_topic_trend_df, df)
         assert_frame_equal(rl_summary.rls_by_publisher_tpl[0], df)
         assert_frame_equal(rl_summary.rls_by_publisher_tpl[1], df)
         self.assertEqual(rl_summary.rls_by_publisher_tpl[2], footer)
         assert_frame_equal(rl_summary.rls_by_rating_df, df)
-        assert_frame_equal(rl_summary.rls_by_year_street_price_df, df)
-        assert_frame_equal(rl_summary.rls_by_topic_df, df)
-        assert_frame_equal(rl_summary.rls_by_topic_bt_df, df)
         assert_frame_equal(rl_summary.definitions_df, df)
-        self.assertEqual(rl_summary.rl_md, content)
-        self.assertEqual(rl_summary.rls_asrt_md, content)
-        self.assertEqual(rl_summary.rls_by_month_md, content)
-        self.assertEqual(rl_summary.rls_by_publisher_md, content)
-        self.assertEqual(rl_summary.rls_by_rating_md, content)
-        self.assertEqual(rl_summary.rls_by_topic_md, content)
+
+        assert_frame_equal(rl_summary.rls_by_kbsize_df, df)
 class DefaultPathProviderTestCase(unittest.TestCase):
 
     def test_getdefaultreadinglistpath_shouldreturnexpectedpath_wheninvoked(self):
@@ -410,57 +376,41 @@ class YearProviderTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(expected, actual)
-class MDInfoProviderTestCase(unittest.TestCase):
-    
-    def test_getall_shouldreturnexpectedlist_wheninvoked(self):
-        
-        # Arrange
-        expected : list[MDInfo] = [
-                MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List"),
-                MDInfo(id = RLID.RLSBYMONTH, file_name = "READINGLISTBYMONTH.md", paragraph_title = "Reading List By Month"),
-                MDInfo(id = RLID.RLSBYPUBLISHER, file_name = "READINGLISTBYPUBLISHER.md", paragraph_title = "Reading List By Publisher"),
-                MDInfo(id = RLID.RLSBYRATING, file_name = "READINGLISTBYRATING.md", paragraph_title = "Reading List By Rating"),
-                MDInfo(id = RLID.RLSBYTOPIC, file_name = "READINGLISTBYTOPIC.md", paragraph_title = "Reading List By Topic")
-            ]
-
-        # Act
-        actual : list[MDInfo] = MDInfoProvider().get_all()
-
-        # Assert
-        self.assertEqual(len(expected), len(actual))
-        for i in range(len(expected)):
-            self.assertEqual(expected[i].id, actual[i].id)
-            self.assertEqual(expected[i].file_name, actual[i].file_name)
-            self.assertEqual(expected[i].paragraph_title, actual[i].paragraph_title)
 class SettingBagTestCase(unittest.TestCase):
 
     def test_settingbag_shouldinitializeasexpected_wheninvoked(self):
         
         # Arrange
-        options_rl : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
-        options_rls_asrt : list[Literal[OPTION.display, OPTION.logset]] = [OPTION.display, OPTION.logset]
-        options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = [OPTION.display, OPTION.plot]
-        options_rls_by_books_year : list[Literal[OPTION.plot]] = [OPTION.plot]
-        options_rls_by_month : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
-        options_rls_by_topic : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
-        options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset, OPTION.save]] = [OPTION.display, OPTION.logset, OPTION.save]
-        options_rls_by_rating : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
-        options_rls_by_topic_bt : list[Literal[OPTION.display, OPTION.save]] = [OPTION.display, OPTION.save]
-        options_definitions : list[Literal[OPTION.display]] = [OPTION.display]
+        options_rl_rating_five : list[Literal[OPTION.display]] = [OPTION.display]                                   # type: ignore[valid-type]
+        options_rl_most_underlines : list[Literal[OPTION.display]] = [OPTION.display]                               # type: ignore[valid-type]
+        options_rls_by_month : list[Literal[OPTION.display]] = [OPTION.display]                                     # type: ignore[valid-type]
+        options_rls_by_year : list[Literal[OPTION.display]] = [OPTION.display]                                      # type: ignore[valid-type]
+        options_rls_by_range : list[Literal[OPTION.display]] = [OPTION.display]                                     # type: ignore[valid-type]
+        options_rls_by_topic : list[Literal[OPTION.display]] = [OPTION.display]                                     # type: ignore[valid-type]
+        options_rls_by_topic_trend : list[Literal[OPTION.display]] = [OPTION.display]                               # type: ignore[valid-type]
+        options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]] = [OPTION.display, OPTION.logset]   # type: ignore[valid-type]
+        options_rls_by_rating : list[Literal[OPTION.display]] = [OPTION.display]                                    # type: ignore[valid-type]
+        options_rls_by_underlines : list[Literal[OPTION.display]] = [OPTION.display]                                # type: ignore[valid-type]
+        options_definitions : list[Literal[OPTION.display]] = [OPTION.display]                                      # type: ignore[valid-type]
+        options_report : list[Literal[OPTION.save_html, OPTION.save_pdf]] = [OPTION.save_html, OPTION.save_pdf]     # type: ignore[valid-type]
+
+        options_rl : list[Literal[OPTION.display]] = [OPTION.display]                                               # type: ignore[valid-type]
+        options_rl_enriched : list[Literal[OPTION.display]] = [OPTION.display]                                      # type: ignore[valid-type]
+        options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = [OPTION.display, OPTION.plot]          # type: ignore[valid-type]
+        options_rls_by_books_year : list[Literal[OPTION.plot]] = [OPTION.plot]                                      # type: ignore[valid-type]
         read_years : list[int] = [2022, 2023]
         excel_path : str = "Reading List.xlsx"
         excel_nrows : int = 100
         excel_skiprows : int = 0
         excel_tabname : str = "Books"
         excel_null_value : str = "-"
+        rl_most_underlines_formatters : dict[str, str] = {"AvgRating": "{:.2f}", "AB%": "{:.2f}", "AvgUnderlines": "{:.2f}"}
         rls_by_kbsize_ascending : bool = False
         rls_by_kbsize_remove_if_zero : bool = True
         rls_by_kbsize_n : int = 10
         rls_by_rating_number_as_stars : bool = True
-        md_last_update : datetime = datetime.now()
-        md_infos : list[MDInfo] = [ MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List") ]
         rls_by_publisher_n : int = 10
-        rls_by_publisher_formatters : dict[str, str] = {"AvgRating": "{:.2f}", "AB%": "{:.2f}"}
+        rls_by_publisher_formatters : dict[str, str] = {"AvgUnderlines": "{:.2f}", "U%": "{:.2f}"}
         rls_by_publisher_min_books : int = 8
         rls_by_publisher_min_avgrating : float = 2.5
         rls_by_publisher_min_ab_perc : float = 100.0
@@ -472,16 +422,23 @@ class SettingBagTestCase(unittest.TestCase):
 
         # Act
         setting_bag : SettingBag = SettingBag(
-            options_rl = options_rl,
-            options_rls_asrt = options_rls_asrt,
-            options_rls_by_kbsize = options_rls_by_kbsize,
-            options_rls_by_books_year = options_rls_by_books_year,
+            options_rl_rating_five = options_rl_rating_five,
+            options_rl_most_underlines = options_rl_most_underlines,
             options_rls_by_month = options_rls_by_month,
+            options_rls_by_year = options_rls_by_year,
+            options_rls_by_range = options_rls_by_range,
             options_rls_by_topic = options_rls_by_topic,
+            options_rls_by_topic_trend = options_rls_by_topic_trend,
             options_rls_by_publisher = options_rls_by_publisher,
             options_rls_by_rating = options_rls_by_rating,
-            options_rls_by_topic_bt = options_rls_by_topic_bt,
+            options_rls_by_underlines = options_rls_by_underlines,
             options_definitions = options_definitions,
+            options_report = options_report,
+
+            options_rl = options_rl,
+            options_rl_enriched = options_rl_enriched,
+            options_rls_by_kbsize = options_rls_by_kbsize,
+            options_rls_by_books_year = options_rls_by_books_year,
             read_years = read_years,
             excel_path = excel_path,
             excel_nrows = excel_nrows,
@@ -490,7 +447,8 @@ class SettingBagTestCase(unittest.TestCase):
             excel_null_value = excel_null_value,
             working_folder_path = working_folder_path,
             rounding_digits = rounding_digits,
-            now = now,            
+            now = now,
+            rl_most_underlines_formatters = rl_most_underlines_formatters,
             rls_by_kbsize_ascending = rls_by_kbsize_ascending,
             rls_by_kbsize_remove_if_zero = rls_by_kbsize_remove_if_zero,
             rls_by_kbsize_n = rls_by_kbsize_n,
@@ -501,22 +459,26 @@ class SettingBagTestCase(unittest.TestCase):
             rls_by_publisher_min_ab_perc = rls_by_publisher_min_ab_perc,
             rls_by_publisher_criteria = rls_by_publisher_criteria,
             rls_by_rating_number_as_stars = rls_by_rating_number_as_stars,
-            rls_by_topic_bt_sparklines_maximum = rls_by_topic_bt_sparklines_maximum,
-            md_last_update = md_last_update,
-            md_infos = md_infos
+            rls_by_topic_trend_sparklines_maximum = rls_by_topic_bt_sparklines_maximum
         )
 
         # Assert
-        self.assertEqual(setting_bag.options_rl, options_rl)
-        self.assertEqual(setting_bag.options_rls_asrt, options_rls_asrt)
-        self.assertEqual(setting_bag.options_rls_by_books_year, options_rls_by_books_year)
-        self.assertEqual(setting_bag.options_rls_by_kbsize, options_rls_by_kbsize)
+        self.assertEqual(setting_bag.options_rl_rating_five, options_rl_rating_five)
+        self.assertEqual(setting_bag.options_rl_most_underlines, options_rl_most_underlines)
         self.assertEqual(setting_bag.options_rls_by_month, options_rls_by_month)
+        self.assertEqual(setting_bag.options_rls_by_year, options_rls_by_year)        
+        self.assertEqual(setting_bag.options_rls_by_range, options_rls_by_range)
+        self.assertEqual(setting_bag.options_rls_by_topic, options_rls_by_topic)
+        self.assertEqual(setting_bag.options_rls_by_topic_trend, options_rls_by_topic_trend)
         self.assertEqual(setting_bag.options_rls_by_publisher, options_rls_by_publisher)
         self.assertEqual(setting_bag.options_rls_by_rating, options_rls_by_rating)
-        self.assertEqual(setting_bag.options_rls_by_topic, options_rls_by_topic)
-        self.assertEqual(setting_bag.options_rls_by_topic_bt, options_rls_by_topic_bt)
         self.assertEqual(setting_bag.options_definitions, options_definitions)
+        self.assertEqual(setting_bag.options_report, options_report)
+
+        self.assertEqual(setting_bag.options_rl, options_rl)
+        self.assertEqual(setting_bag.options_rl_enriched, options_rl_enriched)
+        self.assertEqual(setting_bag.options_rls_by_books_year, options_rls_by_books_year)
+        self.assertEqual(setting_bag.options_rls_by_kbsize, options_rls_by_kbsize)
         self.assertEqual(setting_bag.read_years, read_years)
         self.assertEqual(setting_bag.excel_path, excel_path)
         self.assertEqual(setting_bag.excel_nrows, excel_nrows)
@@ -526,6 +488,7 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.working_folder_path, working_folder_path)
         self.assertEqual(setting_bag.rounding_digits, rounding_digits)
         self.assertEqual(setting_bag.now, now)
+        self.assertEqual(setting_bag.rl_most_underlines_formatters, rl_most_underlines_formatters)
         self.assertEqual(setting_bag.rls_by_kbsize_ascending, rls_by_kbsize_ascending)
         self.assertEqual(setting_bag.rls_by_kbsize_remove_if_zero, rls_by_kbsize_remove_if_zero)
         self.assertEqual(setting_bag.rls_by_kbsize_n, rls_by_kbsize_n)
@@ -536,11 +499,7 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.rls_by_publisher_min_ab_perc, rls_by_publisher_min_ab_perc)
         self.assertEqual(setting_bag.rls_by_publisher_criteria, rls_by_publisher_criteria)
         self.assertEqual(setting_bag.rls_by_rating_number_as_stars, rls_by_rating_number_as_stars)
-        self.assertEqual(setting_bag.rls_by_topic_bt_sparklines_maximum, rls_by_topic_bt_sparklines_maximum)
-        self.assertEqual(setting_bag.md_last_update, md_last_update)
-        self.assertEqual(setting_bag.md_infos[0].id, md_infos[0].id)
-        self.assertEqual(setting_bag.md_infos[0].file_name, md_infos[0].file_name)
-        self.assertEqual(setting_bag.md_infos[0].paragraph_title, md_infos[0].paragraph_title)
+        self.assertEqual(setting_bag.rls_by_topic_trend_sparklines_maximum, rls_by_topic_bt_sparklines_maximum)
 class RLDataFrameHelperTestCase(unittest.TestCase):
 
     @parameterized.expand([
@@ -735,21 +694,6 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         self.trend_sparklines_maximum : bool = True
         self.rounding_digits : int = 2
 
-    def test_trycompletesabyyear_shouldreturnoriginaldataframe_whenmonthcountis12(self):
-        
-        # Arrange
-        sa_by_year_dict: dict[str, list] = {
-            RLCN.MONTH: [str(i) for i in range(1, 13)], 
-            RLCN.READYEAR: [2023] * 12
-        }
-        sa_by_year_df : DataFrame = pd.DataFrame(sa_by_year_dict)
-        read_year: int = 2023
-
-        # Act
-        actual : DataFrame = self.df_factory._RLDataFrameFactory__try_complete_sa_by_year(sa_by_year_df = sa_by_year_df, read_year = read_year) # type: ignore
-
-        # Assert
-        assert_frame_equal(sa_by_year_df, actual)
     def test_createrldf_shouldreturnexpecteddataframe_wheninvoked(self):
 
         # Arrange
@@ -770,38 +714,7 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(expected_column_names, actual.columns.tolist())
-        self.assertEqual(expected_dtype_names, SupportMethodProvider().get_dtype_names(df = actual))    
-    def test_createrlsasrtdf_shouldreturnexpecteddataframe_wheninvoked(self):
-        
-        # Arrange
-        rl_df : DataFrame = ObjectMother().get_rl_tpl()[0]
-        (expected, now) = ObjectMother().get_rls_asrt_tpl()
-
-        # Act
-        actual : DataFrame = self.df_factory.create_rls_asrt_df(
-            rl_df = rl_df,
-            rounding_digits = self.rounding_digits,
-            now = now
-        )
-
-        # Assert
-        assert_frame_equal(expected, actual)        
-    def test_createrlsbykbsizedf_shouldreturnexpecteddataframe_wheninvoked(self):
-        
-        # Arrange
-        rl_df : DataFrame = ObjectMother().get_rl_tpl()[0]
-        expected : DataFrame = ObjectMother().get_rls_by_kbsize_df()
-
-        # Act
-        actual : DataFrame = self.df_factory.create_rls_by_kbsize_df(
-            rl_df = rl_df,
-            ascending = self.kbsize_ascending,
-            remove_if_zero = self.kbsize_remove_if_zero,
-            n = self.kbsize_n
-        )
-
-        # Assert
-        assert_frame_equal(expected, actual)
+        self.assertEqual(expected_dtype_names, SupportMethodProvider().get_dtype_names(df = actual))
     def test_createrlsbymonthtpl_shouldreturnexpecteddataframes_wheninvoked(self):
         
         # Arrange
@@ -819,17 +732,17 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected_1, actual_1)    
-        assert_frame_equal(expected_2, actual_2)     
-    def test_createrlsbyyearstreetpricedf_shouldreturnexpecteddataframe_wheninvoked(self):
+        assert_frame_equal(expected_2, actual_2)   
+    def test_createrlsbyyeardf_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
         rl_df : DataFrame = ObjectMother().get_rl_tpl()[0]
         rls_by_month_tpl : Tuple[DataFrame, DataFrame] = ObjectMother().get_rls_by_month_tpl()
         read_years : list[int] = [ 2023, 2024 ]
-        expected : DataFrame = ObjectMother().get_rls_by_year_street_price_df()
+        expected : DataFrame = ObjectMother().get_rls_by_year_df()
 
         # Act
-        actual : DataFrame = self.df_factory.create_rls_by_year_street_price_df(
+        actual : DataFrame = self.df_factory.create_rls_by_year_df(
             rls_by_month_tpl = rls_by_month_tpl,
             rl_df = rl_df,
             read_years = read_years,
@@ -837,7 +750,38 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         )
 
         # Assert
-        assert_frame_equal(expected, actual)       
+        assert_frame_equal(expected, actual)   
+    def test_createrlsbyrangedf_shouldreturnexpecteddataframe_wheninvoked(self):
+        
+        # Arrange
+        rl_df : DataFrame = ObjectMother().get_rl_tpl()[0]
+        expected : DataFrame = ObjectMother().get_rls_by_range_df()
+
+        # Act
+        actual : DataFrame = self.df_factory.create_rls_by_range_df(
+            rl_df = rl_df,
+            rounding_digits = self.rounding_digits
+        )
+
+        # Assert
+        assert_frame_equal(expected, actual)    
+    
+    def test_createrlsbykbsizedf_shouldreturnexpecteddataframe_wheninvoked(self):
+        
+        # Arrange
+        rl_df : DataFrame = ObjectMother().get_rl_tpl()[0]
+        expected : DataFrame = ObjectMother().get_rls_by_kbsize_df()
+
+        # Act
+        actual : DataFrame = self.df_factory.create_rls_by_kbsize_df(
+            rl_df = rl_df,
+            ascending = self.kbsize_ascending,
+            remove_if_zero = self.kbsize_remove_if_zero,
+            n = self.kbsize_n
+        )
+
+        # Assert
+        assert_frame_equal(expected, actual)
     def test_createrlsbytopicdf_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
@@ -884,10 +828,10 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         
         # Arrange
         (rl_df, read_years) = ObjectMother().get_rl_tpl()
-        expected : DataFrame = ObjectMother().get_rls_by_topic_bt_df()
+        expected : DataFrame = ObjectMother().get_rls_by_topic_trend_df()
 
         # Act
-        actual : DataFrame = self.df_factory.create_rls_by_topic_bt_df(
+        actual : DataFrame = self.df_factory.create_rls_by_topic_trend_df(
             rl_df = rl_df,
             read_years = read_years,
             sparklines_maximum = self.trend_sparklines_maximum
@@ -905,6 +849,21 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected, actual)
+    def test_trycompletesabyyear_shouldreturnoriginaldataframe_whenmonthcountis12(self):
+        
+        # Arrange
+        sa_by_year_dict: dict[str, list] = {
+            RLCN.MONTH: [str(i) for i in range(1, 13)], 
+            RLCN.READYEAR: [2023] * 12
+        }
+        sa_by_year_df : DataFrame = pd.DataFrame(sa_by_year_dict)
+        read_year: int = 2023
+
+        # Act
+        actual : DataFrame = self.df_factory._RLDataFrameFactory__try_complete_sa_by_year(sa_by_year_df = sa_by_year_df, read_year = read_year) # type: ignore
+
+        # Assert
+        assert_frame_equal(sa_by_year_df, actual)
 class ComponentBagTestCase(unittest.TestCase):
     
     def test_componentbag_shouldinitializeasexpected_wheninvoked(self):
@@ -943,54 +902,12 @@ class RLAdapterTestCase(unittest.TestCase):
         self.rls_by_publisher_min_avgrating : float = 2.50
         self.rls_by_publisher_criteria : str = "Yes"
         self.rls_by_rating_number_as_stars = True
-        self.md_infos : list[MDInfo] = [
-            MDInfo(id = RLID.RL, file_name = "READINGLIST.md", paragraph_title = "Reading List")
-        ]
-        self.md_last_update : datetime = datetime(2024, 1, 1)
-    def test_extractfilenameandparagraphtitle_shouldreturnexpectedvalues_whenidexists(self) -> None:
-        
-        # Arrange
-        df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
 
-        setting_bag : SettingBag = Mock()
-        setting_bag.md_infos = self.md_infos
-
-        # Act
-        actual : Tuple[str, str] = rl_adapter.extract_file_name_and_paragraph_title(
-            id = self.md_infos[0].id, 
-            setting_bag = setting_bag
-        )
-
-        # Assert
-        self.assertEqual(actual, (self.md_infos[0].file_name, self.md_infos[0].paragraph_title))
-    def test_extractfilenameandparagraphtitle_shouldraiseexception_wheniddoesnotexist(self) -> None:
-        
-        # Arrange
-        df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
-        
-        id : RLID = RLID.RL
-
-        md_infos : list[MDInfo] = [
-            MDInfo(id = Mock(id = "other_id"), file_name = "OTHERFILE.md", paragraph_title = "Other Title")
-        ]
-        setting_bag : SettingBag = Mock(md_infos = md_infos)
-
-        # Act
-        with self.assertRaises(Exception) as context:
-            rl_adapter.extract_file_name_and_paragraph_title(id = id, setting_bag = setting_bag)
-        
-        # Assert
-        self.assertEqual(str(context.exception), _MessageCollection.no_mdinfo_found(id = id)) 
     def test_createrldf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
 
         setting_bag : SettingBag = Mock()
         setting_bag.excel_path = self.excel_path
@@ -1010,12 +927,59 @@ class RLAdapterTestCase(unittest.TestCase):
             excel_tabname = self.excel_tabname,
             excel_null_value = self.excel_null_value
         )
-    def test_createrlsasrtdf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
+    def test_createrlsbymonthtpl_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
+
+        setting_bag : SettingBag = Mock()
+        setting_bag.read_years = self.read_years
+        setting_bag.now = self.now
+
+        rl_df : DataFrame = Mock()
+
+        # Act
+        rl_adapter.create_rls_by_month_tpl(rl_df = rl_df, setting_bag = setting_bag)
+
+        # Assert
+        df_factory.create_rls_by_month_tpl.assert_called_once_with(
+            rl_df = rl_df,
+            read_years = self.read_years,
+            now = self.now
+        )
+    def test_createrlsbyyeardf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
+        
+        # Arrange
+        df_factory : RLDataFrameFactory = Mock()
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
+
+        setting_bag : SettingBag = Mock()
+        setting_bag.read_years = self.read_years
+        setting_bag.rounding_digits = self.rounding_digits
+
+        rl_df : DataFrame = Mock()
+        rls_by_month_tpl : Tuple[DataFrame, DataFrame] = (Mock(), Mock())
+
+        # Act
+        rl_adapter.create_rls_by_year_df(
+            rls_by_month_tpl = rls_by_month_tpl,
+            rl_df = rl_df,
+            setting_bag = setting_bag
+        )
+
+        # Assert
+        df_factory.create_rls_by_year_df.assert_called_once_with(
+            rls_by_month_tpl = rls_by_month_tpl,
+            rl_df = rl_df,
+            read_years = self.read_years,
+            rounding_digits = self.rounding_digits
+        )
+    def test_createrlsbyrangedf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
+        
+        # Arrange
+        df_factory : RLDataFrameFactory = Mock()
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
 
         setting_bag : SettingBag = Mock()
         setting_bag.rounding_digits = self.rounding_digits
@@ -1024,20 +988,19 @@ class RLAdapterTestCase(unittest.TestCase):
         rl_df : DataFrame = Mock()
 
         # Act
-        rl_adapter.create_rls_asrt_df(rl_df = rl_df, setting_bag = setting_bag)
+        rl_adapter.create_rls_by_range_df(rl_df = rl_df, setting_bag = setting_bag)
 
         # Assert
-        df_factory.create_rls_asrt_df.assert_called_once_with(
+        df_factory.create_rls_by_range_df.assert_called_once_with(
             rl_df = rl_df,
-            rounding_digits = self.rounding_digits,
-            now = self.now
-        )
+            rounding_digits = self.rounding_digits
+        )        
+
     def test_createrlsbykbdf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
 
         setting_bag : SettingBag = Mock()
         setting_bag.rls_by_kbsize_n = self.rls_by_kbsize_n
@@ -1056,62 +1019,11 @@ class RLAdapterTestCase(unittest.TestCase):
             ascending = self.rls_by_kbsize_ascending,
             remove_if_zero = self.rls_by_kbsize_remove_if_zero,
         )
-    def test_createrlsbymonthtpl_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
-        
-        # Arrange
-        df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
-
-        setting_bag : SettingBag = Mock()
-        setting_bag.read_years = self.read_years
-        setting_bag.now = self.now
-
-        rl_df : DataFrame = Mock()
-
-        # Act
-        rl_adapter.create_rls_by_month_tpl(rl_df = rl_df, setting_bag = setting_bag)
-
-        # Assert
-        df_factory.create_rls_by_month_tpl.assert_called_once_with(
-            rl_df = rl_df,
-            read_years = self.read_years,
-            now = self.now
-        )
-    def test_createrlsbyyearstreetpricedf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
-        
-        # Arrange
-        df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
-
-        setting_bag : SettingBag = Mock()
-        setting_bag.read_years = self.read_years
-        setting_bag.rounding_digits = self.rounding_digits
-
-        rl_df : DataFrame = Mock()
-        rls_by_month_tpl : Tuple[DataFrame, DataFrame] = (Mock(), Mock())
-
-        # Act
-        rl_adapter.create_rls_by_year_street_price_df(
-            rls_by_month_tpl = rls_by_month_tpl,
-            rl_df = rl_df,
-            setting_bag = setting_bag
-        )
-
-        # Assert
-        df_factory.create_rls_by_year_street_price_df.assert_called_once_with(
-            rls_by_month_tpl = rls_by_month_tpl,
-            rl_df = rl_df,
-            read_years = self.read_years,
-            rounding_digits = self.rounding_digits
-        )
     def test_createrlsbypublishertpl_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
 
         setting_bag : SettingBag = Mock()
         setting_bag.rounding_digits = self.rounding_digits
@@ -1138,8 +1050,7 @@ class RLAdapterTestCase(unittest.TestCase):
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        md_factory : RLMarkdownFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
 
         setting_bag : SettingBag = Mock()
         setting_bag.rls_by_rating_number_as_stars = self.rls_by_rating_number_as_stars
@@ -1158,43 +1069,32 @@ class RLAdapterTestCase(unittest.TestCase):
 
         # Arrange
         rl_df : DataFrame = ObjectMother.get_rl_tpl()[0]
-        rls_asrt_df : DataFrame = ObjectMother.get_rls_asrt_tpl()[0]
-        rls_by_kbsize_df : DataFrame = ObjectMother.get_rls_by_kbsize_df()
+
         rls_by_month_tpl : Tuple[DataFrame, DataFrame] = ObjectMother.get_rls_by_month_tpl()
-        rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = ObjectMother.get_rls_by_publisher_tpl()
-        rls_by_rating_df : DataFrame = ObjectMother.get_rls_by_rating_df()
+        rls_by_year_df : DataFrame = ObjectMother.get_rls_by_year_df()
+        rls_by_range_df : DataFrame = ObjectMother.get_rls_by_range_df()
         rls_by_topic_df : DataFrame = ObjectMother.get_rls_by_topic_df()
-        rls_by_topic_bt_df : DataFrame = ObjectMother.get_rls_by_topic_bt_df()
-        rls_by_year_street_price_df : DataFrame = ObjectMother.get_rls_by_year_street_price_df()
+        rls_by_topic_trend_df : DataFrame = ObjectMother.get_rls_by_topic_trend_df()
+        rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = ObjectMother.get_rls_by_publisher_tpl()
+
+        rls_by_kbsize_df : DataFrame = ObjectMother.get_rls_by_kbsize_df()
+        rls_by_rating_df : DataFrame = ObjectMother.get_rls_by_rating_df()
         definitions_df : DataFrame = ObjectMother.get_definitions_df()
-        rl_md : str = "Sample RL Markdown"
-        rls_asrt_md : str = "Sample Assertion Markdown"
-        rls_by_month_md : str = "Sample Month Markdown"
-        rls_by_publisher_md : str = "Sample Publisher Markdown"
-        rls_by_rating_md : str = "Sample Rating Markdown"
-        rls_by_topic_md : str = "Sample Topic Markdown"
 
         df_factory : RLDataFrameFactory = Mock()
-        df_factory.create_rls_by_topic_df.return_value = rls_by_topic_df
-        df_factory.create_definitions_df.return_value = definitions_df
         df_factory.create_rl_df = Mock(return_value = rl_df)
-        df_factory.create_rls_asrt_df = Mock(return_value = rls_asrt_df)
-        df_factory.create_rls_by_kbsize_df = Mock(return_value = rls_by_kbsize_df)
         df_factory.create_rls_by_month_tpl = Mock(return_value = rls_by_month_tpl)
+        df_factory.create_rls_by_year_df = Mock(return_value = rls_by_year_df)
+        df_factory.create_rls_by_range_df = Mock(return_value = rls_by_range_df)
+        df_factory.create_rls_by_topic_df.return_value = rls_by_topic_df
+        df_factory.create_rls_by_topic_trend_df = Mock(return_value = rls_by_topic_trend_df)
         df_factory.create_rls_by_publisher_tpl = Mock(return_value = rls_by_publisher_tpl)
+
+        df_factory.create_rls_by_kbsize_df = Mock(return_value = rls_by_kbsize_df)
         df_factory.create_rls_by_rating_df = Mock(return_value = rls_by_rating_df)
-        df_factory.create_rls_by_topic_bt_df = Mock(return_value = rls_by_topic_bt_df)
-        df_factory.create_rls_by_year_street_price_df = Mock(return_value = rls_by_year_street_price_df)
+        df_factory.create_definitions_df.return_value = definitions_df
 
-        md_factory : RLMarkdownFactory = Mock()
-        md_factory.create_rl_asrt_md.return_value = rls_asrt_md
-        md_factory.create_rl_md = Mock(return_value = rl_md)
-        md_factory.create_rls_by_month_md = Mock(return_value = rls_by_month_md)
-        md_factory.create_rls_by_publisher_md = Mock(return_value = rls_by_publisher_md)
-        md_factory.create_rls_by_rating_md = Mock(return_value = rls_by_rating_md)
-        md_factory.create_rls_by_topic_md = Mock(return_value = rls_by_topic_md)
-
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory, md_factory = md_factory)
+        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
         setting_bag : SettingBag = ObjectMother.get_setting_bag()
 
         # Act
@@ -1202,39 +1102,41 @@ class RLAdapterTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(actual.rl_df, rl_df)
-        assert_frame_equal(actual.rls_asrt_df, rls_asrt_df)
-        assert_frame_equal(actual.rls_by_kbsize_df, rls_by_kbsize_df)
         assert_frame_equal(actual.rls_by_month_tpl[0], rls_by_month_tpl[0])
         assert_frame_equal(actual.rls_by_month_tpl[1], rls_by_month_tpl[1])
+        assert_frame_equal(actual.rls_by_year_df, rls_by_year_df)        
+        assert_frame_equal(actual.rls_by_range_df, rls_by_range_df)
+        assert_frame_equal(actual.rls_by_topic_df, rls_by_topic_df)
+        assert_frame_equal(actual.rls_by_topic_trend_df, rls_by_topic_trend_df)
         assert_frame_equal(actual.rls_by_publisher_tpl[0], rls_by_publisher_tpl[0])
         assert_frame_equal(actual.rls_by_publisher_tpl[1], rls_by_publisher_tpl[1])
         self.assertEqual(actual.rls_by_publisher_tpl[2], rls_by_publisher_tpl[2])
+
+        assert_frame_equal(actual.rls_by_kbsize_df, rls_by_kbsize_df)
         assert_frame_equal(actual.rls_by_rating_df, rls_by_rating_df)
-        assert_frame_equal(actual.rls_by_topic_df, rls_by_topic_df)
-        assert_frame_equal(actual.rls_by_topic_bt_df, rls_by_topic_bt_df)
-        assert_frame_equal(actual.rls_by_year_street_price_df, rls_by_year_street_price_df)
         assert_frame_equal(actual.definitions_df, definitions_df)
-        self.assertEqual(actual.rl_md, rl_md)
-        self.assertEqual(actual.rls_asrt_md, rls_asrt_md)
-        self.assertEqual(actual.rls_by_month_md, rls_by_month_md)
-        self.assertEqual(actual.rls_by_publisher_md, rls_by_publisher_md)
-        self.assertEqual(actual.rls_by_rating_md, rls_by_rating_md)
-        self.assertEqual(actual.rls_by_topic_md, rls_by_topic_md)
 class ReadingListProcessorTestCase(unittest.TestCase):
 
     @parameterized.expand([
         ["process_rl"],
-        ["process_rls_asrt"],
-        ["process_rls_by_kbsize"],
-        ["process_rls_by_books_year"],
+        ["process_rl_enriched"],
+        ["process_rl_rating_five"],
+        ["process_rl_most_underlines"],
         ["process_rls_by_month"],
+        ["process_rls_by_year"],        
+        ["process_rls_by_range"],
+        ["process_rls_by_topic"],
+        ["process_rls_by_topic_trend"],        
         ["process_rls_by_publisher"],
         ["process_rls_by_rating"],
-        ["process_rls_by_topic"],
+        ["process_rls_by_underlines"],
         ["process_definitions"],
-        ["get_summary"]
+        ["process_rls_by_kbsize"],
+        ["process_rls_by_books_year"],
+        ["get_summary"],
+        ["save_as_report"]
     ])
-    def test_processmethod_shouldraiseexception_wheninitializenotrun(self, method_name : str) -> None:
+    def test_method_shouldraiseexception_wheninitializenotrun(self, method_name : str) -> None:
         
         # Arrange
         rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = Mock(), setting_bag = Mock())
