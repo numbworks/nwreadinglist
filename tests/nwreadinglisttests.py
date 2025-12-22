@@ -14,7 +14,7 @@ from unittest.mock import Mock, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import RLCN, RLID, DEFINITIONSCN, OPTION, _MessageCollection, RLSummary, DefaultPathProvider
+from nwreadinglist import RLCN, DEFINITIONSTR, OPTION, REPORTSTR, _MessageCollection, RLSummary, DefaultPathProvider
 from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
 from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor
 from nwshared import Converter, Formatter, FilePathManager, FileManager, Displayer, PlotManager
@@ -247,11 +247,11 @@ class ObjectMother():
     @staticmethod
     def get_definitions_df() -> DataFrame:
 
-        columns : list[str] = [DEFINITIONSCN.TERM, DEFINITIONSCN.DEFINITION]
+        columns : list[str] = [DEFINITIONSTR.TERM, DEFINITIONSTR.DEFINITION]
 
         definitions : dict[str, str] = {
-            RLID.RL: "Reading List",
-            RLID.RLS: "Reading List Summary",
+            DEFINITIONSTR.RL: "Reading List",
+            DEFINITIONSTR.RLS: "Reading List Summary",
             RLCN.KBSIZE: "This metric is the word count of the notes I took about a given book",
             RLCN.A4SHEETS: f"'{RLCN.KBSIZE}' converted into amount of A4 sheets",
             RLCN.ABPERC: f"Calculated with the following formula: '({RLCN.A4SHEETS} / {RLCN.BOOKS}) * 100'",

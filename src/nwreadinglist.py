@@ -63,22 +63,14 @@ class RLCN(StrEnum):
     UNDERLINES = "Underlines"
     AVGUNDERLINES = "AvgUnderlines"
     UPERC = "U%"
-class RLID(StrEnum):
-    
-    '''Collects all the ids that identify the dataframes created by RLDataFrameFactory.'''
-
-    RL = "rl"
-    RLS = "rls"    
-    RLSBYMONTH = "rls_by_month"
-    RLSBYPUBLISHER = "rls_by_publisher"
-    RLSBYRATING = "rls_by_rating"
-    RLSBYTOPIC = "rls_by_topic"  
-class DEFINITIONSCN(StrEnum):
+class DEFINITIONSTR(StrEnum):
     
     '''Collects all the column names used by definitions.'''
 
     TERM = "Term"
     DEFINITION = "Definition"
+    RL = "rl"
+    RLS = "rls"
 class OPTION(StrEnum):
 
     '''Represents a collection of options.'''
@@ -91,6 +83,21 @@ class OPTION(StrEnum):
     plot = auto()
     save_html = auto()
     save_pdf = auto()
+class REPORTSTR(StrEnum):
+    
+    '''Collects all the strings related to RLReportManager.'''
+
+    RLRATINGFIVE = "Rating Five"
+    RLMOSTUNDERLINES = "Most Underlines"
+    RLSBYMONTH = "By Month"
+    RLSBYYEAR = "By Year"
+    RLSBYRANGE = "By Range"
+    RLSBYTOPIC = "By Topic"
+    RLSBYTOPICTREND = "By Topic Trend"
+    RLSBYPUBLISHER = "By Publisher"
+    RLSBYRATING = "By Rating"
+    RLSBYUNDERLINES = "By Underlines"
+    DEFINITIONS = "Definitions"
 
 # STATIC CLASSES
 class _MessageCollection():
@@ -1590,11 +1597,11 @@ class RLDataFrameFactory():
 
         '''Creates a dataframe containing all the definitions in use in this application.'''
 
-        columns : list[str] = [DEFINITIONSCN.TERM, DEFINITIONSCN.DEFINITION]
+        columns : list[str] = [DEFINITIONSTR.TERM, DEFINITIONSTR.DEFINITION]
 
         definitions : dict[str, str] = {
-            RLID.RL: "Reading List",
-            RLID.RLS: "Reading List Summary",
+            DEFINITIONSTR.RL: "Reading List",
+            DEFINITIONSTR.RLS: "Reading List Summary",
             RLCN.KBSIZE: "This metric is the word count of the notes I took about a given book",
             RLCN.A4SHEETS: f"'{RLCN.KBSIZE}' converted into amount of A4 sheets",
             RLCN.ABPERC: f"Calculated with the following formula: '({RLCN.A4SHEETS} / {RLCN.BOOKS}) * 100'",
@@ -1830,7 +1837,7 @@ class RLReportManager():
         pdf_path : Path = base_path.with_suffix(".pdf")
 
         return (html_path, pdf_path)
-    def __convert_to_html(self, df : DataFrame, title : str, formatters : Optional[dict], footer : Optional[str] = None) -> str:
+    def __create_html(self, df : DataFrame, title : str, formatters : Optional[dict], footer : Optional[str] = None) -> str:
 
         """Converts the provided DataFrame into a styled HTML table using a layout similar to Jupyter Notebook."""
 
@@ -1873,23 +1880,23 @@ class RLReportManager():
             f"{footer_html}"
             "</div>"
             )
-    def __convert_to_html_sections(self, rl_summary : RLSummary, formatters : Optional[dict]) -> list[str]:
+    def __create_html_sections(self, rl_summary : RLSummary, formatters : Optional[dict]) -> list[str]:
 
         '''Converts summary to a collection of HTML code blocks.'''
 
         html_sections: list[str] = []
         
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_month_tpl[1], "By Month", formatters))
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_year_df, "By Year", formatters))
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_range_df, "By Range", formatters))
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_topic_df, "By Topic", formatters))
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_topic_trend_df, "Topic Trend", formatters))
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_publisher_tpl[1], "By Publisher", formatters, rl_summary.rls_by_publisher_tpl[2]))
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_rating_df, "By Rating", formatters))
-        html_sections.append(self.__convert_to_html(rl_summary.rl_rating_five_df, "Rating = 5", formatters))
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_underlines_df, "By Underlines", formatters))
-        html_sections.append(self.__convert_to_html(rl_summary.rl_most_underlines_df, "Most Underlines", formatters))
-        html_sections.append(self.__convert_to_html(rl_summary.definitions_df, "Definitions", formatters))
+        html_sections.append(self.__create_html(rl_summary.rls_by_month_tpl[1], REPORTSTR.RLSBYMONTH, formatters))
+        html_sections.append(self.__create_html(rl_summary.rls_by_year_df, REPORTSTR.RLSBYYEAR, formatters))
+        html_sections.append(self.__create_html(rl_summary.rls_by_range_df, REPORTSTR.RLSBYRANGE, formatters))
+        html_sections.append(self.__create_html(rl_summary.rls_by_topic_df, REPORTSTR.RLSBYTOPIC, formatters))
+        html_sections.append(self.__create_html(rl_summary.rls_by_topic_trend_df, REPORTSTR.RLSBYTOPICTREND, formatters))
+        html_sections.append(self.__create_html(rl_summary.rls_by_publisher_tpl[1], REPORTSTR.RLSBYPUBLISHER, formatters, rl_summary.rls_by_publisher_tpl[2]))
+        html_sections.append(self.__create_html(rl_summary.rls_by_rating_df, REPORTSTR.RLSBYRATING, formatters))
+        html_sections.append(self.__create_html(rl_summary.rl_rating_five_df, REPORTSTR.RLRATINGFIVE, formatters))
+        html_sections.append(self.__create_html(rl_summary.rls_by_underlines_df, REPORTSTR.RLSBYUNDERLINES, formatters))
+        html_sections.append(self.__create_html(rl_summary.rl_most_underlines_df, REPORTSTR.RLMOSTUNDERLINES, formatters))
+        html_sections.append(self.__create_html(rl_summary.definitions_df, REPORTSTR.DEFINITIONS, formatters))
         
         return html_sections
     def __create_html_template(self, html_sections : list[str], last_update : datetime) -> str:
@@ -1946,7 +1953,7 @@ class RLReportManager():
         '''Builds an HTML report from selected DataFrames in RLSummary and saves it as both HTML and PDF.'''
 
         html_path, pdf_path = self.__create_report_file_paths(folder_path = folder_path, last_update = last_update)
-        html_sections : list[str] = self.__convert_to_html_sections(rl_summary = rl_summary, formatters = formatters)
+        html_sections : list[str] = self.__create_html_sections(rl_summary = rl_summary, formatters = formatters)
         full_html : str = self.__create_html_template(html_sections = html_sections, last_update = last_update)
 
         if save_html:
