@@ -220,6 +220,47 @@ When I started getting the error message, the installed `ipython` version was `9
 
 Forcing `pip` to use an older dependency was necessary to bring back the devcontainer to a working status.
 
+## Known Issues - "ModuleNotFoundError: No module named 'tinycss2.color5'"
+
+At the moment of writing, the latest version of `weasyprint` is `67.0`, but it returns the following error if run via devcontainer:
+
+```
+2025-12-22 19:40:18.005 [error] Unittest test discovery error for workspace:  /workspaces/nwreadinglist 
+ Failed to import test module: nwreadinglisttests
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+  File "/workspaces/nwreadinglist/tests/nwreadinglisttests.py", line 17, in <module>
+    from nwreadinglist import RLCN, DEFINITIONSTR, OPTION, REPORTSTR, _MessageCollection, RLSummary, DefaultPathProvider
+  File "/workspaces/nwreadinglist/src/nwreadinglist.py", line 25, in <module>
+    from weasyprint import CSS, HTML
+  File "/usr/local/lib/python3.12/site-packages/weasyprint/__init__.py", line 440, in <module>
+    from .css import preprocess_stylesheet  # noqa: I001, E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/weasyprint/css/__init__.py", line 32, in <module>
+    from . import counters, media_queries
+  File "/usr/local/lib/python3.12/site-packages/weasyprint/css/counters.py", line 10, in <module>
+    from .tokens import remove_whitespace
+  File "/usr/local/lib/python3.12/site-packages/weasyprint/css/tokens.py", line 8, in <module>
+    from tinycss2.color5 import parse_color
+ModuleNotFoundError: No module named 'tinycss2.color5'
+
+2025-12-22 19:40:18.229 [info] Unittest discovery completed for workspace /workspaces/nwreadinglist
+```
+
+The root cause of the issue is that `weasyprint 67.0` forces the installation of `tinycss2 1.4.0` (which doesn't support `tinycss2.color5`), and even asking the Dockerfile to enforce the installation of `tinycss2 1.5.0` (which supports `tinycss2.color5`) doesn't work (`tinycss2` stays on `1.4.0`). 
+
+To solve the issue we use the older `weasyprint 66.0`:
+
+```
+...
+RUN pip install weasyprint==66.0
+...
+```
+
 ## Markdown Toolset
 
 Suggested toolset to view and edit this Markdown file:

@@ -18,11 +18,11 @@ from pandas import DataFrame
 from pandas import Series
 from sparklines import sparklines
 from typing import Any, Callable, Literal, Optional, Tuple
+from weasyprint import CSS, HTML
 
 # LOCAL/NW MODULES
 from nwshared import Formatter, Converter, FilePathManager, FileManager
 from nwshared import LambdaProvider, Displayer, PlotManager
-from weasyprint import CSS, HTML
 
 # CONSTANTS
 class RLCN(StrEnum):
