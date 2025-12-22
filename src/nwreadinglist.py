@@ -63,6 +63,7 @@ class RLCN(StrEnum):
     UNDERLINES = "Underlines"
     AVGUNDERLINES = "AvgUnderlines"
     UPERC = "U%"
+    ID = "Id"
 class DEFINITIONSTR(StrEnum):
     
     '''Collects all the column names used by definitions.'''
@@ -87,6 +88,7 @@ class REPORTSTR(StrEnum):
     
     '''Collects all the strings related to RLReportManager.'''
 
+    RL = "Full Reading List"
     RLRATINGFIVE = "Rating Five"
     RLMOSTUNDERLINES = "Most Underlines"
     RLSBYMONTH = "By Month"
@@ -1806,6 +1808,12 @@ class RLReportManager():
 
     '''Collects all the logic related to the creation of reports out of RLSummary objects.'''
 
+    __formatter : Formatter
+
+    def __init__(self, formatter : Formatter) -> None:
+        
+        self.__formatter = formatter
+
     def __format_for_file_name(self, last_update : datetime) ->  str:
 
         '''Example: "20251222".'''
@@ -1816,6 +1824,29 @@ class RLReportManager():
         '''Example: "2025-12-22".'''
 
         return last_update.strftime("%Y-%m-%d")
+    def __reportify_rl(self, rl_enriched_df : DataFrame) -> DataFrame:
+
+        '''Re-arranges rl_enriched_df in a report-compliant format.'''
+
+        rl_reportified_df : DataFrame = rl_enriched_df.copy(deep = True)
+        rl_reportified_df[RLCN.ID] = rl_reportified_df.index + 1
+        
+        rl_reportified_df = rl_reportified_df[[
+            RLCN.ID, 
+            RLCN.TITLE, 
+            RLCN.YEAR, 
+            RLCN.PAGES, 
+            RLCN.READDATE, 
+            RLCN.PUBLISHER, 
+            RLCN.TOPIC,
+            RLCN.A4SHEETS,
+            RLCN.UNDERLINES,
+            RLCN.RATING
+        ]]
+        
+        rl_reportified_df[RLCN.RATING] = rl_reportified_df[RLCN.RATING].apply(lambda x : self.__formatter.format_rating(rating = x))
+
+        return rl_reportified_df    
     def __create_report_file_paths(self, folder_path: str, last_update : datetime) -> Tuple[Path, Path]:
 
         '''
@@ -1891,7 +1922,9 @@ class RLReportManager():
         html_sections.append(self.__create_html(rl_summary.rls_by_underlines_df, REPORTSTR.RLSBYUNDERLINES, formatters))
         html_sections.append(self.__create_html(rl_summary.rl_most_underlines_df, REPORTSTR.RLMOSTUNDERLINES, formatters))
         html_sections.append(self.__create_html(rl_summary.definitions_df, REPORTSTR.DEFINITIONS, formatters))
-        
+
+        html_sections.append(self.__create_html(self.__reportify_rl(rl_summary.rl_enriched_df), REPORTSTR.RL, formatters))
+
         return html_sections
     def __create_html_template(self, html_sections : list[str], last_update : datetime) -> str:
 
@@ -1965,7 +1998,7 @@ class ComponentBag():
     displayer : Displayer = field(default = Displayer())
     plot_manager : PlotManager = field(default = PlotManager())
     logging_function : Callable[[str], None] = field(default = LambdaProvider().get_default_logging_function())
-    rlr_manager : RLReportManager = field(default = RLReportManager())
+    rlr_manager : RLReportManager = field(default = RLReportManager(formatter = Formatter()))
     rl_adapter : RLAdapter = field(default = RLAdapter(
         df_factory = RLDataFrameFactory(
                         converter = Converter(),
