@@ -108,7 +108,6 @@ class RLSummary():
     rl_enriched_df : DataFrame
     rl_rating_five_df : DataFrame
     rl_most_underlines_df : DataFrame
-
     rls_by_month_tpl : Tuple[DataFrame, DataFrame]
     rls_by_year_df : DataFrame
     rls_by_range_df : DataFrame
@@ -117,9 +116,9 @@ class RLSummary():
     rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]
     rls_by_rating_df : DataFrame
     rls_by_underlines_df : DataFrame
+    definitions_df : DataFrame
 
     rls_by_kbsize_df : DataFrame
-    definitions_df : DataFrame
 
 # CLASSES
 class DefaultPathProvider():
@@ -155,7 +154,6 @@ class SettingBag():
 	# Without Defaults
     options_rl_rating_five : list[Literal[OPTION.display]]
     options_rl_most_underlines : list[Literal[OPTION.display]]
-
     options_rls_by_month : list[Literal[OPTION.display]]
     options_rls_by_year : list[Literal[OPTION.display]]
     options_rls_by_range : list[Literal[OPTION.display]]
@@ -164,9 +162,6 @@ class SettingBag():
     options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]]
     options_rls_by_rating : list[Literal[OPTION.display]]
     options_rls_by_underlines : list[Literal[OPTION.display]]
-
-    options_rls_by_books_year : list[Literal[OPTION.plot]]
-    options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]]
     options_definitions : list[Literal[OPTION.display]]
     read_years : list[int]
     excel_path : str
@@ -175,6 +170,8 @@ class SettingBag():
 	# With Defaults
     options_rl : list[Literal[OPTION.display]] = field(default_factory = list)
     options_rl_enriched : list[Literal[OPTION.display]] = field(default_factory = list)
+    options_rls_by_books_year : list[Literal[OPTION.plot]] = field(default_factory = list)
+    options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = field(default_factory = list)
     excel_skiprows : int = field(default = 0)
     excel_tabname : str = field(default = "Books")
     excel_null_value : str = field(default = "-")
@@ -1327,7 +1324,6 @@ class RLDataFrameFactory():
                 lambda x : self.__formatter.format_rating(rating = x))
 
         return rl_most_underlines_df
-
     def create_rls_by_month_tpl(self, rl_df : DataFrame, read_years : list[int], now : datetime) -> Tuple[DataFrame, DataFrame]:
 
         '''
@@ -1585,25 +1581,6 @@ class RLDataFrameFactory():
                 .reset_index(name = RLCN.BOOKS))
 
         return rls_by_underlines_df
-
-    def create_rls_by_kbsize_df(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool, n : int) -> DataFrame:
-        
-        '''
-            Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
-            1	    Machine Learning For Dummies	                2017	Data Analysis, Data Science, ML	Wiley	4	    3732	8
-            2	    Machine Learning Projects for .NET Developers	2017	Data Analysis, Data Science, ML	Apress	4	    3272	7        
-            ...
-        '''
-
-        rl_by_kbsize_df : DataFrame = self.__slice_by_kbsize(
-            rl_df = rl_df, 
-            ascending = ascending, 
-            remove_if_zero = remove_if_zero)
-        
-        rl_by_kbsize_df = self.__converter.convert_index_to_one_based(df = rl_by_kbsize_df)
-        rl_by_kbsize_df = rl_by_kbsize_df.head(n = n)
-
-        return rl_by_kbsize_df   
     def create_definitions_df(self) -> DataFrame:
 
         '''Creates a dataframe containing all the definitions in use in this application.'''
@@ -1625,7 +1602,26 @@ class RLDataFrameFactory():
             columns = columns
         )
 
-        return definitions_df
+        return definitions_df    
+    
+    def create_rls_by_kbsize_df(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool, n : int) -> DataFrame:
+        
+        '''
+            Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
+            1	    Machine Learning For Dummies	                2017	Data Analysis, Data Science, ML	Wiley	4	    3732	8
+            2	    Machine Learning Projects for .NET Developers	2017	Data Analysis, Data Science, ML	Apress	4	    3272	7        
+            ...
+        '''
+
+        rl_by_kbsize_df : DataFrame = self.__slice_by_kbsize(
+            rl_df = rl_df, 
+            ascending = ascending, 
+            remove_if_zero = remove_if_zero)
+        
+        rl_by_kbsize_df = self.__converter.convert_index_to_one_based(df = rl_by_kbsize_df)
+        rl_by_kbsize_df = rl_by_kbsize_df.head(n = n)
+
+        return rl_by_kbsize_df   
 class RLAdapter():
 
     '''Adapts SettingBag properties for use in RL*Factory methods.'''
@@ -1903,7 +1899,6 @@ class ReadingListProcessor():
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df, formatters = formatters)
-
     def process_rls_by_month(self) -> None:
 
         '''
@@ -2029,6 +2024,21 @@ class ReadingListProcessor():
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df)
+    def process_definitions(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_definitions.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_definitions
+        df : DataFrame = self.__rl_summary.definitions_df
+
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df)
 
     def process_rls_by_kbsize(self) -> None:
 
@@ -2065,21 +2075,7 @@ class ReadingListProcessor():
 
         if OPTION.plot in options:
             self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)
-    def process_definitions(self) -> None:
-
-        '''
-            Performs all the actions listed in __setting_bag.options_definitions.
-            
-            It raises an exception if the 'initialize' method has not been run yet.
-        '''
-
-        self.__validate_summary()
-
-        options : list = self.__setting_bag.options_definitions
-        df : DataFrame = self.__rl_summary.definitions_df
-
-        if OPTION.display in options:
-            self.__component_bag.displayer.display(obj = df)
+    
     def get_summary(self) -> RLSummary:
 
         '''Returns __rl_summary.'''
