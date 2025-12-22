@@ -1272,7 +1272,7 @@ class RLDataFrameFactory():
         rl_enriched_df[RLCN.UPERC] = rl_enriched_df[RLCN.UPERC].round(2)
 
         return rl_enriched_df
-    def create_rl_rating_five_df(self, rl_df : DataFrame, number_as_stars : bool) -> DataFrame:
+    def create_rl_rating_five_df(self, rl_enriched_df : DataFrame, number_as_stars : bool) -> DataFrame:
 
         """
                 Title	                                    Year	ReadDate	Topic	                Publisher	A4Sheets	Rating
@@ -1281,11 +1281,8 @@ class RLDataFrameFactory():
             ...
         """
 
-        rl_rating_five_df : DataFrame = rl_df.copy(deep = True)
+        rl_rating_five_df : DataFrame = rl_enriched_df.copy(deep = True)
         rl_rating_five_df = rl_rating_five_df[rl_rating_five_df[RLCN.RATING] == 5]
-
-        rl_rating_five_df[RLCN.A4SHEETS] = rl_rating_five_df[RLCN.KBSIZE].apply(
-            lambda x : self.__converter.convert_word_count_to_A4_sheets(word_count = x))
 
         cns : list[str] = [
             RLCN.TITLE,
@@ -1664,12 +1661,12 @@ class RLAdapter():
         rl_enriched_df : DataFrame = self.__df_factory.create_rl_enriched_df(rl_df = rl_df)
 
         return rl_enriched_df     
-    def create_rl_rating_five_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+    def create_rl_rating_five_df(self, rl_enriched_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
 
         '''Creates the expected dataframe using setting_bag and the provided arguments.'''
 
         rl_rating_five_df : DataFrame = self.__df_factory.create_rl_rating_five_df(
-            rl_df = rl_df,
+            rl_enriched_df = rl_enriched_df,
             number_as_stars = setting_bag.rls_by_rating_number_as_stars
         )
 
@@ -1684,7 +1681,6 @@ class RLAdapter():
         )
 
         return rl_most_underlines_df 
-    
     def create_rls_by_month_tpl(self, rl_df : DataFrame, setting_bag : SettingBag) -> Tuple[DataFrame, DataFrame]:
 
         '''Creates the expected dataframe using setting_bag and the provided arguments.'''
@@ -1773,9 +1769,8 @@ class RLAdapter():
 
         rl_df : DataFrame = self.create_rl_df(setting_bag = setting_bag)
         rl_enriched_df : DataFrame = self.create_rl_enriched_df(rl_df = rl_df)
-        rl_rating_five_df : DataFrame = self.create_rl_rating_five_df(rl_df = rl_df, setting_bag = setting_bag)
+        rl_rating_five_df : DataFrame = self.create_rl_rating_five_df(rl_enriched_df = rl_enriched_df, setting_bag = setting_bag)
         rl_most_underlines_df : DataFrame = self.create_rl_most_underlines_df(rl_enriched_df = rl_enriched_df, setting_bag = setting_bag)
-
         rls_by_month_tpl : Tuple[DataFrame, DataFrame] = self.create_rls_by_month_tpl(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_year_df : DataFrame = self.create_rls_by_year_df(rls_by_month_tpl = rls_by_month_tpl, rl_df = rl_df, setting_bag = setting_bag)
         rls_by_range_df : DataFrame = self.create_rls_by_range_df(rl_df = rl_df, setting_bag = setting_bag)
@@ -1784,16 +1779,15 @@ class RLAdapter():
         rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.create_rls_by_publisher_tpl(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_rating_df : DataFrame = self.create_rls_by_rating_df(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_underlines_df : DataFrame = self.__df_factory.create_rls_by_underlines_df(rl_enriched_df = rl_enriched_df)
-        
-        rls_by_kbsize_df : DataFrame = self.create_rls_by_kbsize_df(rl_df = rl_df, setting_bag = setting_bag)
         definitions_df : DataFrame = self.__df_factory.create_definitions_df()
+
+        rls_by_kbsize_df : DataFrame = self.create_rls_by_kbsize_df(rl_df = rl_df, setting_bag = setting_bag)
 
         rl_summary : RLSummary = RLSummary(
             rl_df = rl_df,
             rl_enriched_df = rl_enriched_df,
             rl_rating_five_df = rl_rating_five_df,
             rl_most_underlines_df = rl_most_underlines_df,
-            
             rls_by_month_tpl = rls_by_month_tpl,
             rls_by_year_df = rls_by_year_df,
             rls_by_range_df = rls_by_range_df,
@@ -1802,9 +1796,9 @@ class RLAdapter():
             rls_by_publisher_tpl = rls_by_publisher_tpl,
             rls_by_rating_df = rls_by_rating_df,
             rls_by_underlines_df = rls_by_underlines_df,
-            
-            rls_by_kbsize_df = rls_by_kbsize_df,
-            definitions_df = definitions_df
+            definitions_df = definitions_df,
+
+            rls_by_kbsize_df = rls_by_kbsize_df
         )
 
         return rl_summary
