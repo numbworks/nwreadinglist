@@ -1830,12 +1830,13 @@ class RLReportManager():
         pdf_path : Path = base_path.with_suffix(".pdf")
 
         return (html_path, pdf_path)
-    def __convert_to_html(self, df : DataFrame, title : str, footer : Optional[str] = None) -> str:
+    def __convert_to_html(self, df : DataFrame, title : str, formatters : Optional[dict], footer : Optional[str] = None) -> str:
 
         """Converts the provided DataFrame into a styled HTML table using a layout similar to Jupyter Notebook."""
 
         styled = (
             df.style
+            .format(formatters)
             .hide(axis="index")
             .set_table_styles(
                 [
@@ -1872,23 +1873,23 @@ class RLReportManager():
             f"{footer_html}"
             "</div>"
             )
-    def __convert_to_html_sections(self, rl_summary : RLSummary) -> list[str]:
+    def __convert_to_html_sections(self, rl_summary : RLSummary, formatters : Optional[dict]) -> list[str]:
 
         '''Converts summary to a collection of HTML code blocks.'''
 
         html_sections: list[str] = []
         
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_month_tpl[1], "By Month"))
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_year_df, "By Year"))
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_range_df, "By Range"))
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_topic_df, "By Topic"))
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_topic_trend_df, "Topic Trend"))
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_publisher_tpl[1], "By Publisher", rl_summary.rls_by_publisher_tpl[2]))
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_rating_df, "By Rating"))
-        html_sections.append(self.__convert_to_html(rl_summary.rl_rating_five_df, "Rating = 5"))
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_underlines_df, "By Underlines"))
-        html_sections.append(self.__convert_to_html(rl_summary.rl_most_underlines_df, "Most Underlines"))
-        html_sections.append(self.__convert_to_html(rl_summary.definitions_df, "Definitions"))
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_month_tpl[1], "By Month", formatters))
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_year_df, "By Year", formatters))
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_range_df, "By Range", formatters))
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_topic_df, "By Topic", formatters))
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_topic_trend_df, "Topic Trend", formatters))
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_publisher_tpl[1], "By Publisher", formatters, rl_summary.rls_by_publisher_tpl[2]))
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_rating_df, "By Rating", formatters))
+        html_sections.append(self.__convert_to_html(rl_summary.rl_rating_five_df, "Rating = 5", formatters))
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_underlines_df, "By Underlines", formatters))
+        html_sections.append(self.__convert_to_html(rl_summary.rl_most_underlines_df, "Most Underlines", formatters))
+        html_sections.append(self.__convert_to_html(rl_summary.definitions_df, "Definitions", formatters))
         
         return html_sections
     def __create_html_template(self, html_sections : list[str], last_update : datetime) -> str:
@@ -1917,6 +1918,7 @@ class RLReportManager():
             </style>
         </head>
         <body>
+            <img src='https://avatars.githubusercontent.com/u/10279234' alt='NW logo' style='width:80px; height:80px; margin-bottom:10px;'>
             <h1>Reading List Report | {self.__format_for_title(last_update)}</h1>
             {''.join(html_sections)}
         </body>
@@ -1932,12 +1934,19 @@ class RLReportManager():
         
         return stylesheet
     
-    def save_as_report(self, rl_summary: RLSummary, folder_path : str, last_update : datetime, save_html : bool, save_pdf : bool) -> None:
+    def save_as_report(
+        self, 
+        rl_summary: RLSummary, 
+        folder_path : str, 
+        last_update : datetime, 
+        save_html : bool, 
+        save_pdf : bool, 
+        formatters : Optional[dict] = None) -> None:
         
         '''Builds an HTML report from selected DataFrames in RLSummary and saves it as both HTML and PDF.'''
 
         html_path, pdf_path = self.__create_report_file_paths(folder_path = folder_path, last_update = last_update)
-        html_sections : list[str] = self.__convert_to_html_sections(rl_summary = rl_summary)
+        html_sections : list[str] = self.__convert_to_html_sections(rl_summary = rl_summary, formatters = formatters)
         full_html : str = self.__create_html_template(html_sections = html_sections, last_update = last_update)
 
         if save_html:
@@ -1980,6 +1989,16 @@ class ReadingListProcessor():
 
         if not hasattr(self, '_ReadingListProcessor__rl_summary'):
             raise Exception(_MessageCollection.please_run_initialize_first())
+    def __merge_formatters(self) -> dict:
+
+        '''Merges all formatters in one dict'''
+
+        formatters : dict = (
+            self.__setting_bag.rl_most_underlines_formatters | 
+            self.__setting_bag.rls_by_publisher_formatters
+        )
+            
+        return formatters
 
     def initialize(self) -> None:
 
@@ -2238,6 +2257,7 @@ class ReadingListProcessor():
         self.__validate_summary()
 
         options : list = self.__setting_bag.options_report
+        formatters :dict = self.__merge_formatters()
         save_html : bool = False
         save_pdf : bool = False
 
@@ -2252,7 +2272,8 @@ class ReadingListProcessor():
             folder_path = self.__setting_bag.working_folder_path,
             last_update = self.__setting_bag.now,
             save_html = save_html,
-            save_pdf = save_pdf)
+            save_pdf = save_pdf,
+            formatters = formatters)
 
 # MAIN
 if __name__ == "__main__":
