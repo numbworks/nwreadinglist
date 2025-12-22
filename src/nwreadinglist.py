@@ -1899,14 +1899,14 @@ class RLReportManager():
         <html>
         <head>
             <meta charset="utf-8">
-            <title>Reading List Report - {self.__format_for_title(last_update)}</title>
+            <title>Reading List Report | {self.__format_for_title(last_update)}</title>
             <style>
                 body {{
                     font-family: Arial, sans-serif;
                     margin: 20px;
                 }}
                 h1 {{
-                    text-align: center;
+                    text-align: left;
                     margin-bottom: 40px;
                 }}
                 h2 {{
@@ -1917,7 +1917,7 @@ class RLReportManager():
             </style>
         </head>
         <body>
-            <h1>Reading List Report - {self.__format_for_title(last_update)}</h1>
+            <h1>Reading List Report | {self.__format_for_title(last_update)}</h1>
             {''.join(html_sections)}
         </body>
         </html>
