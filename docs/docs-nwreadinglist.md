@@ -6,20 +6,7 @@ Contact: numbworks@gmail.com
 | Date | Author | Description |
 |---|---|---|
 | 2023-08-10 | numbworks | Created. |
-| 2023-09-24 | numbworks | Updated to v1.6.0. |
-| 2024-01-21 | numbworks | Updated to v2.0.0. |
-| 2024-03-24 | numbworks | Updated to v3.0.0. |
-| 2024-03-28 | numbworks | Updated to v3.1.0. |
-| 2024-05-19 | numbworks | Updated to v3.2.0. |
-| 2024-05-20 | numbworks | Updated to v3.3.0. |
-| 2024-08-12 | numbworks | Updated to v3.4.0. |
-| 2024-09-23 | numbworks | Updated to v3.5.0. |
-| 2024-10-28 | numbworks | Updated to v3.8.0. |
-| 2024-11-07 | numbworks | Updated to v4.0.0. |
-| 2024-12-01 | numbworks | Updated to v4.1.0. |
-| 2024-12-09 | numbworks | Updated to v4.2.0. |
-| 2025-05-09 | numbworks | Updated to v4.3.0. |
-| 2025-05-26 | numbworks | Updated to v4.3.2. |
+| 2025-12-22 | numbworks | Updated to v4.4.0. |
 
 ## Introduction
 
@@ -167,7 +154,7 @@ The expected outcome for `all-concise` is:
 
 ```
 MODULE_NAME: nwreadinglist
-MODULE_VERSION: 4.3.2
+MODULE_VERSION: 4.4.0
 COVERAGE_THRESHOLD: 70%
 [OK] type-concise: passed!
 [OK] changelog-concise: 'CHANGELOG' updated to current version!
