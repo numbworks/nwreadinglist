@@ -182,6 +182,7 @@ class SettingBag():
     working_folder_path : str = field(default = "/home/nwreadinglist/")
     rounding_digits : int = field(default = 2)
     now : datetime = field(default = datetime.now())
+    report_last_update : datetime = field(default = datetime.now())
     rl_most_underlines_formatters : dict = field(default_factory = lambda : { RLCN.AVGUNDERLINES : "{:.2f}", RLCN.UPERC : "{:.2f}" })
     rls_by_kbsize_n : int = field(default = 10)
     rls_by_kbsize_ascending : bool = field(default = False)
@@ -1804,15 +1805,25 @@ class RLReportManager():
 
     '''Collects all the logic related to the creation of reports out of RLSummary objects.'''
 
-    def __create_report_file_paths(self, folder_path: str, now : datetime) -> Tuple[Path, Path]:
+    def __format_for_file_name(self, last_update : datetime) ->  str:
+
+        '''Example: "20251222".'''
+
+        return last_update.strftime("%Y%m%d")
+    def __format_for_title(self, last_update : datetime) ->  str:
+
+        '''Example: "2025-12-22".'''
+
+        return last_update.strftime("%Y-%m-%d")
+    def __create_report_file_paths(self, folder_path: str, last_update : datetime) -> Tuple[Path, Path]:
 
         '''
             Example: 
-                - /home/nwreadinglist/20251222132723835722.html
-                - /home/nwreadinglist/20251222132723835722.pdf
+                - /home/nwreadinglist/READINGLISTREPORT20251222.html
+                - /home/nwreadinglist/READINGLISTREPORT20251222.pdf
         '''
 
-        file_name : str = now.strftime("%Y%m%d%H%M%S%f")
+        file_name : str = f"READINGLISTREPORT{self.__format_for_file_name(last_update)}"
         base_path : Path = Path(folder_path) / file_name
 
         html_path : Path = base_path.with_suffix(".html")
@@ -1880,7 +1891,7 @@ class RLReportManager():
         html_sections.append(self.__convert_to_html(rl_summary.definitions_df, "Definitions"))
         
         return html_sections
-    def __create_html_template(self, html_sections : list[str]) -> str:
+    def __create_html_template(self, html_sections : list[str], last_update : datetime) -> str:
 
         '''Creates HTML template.'''
 
@@ -1888,7 +1899,7 @@ class RLReportManager():
         <html>
         <head>
             <meta charset="utf-8">
-            <title>Reading List Report</title>
+            <title>Reading List Report - {self.__format_for_title(last_update)}</title>
             <style>
                 body {{
                     font-family: Arial, sans-serif;
@@ -1906,7 +1917,7 @@ class RLReportManager():
             </style>
         </head>
         <body>
-            <h1>Reading List Report</h1>
+            <h1>Reading List Report - {self.__format_for_title(last_update)}</h1>
             {''.join(html_sections)}
         </body>
         </html>
@@ -1921,13 +1932,13 @@ class RLReportManager():
         
         return stylesheet
     
-    def save_as_report(self, rl_summary: RLSummary, folder_path : str, now : datetime, save_html : bool, save_pdf : bool) -> None:
+    def save_as_report(self, rl_summary: RLSummary, folder_path : str, last_update : datetime, save_html : bool, save_pdf : bool) -> None:
         
         '''Builds an HTML report from selected DataFrames in RLSummary and saves it as both HTML and PDF.'''
 
-        html_path, pdf_path = self.__create_report_file_paths(folder_path = folder_path, now = now)
-        html_sections = self.__convert_to_html_sections(rl_summary = rl_summary)
-        full_html = self.__create_html_template(html_sections)
+        html_path, pdf_path = self.__create_report_file_paths(folder_path = folder_path, last_update = last_update)
+        html_sections : list[str] = self.__convert_to_html_sections(rl_summary = rl_summary)
+        full_html : str = self.__create_html_template(html_sections = html_sections, last_update = last_update)
 
         if save_html:
             html_path.write_text(data = full_html, encoding = "utf-8")
@@ -2239,7 +2250,7 @@ class ReadingListProcessor():
         self.__component_bag.rlr_manager.save_as_report(
             rl_summary = self.__rl_summary,
             folder_path = self.__setting_bag.working_folder_path,
-            now = self.__setting_bag.now,
+            last_update = self.__setting_bag.now,
             save_html = save_html,
             save_pdf = save_pdf)
 
