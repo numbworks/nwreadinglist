@@ -272,7 +272,6 @@ class ObjectMother():
         setting_bag : SettingBag = SettingBag(
             options_rl_rating_five = [OPTION.display],            
             options_rl_most_underlines = [OPTION.display],
-
             options_rls_by_month = [OPTION.display],
             options_rls_by_year = [OPTION.display],
             options_rls_by_range = [OPTION.display],
@@ -281,10 +280,8 @@ class ObjectMother():
             options_rls_by_publisher = [OPTION.display, OPTION.logset],
             options_rls_by_rating = [OPTION.display],
             options_rls_by_underlines = [OPTION.display],
-
-            options_rls_by_kbsize = [OPTION.display, OPTION.plot],
-            options_rls_by_books_year = [OPTION.plot],
             options_definitions = [OPTION.display],
+            options_report = [OPTION.save_html, OPTION.save_pdf],
             read_years = YearProvider().get_all_years(),
             excel_path = DefaultPathProvider().get_default_reading_list_path(),
             excel_nrows = 323
@@ -321,7 +318,6 @@ class RLSummaryTestCase(unittest.TestCase):
             rl_enriched_df = df,
             rl_rating_five_df = df,
             rl_most_underlines_df = df,
-
             rls_by_month_tpl = tpl,
             rls_by_year_df = df,
             rls_by_range_df = df,
@@ -330,25 +326,29 @@ class RLSummaryTestCase(unittest.TestCase):
             rls_by_publisher_tpl = tpl_footer,
             rls_by_rating_df = df,
             rls_by_underlines_df = df,
+            definitions_df = df,
 
-            rls_by_kbsize_df = df,
-            definitions_df = df
+            rls_by_kbsize_df = df
         )
 
         # Assert
         assert_frame_equal(rl_summary.rl_df, df)
-        assert_frame_equal(rl_summary.rls_by_range_df, df)
-        assert_frame_equal(rl_summary.rls_by_kbsize_df, df)
+        assert_frame_equal(rl_summary.rl_enriched_df, df)
+        assert_frame_equal(rl_summary.rl_rating_five_df, df)
+        assert_frame_equal(rl_summary.rl_most_underlines_df, df)        
         assert_frame_equal(rl_summary.rls_by_month_tpl[0], df)
         assert_frame_equal(rl_summary.rls_by_month_tpl[1], df)
+        assert_frame_equal(rl_summary.rls_by_year_df, df)
+        assert_frame_equal(rl_summary.rls_by_range_df, df)
+        assert_frame_equal(rl_summary.rls_by_topic_df, df)
+        assert_frame_equal(rl_summary.rls_by_topic_trend_df, df)
         assert_frame_equal(rl_summary.rls_by_publisher_tpl[0], df)
         assert_frame_equal(rl_summary.rls_by_publisher_tpl[1], df)
         self.assertEqual(rl_summary.rls_by_publisher_tpl[2], footer)
         assert_frame_equal(rl_summary.rls_by_rating_df, df)
-        assert_frame_equal(rl_summary.rls_by_year_df, df)
-        assert_frame_equal(rl_summary.rls_by_topic_df, df)
-        assert_frame_equal(rl_summary.rls_by_topic_trend_df, df)
         assert_frame_equal(rl_summary.definitions_df, df)
+
+        assert_frame_equal(rl_summary.rls_by_kbsize_df, df)
 class DefaultPathProviderTestCase(unittest.TestCase):
 
     def test_getdefaultreadinglistpath_shouldreturnexpectedpath_wheninvoked(self):
@@ -381,11 +381,8 @@ class SettingBagTestCase(unittest.TestCase):
     def test_settingbag_shouldinitializeasexpected_wheninvoked(self):
         
         # Arrange
-        options_rl : list[Literal[OPTION.display]] = [OPTION.display]
-        options_rl_enriched : list[Literal[OPTION.display]] = [OPTION.display]
         options_rl_rating_five : list[Literal[OPTION.display]] = [OPTION.display]
         options_rl_most_underlines : list[Literal[OPTION.display]] = [OPTION.display]
-
         options_rls_by_month : list[Literal[OPTION.display]] = [OPTION.display]
         options_rls_by_year : list[Literal[OPTION.display]] = [OPTION.display]
         options_rls_by_range : list[Literal[OPTION.display]] = [OPTION.display]
@@ -394,10 +391,13 @@ class SettingBagTestCase(unittest.TestCase):
         options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]] = [OPTION.display, OPTION.logset]
         options_rls_by_rating : list[Literal[OPTION.display]] = [OPTION.display]
         options_rls_by_underlines : list[Literal[OPTION.display]] = [OPTION.display]
+        options_definitions : list[Literal[OPTION.display]] = [OPTION.display]
+        options_report : list[Literal[OPTION.save_html, OPTION.save_pdf]] = [OPTION.save_html, OPTION.save_pdf]
 
+        options_rl : list[Literal[OPTION.display]] = [OPTION.display]
+        options_rl_enriched : list[Literal[OPTION.display]] = [OPTION.display]
         options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = [OPTION.display, OPTION.plot]
         options_rls_by_books_year : list[Literal[OPTION.plot]] = [OPTION.plot]
-        options_definitions : list[Literal[OPTION.display]] = [OPTION.display]
         read_years : list[int] = [2022, 2023]
         excel_path : str = "Reading List.xlsx"
         excel_nrows : int = 100
@@ -422,11 +422,8 @@ class SettingBagTestCase(unittest.TestCase):
 
         # Act
         setting_bag : SettingBag = SettingBag(
-            options_rl = options_rl,
-            options_rl_enriched = options_rl_enriched,
             options_rl_rating_five = options_rl_rating_five,
             options_rl_most_underlines = options_rl_most_underlines,
-
             options_rls_by_month = options_rls_by_month,
             options_rls_by_year = options_rls_by_year,
             options_rls_by_range = options_rls_by_range,
@@ -435,10 +432,13 @@ class SettingBagTestCase(unittest.TestCase):
             options_rls_by_publisher = options_rls_by_publisher,
             options_rls_by_rating = options_rls_by_rating,
             options_rls_by_underlines = options_rls_by_underlines,
+            options_definitions = options_definitions,
+            options_report = options_report,
 
+            options_rl = options_rl,
+            options_rl_enriched = options_rl_enriched,
             options_rls_by_kbsize = options_rls_by_kbsize,
             options_rls_by_books_year = options_rls_by_books_year,
-            options_definitions = options_definitions,
             read_years = read_years,
             excel_path = excel_path,
             excel_nrows = excel_nrows,
@@ -463,11 +463,8 @@ class SettingBagTestCase(unittest.TestCase):
         )
 
         # Assert
-        self.assertEqual(setting_bag.options_rl, options_rl)
-        self.assertEqual(setting_bag.options_rl_enriched, options_rl_enriched)
         self.assertEqual(setting_bag.options_rl_rating_five, options_rl_rating_five)
         self.assertEqual(setting_bag.options_rl_most_underlines, options_rl_most_underlines)
-
         self.assertEqual(setting_bag.options_rls_by_month, options_rls_by_month)
         self.assertEqual(setting_bag.options_rls_by_year, options_rls_by_year)        
         self.assertEqual(setting_bag.options_rls_by_range, options_rls_by_range)
@@ -475,10 +472,13 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.options_rls_by_topic_trend, options_rls_by_topic_trend)
         self.assertEqual(setting_bag.options_rls_by_publisher, options_rls_by_publisher)
         self.assertEqual(setting_bag.options_rls_by_rating, options_rls_by_rating)
+        self.assertEqual(setting_bag.options_definitions, options_definitions)
+        self.assertEqual(setting_bag.options_report, options_report)
 
+        self.assertEqual(setting_bag.options_rl, options_rl)
+        self.assertEqual(setting_bag.options_rl_enriched, options_rl_enriched)
         self.assertEqual(setting_bag.options_rls_by_books_year, options_rls_by_books_year)
         self.assertEqual(setting_bag.options_rls_by_kbsize, options_rls_by_kbsize)
-        self.assertEqual(setting_bag.options_definitions, options_definitions)
         self.assertEqual(setting_bag.read_years, read_years)
         self.assertEqual(setting_bag.excel_path, excel_path)
         self.assertEqual(setting_bag.excel_nrows, excel_nrows)
@@ -1119,19 +1119,24 @@ class ReadingListProcessorTestCase(unittest.TestCase):
 
     @parameterized.expand([
         ["process_rl"],
+        ["process_rl_enriched"],
+        ["process_rl_rating_five"],
+        ["process_rl_most_underlines"],
         ["process_rls_by_month"],
         ["process_rls_by_year"],        
         ["process_rls_by_range"],
         ["process_rls_by_topic"],
         ["process_rls_by_topic_trend"],        
         ["process_rls_by_publisher"],
+        ["process_rls_by_rating"],
+        ["process_rls_by_underlines"],
+        ["process_definitions"],
         ["process_rls_by_kbsize"],
         ["process_rls_by_books_year"],
-        ["process_rls_by_rating"],
-        ["process_definitions"],
-        ["get_summary"]
+        ["get_summary"],
+        ["save_as_report"]
     ])
-    def test_processmethod_shouldraiseexception_wheninitializenotrun(self, method_name : str) -> None:
+    def test_method_shouldraiseexception_wheninitializenotrun(self, method_name : str) -> None:
         
         # Arrange
         rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = Mock(), setting_bag = Mock())

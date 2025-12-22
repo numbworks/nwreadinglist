@@ -6,6 +6,7 @@ Alias: nwrl
 
 # GLOBAL MODULES
 import copy
+from pathlib import Path
 import numpy as np
 import os
 import pandas as pd
@@ -21,6 +22,7 @@ from typing import Any, Callable, Literal, Optional, Tuple
 # LOCAL/NW MODULES
 from nwshared import Formatter, Converter, FilePathManager, FileManager
 from nwshared import LambdaProvider, Displayer, PlotManager
+from weasyprint import CSS, HTML
 
 # CONSTANTS
 class RLCN(StrEnum):
@@ -83,11 +85,12 @@ class OPTION(StrEnum):
 
     display = auto()
     display_c = auto()
-    save = auto()
-    plot = auto()
     logdef = auto()
     logterm = auto()
     logset = auto()
+    plot = auto()
+    save_html = auto()
+    save_pdf = auto()
 
 # STATIC CLASSES
 class _MessageCollection():
@@ -163,6 +166,7 @@ class SettingBag():
     options_rls_by_rating : list[Literal[OPTION.display]]
     options_rls_by_underlines : list[Literal[OPTION.display]]
     options_definitions : list[Literal[OPTION.display]]
+    options_report : list[Literal[OPTION.save_html, OPTION.save_pdf]]
     read_years : list[int]
     excel_path : str
     excel_nrows : int
@@ -1796,6 +1800,128 @@ class RLAdapter():
         )
 
         return rl_summary
+class RLReportManager():
+
+    '''Collects all the logic related to the creation of reports out of RLSummary objects.'''
+
+    def __create_report_file_paths(self, folder_path: str, now : datetime) -> Tuple[Path, Path]:
+
+        '''
+            Example: 
+                - /home/nwreadinglist/20251222132723835722.html
+                - /home/nwreadinglist/20251222132723835722.pdf
+        '''
+
+        file_name : str = now.strftime("%Y%m%d%H%M%S%f")
+        base_path : Path = Path(folder_path) / file_name
+
+        html_path : Path = base_path.with_suffix(".html")
+        pdf_path : Path = base_path.with_suffix(".pdf")
+
+        return (html_path, pdf_path)
+    def __convert_to_html(self, df : DataFrame, title : str) -> str:
+
+        """Converts the provided DataFrame into a styled HTML table using a layout similar to Jupyter Notebook."""
+
+        styled = (
+            df.style
+            .hide(axis="index")
+            .set_table_styles(
+                [
+                    {
+                        "selector": "thead th", 
+                        "props": "background-color: #eeeeee; color: #333; font-weight: bold; padding: 8px 10px; text-align: center; border: none;"
+                    },
+                    {
+                        "selector": "tbody td", 
+                        "props": "padding: 8px 10px; text-align: center; border: none; white-space: nowrap;"
+                    },
+                    {
+                        "selector": "tbody tr:nth-child(even)", 
+                        "props": "background-color: #f5f5f5;"
+                    },
+                    {
+                        "selector": "", 
+                        "props": "border-collapse: collapse; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 13px; color: #444;"
+                    }
+                ]
+            )
+        )
+        
+        return f"<div style='margin-bottom: 20px;'><h2>{title}</h2>\n{styled.to_html()}</div>"
+    def __convert_to_html_sections(self, rl_summary : RLSummary) -> list[str]:
+
+        '''Converts summary to a collection of HTML code blocks.'''
+
+        html_sections: list[str] = []
+        
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_month_tpl[1], "By Month"))
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_year_df, "By Year"))
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_range_df, "By Range"))
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_topic_df, "By Topic"))
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_topic_trend_df, "Topic Trend"))
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_publisher_tpl[1], f"By Publisher — {rl_summary.rls_by_publisher_tpl[2]}"))
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_rating_df, "By Rating"))
+        html_sections.append(self.__convert_to_html(rl_summary.rl_rating_five_df, "Rating = 5"))
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_underlines_df, "By Underlines"))
+        html_sections.append(self.__convert_to_html(rl_summary.rl_most_underlines_df, "Most Underlines"))
+        html_sections.append(self.__convert_to_html(rl_summary.definitions_df, "Definitions"))
+        
+        return html_sections
+    def __create_html_template(self, html_sections : list[str]) -> str:
+
+        '''Creates HTML template.'''
+
+        full_html: str = f"""
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>Reading List Summary</title>
+            <style>
+                body {{
+                    font-family: Arial, sans-serif;
+                    margin: 20px;
+                }}
+                h1 {{
+                    text-align: center;
+                    margin-bottom: 40px;
+                }}
+                h2 {{
+                    margin-top: 40px;
+                    border-bottom: 2px solid #ddd;
+                    padding-bottom: 5px;
+                }}
+            </style>
+        </head>
+        <body>
+            <h1>Reading List Summary Report</h1>
+            {''.join(html_sections)}
+        </body>
+        </html>
+        """
+        
+        return full_html
+    def __create_stylesheet(self):
+
+        '''Creates a CSS stylesheet.'''
+
+        stylesheet : CSS = CSS(string = "@page { size: A3 landscape; margin: 20mm; }")
+        
+        return stylesheet
+    
+    def save_as_report(self, rl_summary: RLSummary, folder_path : str, now : datetime, save_html : bool, save_pdf : bool) -> None:
+        
+        '''Builds an HTML report from selected DataFrames in RLSummary and saves it as both HTML and PDF.'''
+
+        html_path, pdf_path = self.__create_report_file_paths(folder_path = folder_path, now = now)
+        html_sections = self.__convert_to_html_sections(rl_summary = rl_summary)
+        full_html = self.__create_html_template(html_sections)
+
+        if save_html:
+            html_path.write_text(data = full_html, encoding = "utf-8")
+        
+        if save_pdf:
+            HTML(string = full_html).write_pdf(target = str(pdf_path), stylesheets = [self.__create_stylesheet()])
 @dataclass(frozen=True)
 class ComponentBag():
 
@@ -1803,16 +1929,15 @@ class ComponentBag():
 
     file_path_manager : FilePathManager = field(default = FilePathManager())
     file_manager : FileManager = field(default = FileManager(file_path_manager = FilePathManager()))
-	
+    displayer : Displayer = field(default = Displayer())
+    plot_manager : PlotManager = field(default = PlotManager())
+    logging_function : Callable[[str], None] = field(default = LambdaProvider().get_default_logging_function())
+    rlr_manager : RLReportManager = field(default = RLReportManager())
     rl_adapter : RLAdapter = field(default = RLAdapter(
         df_factory = RLDataFrameFactory(
                         converter = Converter(),
                         formatter = Formatter(),
                         df_helper = RLDataFrameHelper())))
-
-    displayer : Displayer = field(default = Displayer())
-    plot_manager : PlotManager = field(default = PlotManager())
-    logging_function : Callable[[str], None] = field(default = LambdaProvider().get_default_logging_function())
 class ReadingListProcessor():
 
     '''Collects all the logic related to the processing of "Reading List.xlsx".'''
@@ -2083,27 +2208,29 @@ class ReadingListProcessor():
         self.__validate_summary()
 
         return self.__rl_summary
+    def save_as_report(self) -> None:
+
+        '''Builds an HTML report from selected DataFrames in RLSummary and saves it as both HTML and PDF.'''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_report
+        save_html : bool = False
+        save_pdf : bool = False
+
+        if OPTION.save_html in options:
+            save_html = True
+
+        if OPTION.save_pdf in options:
+            save_pdf = True
+
+        self.__component_bag.rlr_manager.save_as_report(
+            rl_summary = self.__rl_summary,
+            folder_path = self.__setting_bag.working_folder_path,
+            now = self.__setting_bag.now,
+            save_html = save_html,
+            save_pdf = save_pdf)
 
 # MAIN
 if __name__ == "__main__":
-
-    rldf_factory : RLDataFrameFactory = RLDataFrameFactory(
-        converter = Converter(),
-        formatter = Formatter(),
-        df_helper = RLDataFrameHelper()
-    )
-  
-    rl_df : DataFrame = rldf_factory.create_rl_df(
-        excel_path = DefaultPathProvider().get_default_reading_list_path(),
-        excel_skiprows = 0,
-        excel_nrows = 372,
-        excel_tabname = "Books",
-        excel_null_value = "-"
-    )
-
-    rl_enriched_df : DataFrame = rldf_factory.create_rl_enriched_df(rl_df = rl_df)
-    rls_by_underlines : DataFrame = rldf_factory.create_rls_by_underlines_df(rl_enriched_df = rl_enriched_df)
-
-    print(rls_by_underlines)
-
-    # pass
+    pass
