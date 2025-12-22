@@ -1819,7 +1819,7 @@ class RLReportManager():
         pdf_path : Path = base_path.with_suffix(".pdf")
 
         return (html_path, pdf_path)
-    def __convert_to_html(self, df : DataFrame, title : str) -> str:
+    def __convert_to_html(self, df : DataFrame, title : str, footer : Optional[str] = None) -> str:
 
         """Converts the provided DataFrame into a styled HTML table using a layout similar to Jupyter Notebook."""
 
@@ -1847,8 +1847,20 @@ class RLReportManager():
                 ]
             )
         )
-        
-        return f"<div style='margin-bottom: 20px;'><h2>{title}</h2>\n{styled.to_html()}</div>"
+
+        footer_html : str = (
+                f"<br/><div style='margin-top: 6px; font-size: 14px; color: #666;'>{footer}</div>"
+                if footer
+                else ""
+            )
+    
+        return (
+            "<div style='margin-bottom: 20px;'>"
+            f"<h2>{title}</h2>\n"
+            f"{styled.to_html()}\n"
+            f"{footer_html}"
+            "</div>"
+            )
     def __convert_to_html_sections(self, rl_summary : RLSummary) -> list[str]:
 
         '''Converts summary to a collection of HTML code blocks.'''
@@ -1860,7 +1872,7 @@ class RLReportManager():
         html_sections.append(self.__convert_to_html(rl_summary.rls_by_range_df, "By Range"))
         html_sections.append(self.__convert_to_html(rl_summary.rls_by_topic_df, "By Topic"))
         html_sections.append(self.__convert_to_html(rl_summary.rls_by_topic_trend_df, "Topic Trend"))
-        html_sections.append(self.__convert_to_html(rl_summary.rls_by_publisher_tpl[1], f"By Publisher — {rl_summary.rls_by_publisher_tpl[2]}"))
+        html_sections.append(self.__convert_to_html(rl_summary.rls_by_publisher_tpl[1], "By Publisher", rl_summary.rls_by_publisher_tpl[2]))
         html_sections.append(self.__convert_to_html(rl_summary.rls_by_rating_df, "By Rating"))
         html_sections.append(self.__convert_to_html(rl_summary.rl_rating_five_df, "Rating = 5"))
         html_sections.append(self.__convert_to_html(rl_summary.rls_by_underlines_df, "By Underlines"))
@@ -1876,7 +1888,7 @@ class RLReportManager():
         <html>
         <head>
             <meta charset="utf-8">
-            <title>Reading List Summary</title>
+            <title>Reading List Report</title>
             <style>
                 body {{
                     font-family: Arial, sans-serif;
@@ -1894,7 +1906,7 @@ class RLReportManager():
             </style>
         </head>
         <body>
-            <h1>Reading List Summary Report</h1>
+            <h1>Reading List Report</h1>
             {''.join(html_sections)}
         </body>
         </html>
