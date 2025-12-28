@@ -100,6 +100,11 @@ class REPORTSTR(StrEnum):
     RLSBYRATING = "By Rating"
     RLSBYUNDERLINES = "By Underlines"
     DEFINITIONS = "Definitions"
+class RSMODE(StrEnum):
+
+    '''Represents a collection of modes for RSHighlighter.'''
+
+    top_three_per_books = auto()
 
 # STATIC CLASSES
 class _MessageCollection():
