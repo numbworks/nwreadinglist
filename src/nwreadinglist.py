@@ -1628,6 +1628,18 @@ class RLDataFrameFactory():
         rl_by_kbsize_df = rl_by_kbsize_df.head(n = n)
 
         return rl_by_kbsize_df   
+
+@dataclass(frozen = True)
+class RSCell():
+    
+    '''Collects all the information related to a DataFrame cell that are required by RSHighlighter.'''
+
+    coordinate_pair : Tuple[int, int]
+    rs : str 
+    books : int
+    pages : int
+
+
 class RLAdapter():
 
     '''Adapts SettingBag properties for use in RL*Factory methods.'''

@@ -14,7 +14,7 @@ from unittest.mock import Mock, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import RLCN, DEFINITIONSTR, OPTION, _MessageCollection, RLSummary, DefaultPathProvider
+from nwreadinglist import RLCN, DEFINITIONSTR, OPTION, _MessageCollection, RLSummary, DefaultPathProvider, RSCell
 from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
 from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor
 from nwshared import Converter, Formatter, FilePathManager, FileManager, Displayer, PlotManager
@@ -851,6 +851,33 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(sa_by_year_df, actual)
+
+class RSCellTestCase(unittest.TestCase):
+
+    def test_init_shouldinitializeobjectwithexpectedproperties_whenvalidarguments(self) -> None:
+
+        # Arrange
+        coordinate_pair : Tuple[int, int] = (5, 10)
+        rs : str = "13 (5157)"
+        books : int = 13
+        pages : int = 5157
+
+        # Act
+        rs_cell : RSCell = RSCell(
+            coordinate_pair = coordinate_pair,
+            rs = rs,
+            books = books,
+            pages = pages
+        )
+
+        # Assert
+        self.assertEqual(rs_cell.coordinate_pair, coordinate_pair)
+        self.assertEqual(rs_cell.rs, rs)
+        self.assertEqual(rs_cell.books, books)
+        self.assertEqual(rs_cell.pages, pages)
+
+
+
 class ComponentBagTestCase(unittest.TestCase):
     
     def test_componentbag_shouldinitializeasexpected_wheninvoked(self):
