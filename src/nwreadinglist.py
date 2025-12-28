@@ -6,16 +6,17 @@ Alias: nwrl
 
 # GLOBAL MODULES
 import copy
-from pathlib import Path
 import numpy as np
 import os
 import pandas as pd
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum, auto
 from numpy import float64
-from pandas import DataFrame
-from pandas import Series
+from pandas import DataFrame, Series
+from pathlib import Path
+from re import Match
 from sparklines import sparklines
 from typing import Any, Callable, Literal, Optional, Tuple
 from weasyprint import CSS, HTML
@@ -104,7 +105,8 @@ class RSMODE(StrEnum):
 
     '''Represents a collection of modes for RSHighlighter.'''
 
-    top_three_per_books = auto()
+    top_one_per_row = auto()
+    top_three = auto()
 
 # STATIC CLASSES
 class _MessageCollection():
@@ -114,6 +116,10 @@ class _MessageCollection():
     @staticmethod
     def please_run_initialize_first() -> str:
         return "Please run the 'initialize' method first."
+
+    @staticmethod
+    def provided_mode_not_supported(mode : RSMODE):
+        return f"The provided mode is not supported: '{mode}'."
 
 # DTOs
 @dataclass(frozen=True)
@@ -1633,7 +1639,6 @@ class RLDataFrameFactory():
         rl_by_kbsize_df = rl_by_kbsize_df.head(n = n)
 
         return rl_by_kbsize_df   
-
 @dataclass(frozen = True)
 class RSCell():
     
@@ -1643,8 +1648,171 @@ class RSCell():
     rs : str 
     books : int
     pages : int
+class RSHighlighter():
 
+    '''Encapsulates all the logic related to highlighting cells in dataframes containing reading stasuses.'''
 
+    __df_helper : RLDataFrameHelper
+
+    def __init__(self, df_helper : RLDataFrameHelper) -> None:
+
+        self.__df_helper = df_helper
+
+    def __is_rs(self, cell_content : str) -> bool :
+
+        '''Returns True if content in ["0 (0)", "2 (275)", "13 (5157)", "63 (18578)", ...].'''
+
+        pattern : str = r"^\d+\s*\(\d+\)$"
+        match : Optional[Match[str]] = re.fullmatch(pattern = pattern, string = cell_content)
+
+        if match is not None:
+            return True
+        else:
+            return False
+    def __append_new_rs_cell(self, rs_cells : list[RSCell], coordinate_pair : Tuple[int, int], cell_content : str) -> None:
+
+        '''Creates and append new RSCell object to rs_cells.'''
+
+        books, pages = self.__df_helper.unbox_rs(rs = cell_content)
+
+        rs_cell : RSCell = RSCell(
+            coordinate_pair = coordinate_pair,
+            rs = cell_content,
+            books = books,
+            pages = pages, 
+        )
+        
+        rs_cells.append(rs_cell)
+    def __extract_row(self, df : DataFrame, row_idx : int, column_names : list[str]) -> list[RSCell]:
+
+        '''Returns a collection of RSCell objects for provided arguments.'''
+
+        rs_cells : list[RSCell] = []
+        col_indices : list = [df.columns.get_loc(column_name) for column_name in column_names if column_name in df.columns]
+
+        for col_idx in col_indices:
+
+            coordinate_pair : Tuple[int, int] = (row_idx, col_idx)
+            cell_content : str = str(df.iloc[row_idx, col_idx])
+
+            if self.__is_rs(cell_content = cell_content):
+                self.__append_new_rs_cell(rs_cells, coordinate_pair, cell_content)
+
+        return rs_cells
+    def __extract_n(self, mode : RSMODE) -> int:
+
+        '''Extracts n from mode.'''
+
+        if mode == RSMODE.top_three:
+            return 3
+        elif mode == RSMODE.top_one_per_row:
+            return 1
+        else:
+            raise Exception(_MessageCollection.provided_mode_not_supported(mode))
+    def __extract_top_n_rs_cells(self, rs_cells : list[RSCell], n : int) -> list[RSCell]:
+
+        '''Extracts the n objects in rs_cells with the highest books.'''
+
+        sorted_cells : list[RSCell] = sorted(rs_cells, key = lambda cell : cell.books, reverse = True)
+        top_n : list[RSCell] = sorted_cells[:n]
+
+        return top_n
+    def __calculate_rs_cells(self, df : DataFrame, mode : RSMODE, column_names : list[str]) -> list[RSCell]:
+
+        '''Returns a list of RSCell objects according to df and mode.'''
+
+        rs_cells : list[RSCell] = []
+
+        last_row_idx : int = len(df)
+        n : int = self.__extract_n(mode = mode)
+        current : list[RSCell] = []
+
+        if mode == RSMODE.top_one_per_row:
+            for row_idx in range(last_row_idx):
+
+                current = self.__extract_row(df = df, row_idx = row_idx, column_names = column_names)
+                current = self.__extract_top_n_rs_cells(rs_cells = current, n = n)
+                rs_cells.extend(current)
+                
+        elif mode == RSMODE.top_three:
+            for row_idx in range(last_row_idx):
+                
+                current = self.__extract_row(df = df, row_idx = row_idx, column_names = column_names)
+                rs_cells.extend(current)
+
+            rs_cells = self.__extract_top_n_rs_cells(rs_cells = rs_cells, n = n)
+
+        else:
+            raise Exception(_MessageCollection.provided_mode_not_supported(mode))
+
+        return rs_cells
+    def __add_tags(self, df : DataFrame, rs_cells : list[RSCell], tags : Tuple[str, str]) -> DataFrame:
+
+        '''Adds two HTML tags around the content of the cells listed in rs_cells.'''
+
+        tagged_df : DataFrame = df.copy(deep = True)
+
+        left_h : str = tags[0]
+        right_h : str = tags[1]
+
+        for rs_cell in rs_cells:
+
+            row, col = rs_cell.coordinate_pair
+
+            if row < len(df) and col < len(df.columns):
+                tagged_df.iloc[row, col] = f"{left_h}{str(df.iloc[row, col])}{right_h}"
+            
+        return tagged_df
+    def __highlight_dataframe(self, df : DataFrame, mode : RSMODE, column_names : list[str] = []) -> DataFrame:
+
+        '''
+            Expects a df containing reading stasuses into cells - i.e. "0 (0)", "2 (275)".
+            Returns a df with highlighted cells as per arguments.
+
+            Note: column names are converted to string to aid column search when the dataframe has mixed type column names.
+        '''
+
+        highlighted_df : DataFrame = df.copy(deep = True)
+        highlighted_df.columns = highlighted_df.columns.map(str)
+
+        if len(column_names) == 0:
+            column_names = highlighted_df.columns.to_list()
+
+        rs_cells : list[RSCell] = self.__calculate_rs_cells(
+            df = highlighted_df, 
+            mode = mode,
+            column_names = column_names
+        )
+
+        tags : Tuple[str, str] = (f"<mark style='background-color: pink'>", "</mark>")
+        highlighted_df = self.__add_tags(df = highlighted_df, rs_cells = rs_cells, tags = tags)
+
+        return highlighted_df
+
+    def highlight_rls_by_month(self, rls_by_month_df : DataFrame) -> DataFrame:
+        
+        '''Returns the provided dataframe with adequate highlights.'''
+
+        mode : RSMODE = RSMODE.top_three
+
+        highlighted_df : DataFrame = self.__highlight_dataframe(
+            df = rls_by_month_df,
+            mode = mode
+        )
+        
+        return highlighted_df
+    def highlight_rls_by_year(self, rls_by_year_df : DataFrame) -> DataFrame:
+        
+        '''Returns the provided dataframe with adequate highlights.'''
+
+        mode : RSMODE = RSMODE.top_three
+
+        highlighted_df : DataFrame = self.__highlight_dataframe(
+            df = rls_by_year_df,
+            mode = mode
+        )
+        
+        return highlighted_df
 class RLAdapter():
 
     '''Adapts SettingBag properties for use in RL*Factory methods.'''

@@ -9,12 +9,12 @@ from numpy import float64, int32
 from pandas import DataFrame
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
-from typing import Literal, Tuple
+from typing import Literal, Tuple, cast
 from unittest.mock import Mock, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import RLCN, DEFINITIONSTR, OPTION, _MessageCollection, RLSummary, DefaultPathProvider, RSCell
+from nwreadinglist import RLCN, DEFINITIONSTR, OPTION, RSMODE, _MessageCollection, RLSummary, DefaultPathProvider, RSCell, RSHighlighter
 from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
 from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor
 from nwshared import Converter, Formatter, FilePathManager, FileManager, Displayer, PlotManager
@@ -851,7 +851,6 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(sa_by_year_df, actual)
-
 class RSCellTestCase(unittest.TestCase):
 
     def test_init_shouldinitializeobjectwithexpectedproperties_whenvalidarguments(self) -> None:
@@ -875,9 +874,249 @@ class RSCellTestCase(unittest.TestCase):
         self.assertEqual(rs_cell.rs, rs)
         self.assertEqual(rs_cell.books, books)
         self.assertEqual(rs_cell.pages, pages)
+class RSHighlighterTestCase(unittest.TestCase):
 
+    def setUp(self) -> None:
 
+        self.rs_highlighter : RSHighlighter = RSHighlighter(df_helper = RLDataFrameHelper())
 
+        data : dict[str, list] = {
+            "Month": ["1", "2"],
+            "2015": ["0 (0)", "0 (0)"],
+            "↕": ["↑", "↑"],
+            "2016": ["13 (5157)", "2 (275)"],
+            "↕_duplicate_1": ["↑", "↑"],
+            "2017": ["88 (30123)", "63 (18578)"]
+        }
+        columns_01 : list[str] = ["Month", "2015", "↕", "2016", "↕", "2017"]
+        self.df_with_duplicates : DataFrame = DataFrame(data, columns = columns_01)
+
+        columns_02 : list[str] = ["Month", "2015", "↕", "2016", "↕_duplicate_1", "2017"]
+        self.df_without_duplicates : DataFrame = DataFrame(data, columns = columns_02)
+
+    def test_init_shouldinitializeobjectwithexpectedproperties_wheninvoked(self) -> None:
+
+        # Arrange
+        df_helper : RLDataFrameHelper = RLDataFrameHelper()
+
+        # Act
+        actual : RSHighlighter = RSHighlighter(df_helper = df_helper)
+
+        # Assert
+        self.assertIsInstance(actual, RSHighlighter)
+
+    @parameterized.expand([
+        ("0 (0)", True),
+        ("2 (275)", True),
+        ("13 (5157)", True),
+        ("63 (18578)", True),
+        ("invalid", False),
+        ("2 (27", False),
+        (" (275)", False),
+        ("(5157)", False)
+    ])
+    def test_isrs_shouldreturnexpectedresult_wheninvoked(self, rs: str, expected: bool) -> None:
+        
+        # Arrange
+        # Act
+        actual : bool = self.rs_highlighter._RSHighlighter__is_rs(cell_content = rs)    # type: ignore
+
+        # Assert
+        self.assertEqual(actual, expected)
+
+    def test_appendnewrscell_shouldappendprovidedcell_wheninvoked(self) -> None:
+        
+        # Arrange
+        rs_cells : list[RSCell] = []
+        coordinate_pair : Tuple[int, int] = (5, 10)
+        rs : str = "13 (5157)"
+        books : int = 13
+        pages : int = 5157
+
+        # Act
+        self.rs_highlighter._RSHighlighter__append_new_rs_cell(rs_cells, coordinate_pair, rs) # type: ignore
+
+        # Assert
+        self.assertEqual(len(rs_cells), 1)
+        self.assertEqual(rs_cells[0].coordinate_pair, coordinate_pair)
+        self.assertEqual(rs_cells[0].rs, rs)
+        self.assertEqual(rs_cells[0].books, books)
+        self.assertEqual(rs_cells[0].pages, pages)
+    def test_extractrow_shouldreturnrscells_whenrowhasvalidtimes(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"2015": ["0 (0)"], "↕": ["↑"], "2016": ["63 (18578)"]})
+        column_names : list[str] = ["2015", "2016"]
+
+        # Act
+        actual : list[RSCell] = self.rs_highlighter._RSHighlighter__extract_row(df = df, row_idx = 0, column_names = column_names)   # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].rs, "0 (0)")
+        self.assertEqual(actual[1].rs, "63 (18578)")
+
+    @parameterized.expand([
+        (RSMODE.top_one_per_row, 1),
+        (RSMODE.top_three, 3)
+    ])
+    def test_extractn_shouldreturnexpected_whenvalid(self, mode: RSMODE, expected: int) -> None:
+        
+        # Arrange
+        # Act
+        actual : int = self.rs_highlighter._RSHighlighter__extract_n(mode = mode)   # type: ignore
+
+        # Assert
+        self.assertEqual(actual, expected)
+
+    def test_extractn_shouldraiseexception_wheninvalid(self) -> None:
+        
+        # Arrange
+        mode : RSMODE = cast(RSMODE, "Invalid")
+
+        # Act & Assert
+        with self.assertRaises(Exception):
+            self.rs_highlighter._RSHighlighter__extract_n(mode = mode)   # type: ignore
+    def test_extracttopnrscells_shouldreturntopncells_wheninvoked(self) -> None:
+
+        # Arrange
+        rs_cells : list[RSCell] = [
+            RSCell(coordinate_pair = (0, 0), rs = "13 (5157)", books = 13, pages = 5157),
+            RSCell(coordinate_pair = (0, 1), rs = "2 (275)", books = 2, pages = 275),
+            RSCell(coordinate_pair = (0, 2), rs = "63 (18578)", books = 63, pages = 18578)
+        ]
+
+        # Act
+        actual : list[RSCell] = self.rs_highlighter._RSHighlighter__extract_top_n_rs_cells(rs_cells = rs_cells, n = 2)   # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].rs, "63 (18578)")
+        self.assertEqual(actual[1].rs, "13 (5157)")
+    def test_calculaterscells_shouldreturnexpectedcells_whentoponeperrow(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"2015": ["0 (0)", "2 (275)"], "↕": ["↑", "↑"], "2016": ["63 (18578)", "13 (5157)"]})
+        mode : RSMODE = RSMODE.top_one_per_row
+        column_names : list[str] = ["2015", "2016"]
+
+        # Act
+        actual : list[RSCell] = self.rs_highlighter._RSHighlighter__calculate_rs_cells(df = df, mode = mode, column_names = column_names)   # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].rs, "63 (18578)")
+        self.assertEqual(actual[1].rs, "13 (5157)")
+    def test_calculaterscells_shouldreturnexpectedcells_whentopthree(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"2015": ["0 (0)", "2 (275)"], "↕": ["↑", "↑"], "2016": ["63 (18578)", "13 (5157)"]})
+        mode : RSMODE = RSMODE.top_three
+        column_names : list[str] = ["2015", "2016"]
+
+        # Act
+        actual : list[RSCell] = self.rs_highlighter._RSHighlighter__calculate_rs_cells(df = df, mode = mode, column_names = column_names)   # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 3)
+        self.assertEqual(actual[0].rs, "63 (18578)")
+        self.assertEqual(actual[1].rs, "13 (5157)")
+        self.assertEqual(actual[2].rs, "2 (275)")
+    def test_calculaterscells_shouldraiseexception_wheninvalidmode(self) -> None:
+
+        # Arrange
+        df : DataFrame = DataFrame({"2015": ["0 (0)", "2 (275)"], "↕": ["↑", "↑"], "2016": ["63 (18578)", "13 (5157)"]})
+        mode : RSMODE = cast(RSMODE, "Invalid")
+        column_names : list[str] = ["2015", "2016"]
+
+        expected : str = _MessageCollection.provided_mode_not_supported(mode)
+        
+        # Act
+        with self.assertRaises(Exception) as context:
+            self.rs_highlighter._RSHighlighter__calculate_rs_cells(df = df, mode = mode, column_names = column_names)   # type: ignore
+
+        # Assert
+        self.assertEqual(expected, str(context.exception))
+    def test_addtags_shouldsurroundrscellsswithtokens_wheninvoked(self) -> None:
+
+        # Arrange
+        rs_cells : list[RSCell] = [
+            RSCell(coordinate_pair = (0, 1), rs = "0 (0)", books = 0, pages = 1),
+            RSCell(coordinate_pair = (1, 3), rs = "2 (275)", books = 2, pages = 275)
+        ]
+        tags : Tuple[str, str] = ("[[ ", " ]]")
+        expected : DataFrame = self.df_without_duplicates.copy(deep = True)
+        expected.iloc[0, 1] = "[[ 0 (0) ]]"
+        expected.iloc[1, 3] = "[[ 2 (275) ]]"
+
+        # Act
+        actual : DataFrame = self.rs_highlighter._RSHighlighter__add_tags(self.df_without_duplicates, rs_cells, tags)   # type: ignore
+
+        # Assert
+        self.assertTrue(expected.equals(actual))
+    def test_highlightdataframe_shouldhighlightexpectedcells_whencolumnnamesareprovided(self) -> None:
+
+        # Arrange
+        mode : RSMODE = RSMODE.top_one_per_row
+        column_names : list[str] = ["2015", "2016", "2017"]
+
+        expected : DataFrame = self.df_without_duplicates.copy(deep = True)
+        expected.iloc[0, 5] = "<mark style='background-color: pink'>88 (30123)</mark>"
+        expected.iloc[1, 5] = "<mark style='background-color: pink'>63 (18578)</mark>"
+
+        # Act
+        actual : DataFrame = self.rs_highlighter._RSHighlighter__highlight_dataframe(self.df_without_duplicates, mode, column_names) # type: ignore
+
+        # Assert
+        assert_frame_equal(expected, actual)
+    def test_highlightdataframe_shouldhighlightexpectedcells_whencolumnnamesarenotprovided(self) -> None:
+
+        # Arrange
+        mode : RSMODE = RSMODE.top_one_per_row
+        column_names : list[str] = []
+
+        expected : DataFrame = self.df_without_duplicates.copy(deep = True)
+        expected.iloc[0, 5] = "<mark style='background-color: pink'>88 (30123)</mark>"
+        expected.iloc[1, 5] = "<mark style='background-color: pink'>63 (18578)</mark>"
+
+        # Act
+        actual : DataFrame = self.rs_highlighter._RSHighlighter__highlight_dataframe(self.df_without_duplicates, mode, column_names) # type: ignore
+
+        # Assert
+        assert_frame_equal(expected, actual)
+
+    def test_highlightrlsbymonth_shouldperformexpectedcalls_wheninvoked(self) -> None:
+
+        # Arrange
+        rls_by_month_df : DataFrame = DataFrame()
+
+        highlighted_df : Mock = Mock()
+        self.rs_highlighter._RSHighlighter__highlight_dataframe = highlighted_df  # type: ignore
+
+        # Act
+        self.rs_highlighter.highlight_rls_by_month(rls_by_month_df = rls_by_month_df)
+
+        # Assert
+        highlighted_df.assert_called_once_with(
+            df = rls_by_month_df,
+            mode = RSMODE.top_three
+        )
+    def test_highlightttsbyyear_shouldperformexpectedcalls_wheninvoked(self) -> None:
+
+        # Arrange
+        rls_by_year_df : DataFrame = DataFrame()
+
+        highlighted_df : Mock = Mock()
+        self.rs_highlighter._RSHighlighter__highlight_dataframe = highlighted_df  # type: ignore
+
+        # Act
+        self.rs_highlighter.highlight_rls_by_year(rls_by_year_df = rls_by_year_df)
+
+        # Assert
+        highlighted_df.assert_called_once_with(
+            df = rls_by_year_df,
+            mode = RSMODE.top_three
+        )
 class ComponentBagTestCase(unittest.TestCase):
     
     def test_componentbag_shouldinitializeasexpected_wheninvoked(self):
