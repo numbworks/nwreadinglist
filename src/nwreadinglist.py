@@ -208,15 +208,29 @@ class RLDataFrameHelper():
 
     '''Collects helper functions for RLDataFrameFactory.'''
 
-    def format_reading_status(self, books : int, pages : int) -> str:
+    def box_rs(self, books : int, pages : int) -> str:
 
         '''
             13, 5157 => "13 (5157)"
         '''
         
-        reading_status : str = f"{books} ({pages})"
+        rs : str = f"{books} ({pages})"
         
-        return reading_status
+        return rs
+    def unbox_rs(self, rs : str) -> Tuple[int, int]:
+
+        '''
+            Books: "13 (5157)" => ["13", "(5157)"] => "13" => 13
+            Pages: "13 (5157)" => ["13", "(5157)"] => "5157" => 5157
+        '''    
+
+        tokens : list = rs.split(" ")
+
+        books : int = int(tokens[0])
+        pages : int = int(tokens[1].replace("(", "").replace(")", ""))
+
+        return (books, pages)
+       
     def get_default_sa_by_year(self, read_year : int) -> DataFrame:
 
         '''
@@ -240,15 +254,6 @@ class RLDataFrameHelper():
         default_df = default_df.astype({str(read_year): str})
 
         return default_df
-    def extract_books_from_trend(self, trend : str) -> int:
-
-        '''
-            "13 (5157)" => ["13", "(5157)"] => "13" => 13
-        '''
-
-        tokens : list = trend.split(" ")
-
-        return int(tokens[0])
     def get_trend(self, value_1 : int, value_2 : int) -> str:
 
         '''
@@ -266,7 +271,7 @@ class RLDataFrameHelper():
             trend = "="
 
         return trend
-    def get_trend_by_books(self, trend_1 : str, trend_2 : str) -> str:
+    def get_trend_by_books(self, rs_1 : str, rs_2 : str) -> str:
 
         '''
             "13 (5157)", "16 (3816)" => "↑"
@@ -274,10 +279,28 @@ class RLDataFrameHelper():
             "0 (0)", "0 (0)" => "="   
         '''
 
-        books_1 : int = self.extract_books_from_trend(trend = trend_1)
-        books_2 : int = self.extract_books_from_trend(trend = trend_2)
+        books_1 : int = self.unbox_rs(rs = rs_1)[0]
+        books_2 : int = self.unbox_rs(rs = rs_2)[0]
 
         trend : str = self.get_trend(value_1 = books_1, value_2 = books_2)
+
+        return trend
+    def get_trend_when_float64(self, value_1 : float64, value_2 : float64) -> str:
+
+        '''
+            1447.14, 2123.36 => "↑"
+            2123.36, 1447.14 => "↓"
+            0, 0 => "="
+        '''
+
+        trend : str = ""
+
+        if value_1 < value_2:
+            trend = "↑"
+        elif value_1 > value_2:
+            trend = "↓"
+        else:
+            trend = "="
 
         return trend
     def try_consolidate_trend_column_name(self, column_name : str) -> str:
@@ -291,16 +314,6 @@ class RLDataFrameHelper():
             return RLCN.TRENDSYMBOL
         
         return column_name
-    def extract_pages_from_trend(self, trend : str) -> int:
-
-        '''
-            "13 (5157)" => ["13", "(5157)"] => "5157" => 5157
-        '''
-
-        tokens : list = trend.split(" ")
-        token : str = tokens[1].replace("(", "").replace(")", "")
-
-        return int(token)
     def format_year_books_column_name(self, year_cn : str) -> str:
 
         '''
@@ -329,24 +342,6 @@ class RLDataFrameHelper():
         tokens : list = column_name.split("_")
 
         return tokens[0]
-    def get_trend_when_float64(self, value_1 : float64, value_2 : float64) -> str:
-
-        '''
-            1447.14, 2123.36 => "↑"
-            2123.36, 1447.14 => "↓"
-            0, 0 => "="
-        '''
-
-        trend : str = ""
-
-        if value_1 < value_2:
-            trend = "↑"
-        elif value_1 > value_2:
-            trend = "↓"
-        else:
-            trend = "="
-
-        return trend
     def create_read_years_dataframe(self, read_years : list[int]) -> DataFrame:
 
         '''Create a dataframe out of the provided list of Read Years.'''
@@ -545,7 +540,7 @@ class RLDataFrameFactory():
             how = "inner", 
             left_on = RLCN.READMONTH, 
             right_on = RLCN.READMONTH)
-        sa_by_year_df[read_year] = sa_by_year_df.apply(lambda x : self.__df_helper.format_reading_status(books = x[RLCN.BOOKS], pages = x[RLCN.PAGES]), axis = 1) 
+        sa_by_year_df[read_year] = sa_by_year_df.apply(lambda x : self.__df_helper.box_rs(books = x[RLCN.BOOKS], pages = x[RLCN.PAGES]), axis = 1) 
 
         sa_by_year_df[RLCN.MONTH] = sa_by_year_df[RLCN.READMONTH]
         sa_by_year_df = sa_by_year_df[[RLCN.MONTH, read_year]]
@@ -620,7 +615,7 @@ class RLDataFrameFactory():
             cn_trend_1 : str = str(read_years[i-1])   # for ex. "2016"
             cn_trend_2 : str = str(read_years[i])     # for ex. "2017"
             
-            expansion_df[cn_trend] = expansion_df.apply(lambda x : self.__df_helper.get_trend_by_books(trend_1 = x[cn_trend_1], trend_2 = x[cn_trend_2]), axis = 1) 
+            expansion_df[cn_trend] = expansion_df.apply(lambda x : self.__df_helper.get_trend_by_books(rs_1 = x[cn_trend_1], rs_2 = x[cn_trend_2]), axis = 1) 
 
             new_column_names : list = [RLCN.MONTH, cn_trend_1, cn_trend, cn_trend_2]   # for ex. ["Month", "2016", "↕", "2017"]
             expansion_df = expansion_df.reindex(columns = new_column_names)
@@ -678,7 +673,7 @@ class RLDataFrameFactory():
                 cn_trend_1 : str = str(yeatrend[i])       # 2016 => "2016"
                 cn_trend_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
                 
-                expanded_df[cn_trend] = expanded_df.apply(lambda x : self.__df_helper.get_trend_by_books(trend_1 = x[cn_trend_1], trend_2 = x[cn_trend_2]), axis = 1) 
+                expanded_df[cn_trend] = expanded_df.apply(lambda x : self.__df_helper.get_trend_by_books(rs_1 = x[cn_trend_1], rs_2 = x[cn_trend_2]), axis = 1) 
                 
                 new_item_position : int = (new_column_names.index(cn_trend_1) + 1)
                 new_column_names.insert(new_item_position, cn_trend)
@@ -955,8 +950,8 @@ class RLDataFrameFactory():
             cn_year_books : str = self.__df_helper.format_year_books_column_name(year_cn = year)
             cn_year_pages : str = self.__df_helper.format_year_pages_column_name(year_cn = year)
 
-            rls_by_year_df[cn_year_books] = rls_by_year_df[year].apply(lambda x : self.__df_helper.extract_books_from_trend(trend = x))
-            rls_by_year_df[cn_year_pages] = rls_by_year_df[year].apply(lambda x : self.__df_helper.extract_pages_from_trend(trend = x))
+            rls_by_year_df[cn_year_books] = rls_by_year_df[year].apply(lambda x : self.__df_helper.unbox_rs(rs = x)[0])
+            rls_by_year_df[cn_year_pages] = rls_by_year_df[year].apply(lambda x : self.__df_helper.unbox_rs(rs = x)[1])
 
             rls_by_year_df.drop(labels = year, inplace = True, axis = 1)
 
@@ -967,7 +962,7 @@ class RLDataFrameFactory():
             cn_year_books = self.__df_helper.format_year_books_column_name(year_cn = year)
             cn_year_pages = self.__df_helper.format_year_pages_column_name(year_cn = year)
 
-            rls_by_year_df[year] = rls_by_year_df.apply(lambda x : self.__df_helper.format_reading_status(books = x[cn_year_books], pages = x[cn_year_pages]), axis = 1) 
+            rls_by_year_df[year] = rls_by_year_df.apply(lambda x : self.__df_helper.box_rs(books = x[cn_year_books], pages = x[cn_year_pages]), axis = 1) 
 
             rls_by_year_df.drop(labels = [cn_year_books, cn_year_pages], inplace = True, axis = 1)
 

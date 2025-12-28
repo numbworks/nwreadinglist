@@ -506,14 +506,27 @@ class RLDataFrameHelperTestCase(unittest.TestCase):
         [0, 0, "0 (0)"],
         [13, 5157, "13 (5157)"]
     ])
-    def test_formatreadingstatus_shouldreturnexpectedstring_wheninvoked(self, books : int, pages : int, expected : str):
+    def test_boxrs_shouldreturnexpectedstring_wheninvoked(self, books : int, pages : int, expected : str):
         
         # Arrange
         # Act
-        actual : str = RLDataFrameHelper().format_reading_status(books = books, pages = pages)
+        actual : str = RLDataFrameHelper().box_rs(books = books, pages = pages)
 
         # Assert
         self.assertEqual(expected, actual)
+
+    @parameterized.expand([
+        ["0 (0)", (0, 0)],
+        ["13 (5157)", (13, 5157)]
+    ])
+    def test_unboxrs_shouldreturnexpectedtuple_wheninvoked(self, rs : str, expected : Tuple[int, int]):
+        
+        # Arrange
+        # Act
+        actual : Tuple[int, int] = RLDataFrameHelper().unbox_rs(rs = rs)
+
+        # Assert
+        self.assertEqual(expected, actual)   
 
     def test_getdefaultsabyyear_shouldreturnexpecteddataframe_wheninvoked(self):
         
@@ -525,19 +538,6 @@ class RLDataFrameHelperTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected, actual)
-
-    @parameterized.expand([
-        ["0 (0)", 0],
-        ["13 (5157)", 13]
-    ])
-    def test_extractbooksfromtrend_shouldreturnexpectedint_wheninvoked(self, trend : str, expected : int):
-        
-        # Arrange
-        # Act
-        actual : int = RLDataFrameHelper().extract_books_from_trend(trend = trend)
-
-        # Assert
-        self.assertEqual(expected, actual)    
 
     @parameterized.expand([
         [13, 16, "↑"],
@@ -558,11 +558,11 @@ class RLDataFrameHelperTestCase(unittest.TestCase):
         ["16 (3816)", "13 (5157)", "↓"],
         ["0 (0)", "0 (0)", "="]
     ])
-    def test_gettrendbybooks_shouldreturnexpectedstring_wheninvoked(self, trend_1 : str, trend_2 : str, expected : str):
+    def test_gettrendbybooks_shouldreturnexpectedstring_wheninvoked(self, rs_1 : str, rs_2 : str, expected : str):
         
         # Arrange
         # Act
-        actual : str = RLDataFrameHelper().get_trend_by_books(trend_1 = trend_1, trend_2 = trend_2)
+        actual : str = RLDataFrameHelper().get_trend_by_books(rs_1 = rs_1, rs_2 = rs_2)
 
         # Assert
         self.assertEqual(expected, actual)
@@ -576,19 +576,6 @@ class RLDataFrameHelperTestCase(unittest.TestCase):
         # Arrange
         # Act
         actual : str = RLDataFrameHelper().try_consolidate_trend_column_name(column_name = column_name)
-
-        # Assert
-        self.assertEqual(expected, actual)
-
-    @parameterized.expand([
-        ["13 (5157)", 5157],
-        ["0 (0)", 0]
-    ])
-    def test_extractpagesfromtrend_shouldreturnexpectedint_wheninvoked(self, trend : str, expected : int):
-        
-        # Arrange
-        # Act
-        actual : int = RLDataFrameHelper().extract_pages_from_trend(trend = trend)
 
         # Assert
         self.assertEqual(expected, actual)
