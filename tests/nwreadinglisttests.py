@@ -420,12 +420,12 @@ class SettingBagTestCase(unittest.TestCase):
         rls_by_kbsize_remove_if_zero : bool = True
         rls_by_kbsize_n : int = 10
         rls_by_rating_number_as_stars : bool = True
-        rls_by_publisher_n : int = 10
+        rls_by_publisher_n : Optional[int] = 10
         rls_by_publisher_formatters : dict[str, str] = {"AvgUnderlines": "{:.2f}", "U%": "{:.2f}"}
         rls_by_publisher_min_books : int = 8
         rls_by_publisher_min_avgrating : float = 2.5
         rls_by_publisher_min_ab_perc : float = 100.0
-        rls_by_publisher_criteria : Literal["Yes", "No"] = "Yes"
+        rls_by_publisher_criteria : Optional[Literal["Yes", "No"]] = "Yes"
         rls_by_topic_bt_sparklines_maximum : bool = False
 
         # Act
@@ -680,17 +680,17 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         self.excel_books_skiprows : int = 0
         self.excel_books_tabname : str = "Books"
         self.excel_null_value : str = "-"
-        self.kbsize_ascending : bool = False
-        self.kbsize_remove_if_zero : bool = True  
-        self.kbsize_n : int = 10
-        self.md_stars_rating : bool = True
-        self.publisher_n : int = 10
-        self.publisher_formatters : dict = { "AvgRating" : "{:.2f}", "AB%" : "{:.2f}" }
-        self.publisher_min_books : int = 8
-        self.publisher_min_ab_perc : float = 2.50
-        self.publisher_min_avgrating : float = 100
-        self.publisher_criteria : Literal["Yes", "No"] = "Yes"
-        self.trend_sparklines_maximum : bool = True
+        self.rls_by_kbsize_ascending : bool = False
+        self.rls_by_kbsize_remove_if_zero : bool = True  
+        self.rls_by_kbsize_n : int = 10
+        self.rls_by_rating_number_as_stars : bool = True
+        self.rls_by_publisher_n : int = 10
+        self.rls_by_publisher_formatters : dict = { "AvgRating" : "{:.2f}", "AB%" : "{:.2f}" }
+        self.rls_by_publisher_min_books : int = 8
+        self.rls_by_publisher_min_ab_perc : float = 2.50
+        self.rls_by_publisher_min_avgrating : float = 100
+        self.rls_by_publisher_criteria : Literal["Yes", "No"] = "Yes"
+        self.rls_by_topic_trend_sparklines_maximum : bool = True
         self.rounding_digits : int = 2
 
     def test_createrldf_shouldreturnexpecteddataframe_wheninvoked(self):
@@ -774,9 +774,9 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         # Act
         actual : DataFrame = self.df_factory.create_rls_by_kbsize_df(
             rl_df = rl_df,
-            ascending = self.kbsize_ascending,
-            remove_if_zero = self.kbsize_remove_if_zero,
-            n = self.kbsize_n
+            ascending = self.rls_by_kbsize_ascending,
+            remove_if_zero = self.rls_by_kbsize_remove_if_zero,
+            n = self.rls_by_kbsize_n
         )
 
         # Assert
@@ -802,10 +802,11 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         (actual_1, actual_2, actual_3) = self.df_factory.create_rls_by_publisher_tpl(
             rl_df = rl_df,
             rounding_digits = 2,
-            min_books = self.publisher_min_books,
-            min_ab_perc = self.publisher_min_ab_perc,
-            min_avgrating = self.publisher_min_avgrating,
-            criteria = self.publisher_criteria
+            min_books = self.rls_by_publisher_min_books,
+            min_ab_perc = self.rls_by_publisher_min_ab_perc,
+            min_avgrating = self.rls_by_publisher_min_avgrating,
+            n = None,
+            criteria = self.rls_by_publisher_criteria
         )
 
         # Assert
@@ -819,7 +820,7 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         expected : DataFrame = ObjectMother().get_rls_by_rating_df()
 
         # Act
-        actual : DataFrame = self.df_factory.create_rls_by_rating_df(rl_df = rl_df, number_as_stars = self.md_stars_rating)
+        actual : DataFrame = self.df_factory.create_rls_by_rating_df(rl_df = rl_df, number_as_stars = self.rls_by_rating_number_as_stars)
 
         # Assert
         assert_frame_equal(expected, actual)
@@ -833,7 +834,7 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         actual : DataFrame = self.df_factory.create_rls_by_topic_trend_df(
             rl_df = rl_df,
             read_years = read_years,
-            sparklines_maximum = self.trend_sparklines_maximum
+            sparklines_maximum = self.rls_by_topic_trend_sparklines_maximum
             )
 
         # Assert
@@ -1162,6 +1163,7 @@ class RLAdapterTestCase(unittest.TestCase):
         self.rls_by_kbsize_n  : int = 5
         self.rls_by_kbsize_ascending : bool = True
         self.rls_by_kbsize_remove_if_zero : bool = False
+        self.rls_by_publisher_n = None
         self.rls_by_publisher_min_books : int = 8
         self.rls_by_publisher_min_ab_perc : float = 100
         self.rls_by_publisher_min_avgrating : float = 2.50
@@ -1322,6 +1324,7 @@ class RLAdapterTestCase(unittest.TestCase):
         setting_bag.rls_by_publisher_min_ab_perc = self.rls_by_publisher_min_ab_perc
         setting_bag.rls_by_publisher_min_avgrating = self.rls_by_publisher_min_avgrating
         setting_bag.rls_by_publisher_criteria = self.rls_by_publisher_criteria
+        setting_bag.rls_by_publisher_n = self.rls_by_publisher_n
 
         rl_df : DataFrame = Mock()
 
@@ -1335,6 +1338,7 @@ class RLAdapterTestCase(unittest.TestCase):
             min_books = self.rls_by_publisher_min_books,
             min_ab_perc = self.rls_by_publisher_min_ab_perc,
             min_avgrating = self.rls_by_publisher_min_avgrating,
+            n = self.rls_by_publisher_n,
             criteria = self.rls_by_publisher_criteria
         )
     def test_createrlsbyratingdf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
@@ -2024,11 +2028,8 @@ class ReadingListProcessorTestCase(unittest.TestCase):
     def test_processrlsbypublisher_shoulddisplay_whenoptionisdisplay(self) -> None:
 
         # Arrange
-        publisher_df : Mock = Mock()
-        publisher_df_head : DataFrame = Mock()
-        publisher_df.head.return_value = publisher_df_head
-
-        rls_by_publisher_tpl : tuple = (publisher_df, "ignored", "FOOTER")
+        rls_by_publisher_df : Mock = Mock()
+        rls_by_publisher_tpl : tuple = ("ignored", rls_by_publisher_df, "FOOTER")
 
         rl_summary : Mock = Mock()
         rl_summary.rls_by_publisher_tpl = rls_by_publisher_tpl
@@ -2055,8 +2056,7 @@ class ReadingListProcessorTestCase(unittest.TestCase):
         rl_processor.process_rls_by_publisher()
 
         # Assert
-        publisher_df.head.assert_called_once_with(n = 5)
-        displayer.display.assert_called_once_with(obj = publisher_df_head, formatters = formatters)
+        displayer.display.assert_called_once_with(obj = rls_by_publisher_df, formatters = formatters)
     def test_processrlsbypublisher_shouldlogfooterwithnewline_whenoptionislog(self) -> None:
 
         # Arrange

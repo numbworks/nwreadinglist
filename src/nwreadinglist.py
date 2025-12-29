@@ -207,12 +207,12 @@ class SettingBag():
     rls_by_kbsize_n : int = field(default = 10)
     rls_by_kbsize_ascending : bool = field(default = False)
     rls_by_kbsize_remove_if_zero : bool = field(default = True)
-    rls_by_publisher_n : int = field(default = 10)
+    rls_by_publisher_n : Optional[int] = field(default = 15)
     rls_by_publisher_formatters : dict = field(default_factory = lambda : { RLCN.AVGRATING : "{:.2f}", RLCN.ABPERC : "{:.2f}", RLCN.AVGUNDERLINES : "{:.2f}" })
     rls_by_publisher_min_books : int = field(default = 8)
     rls_by_publisher_min_ab_perc : float = field(default = 100)
     rls_by_publisher_min_avgrating : float = field(default = 2.50)
-    rls_by_publisher_criteria : Literal["Yes", "No"] = field(default = "Yes")    
+    rls_by_publisher_criteria : Optional[Literal["Yes", "No"]] = field(default = None)
     rls_by_rating_number_as_stars : bool = field(default = True)
     rls_by_topic_trend_sparklines_maximum : bool = field(default = False)
 class RLDataFrameHelper():
@@ -1222,7 +1222,7 @@ class RLDataFrameFactory():
             )
 
         return rls_by_publisher_footer
-    def __filter_by_is_worth(self, rls_by_publisher_df : DataFrame, publisher_criteria : str) -> DataFrame:
+    def __filter_by_is_worth(self, rls_by_publisher_df : DataFrame, criteria : Literal["Yes", "No"]) -> DataFrame:
 
         '''
                 Publisher	Books	AvgRating	IsWorth
@@ -1233,7 +1233,7 @@ class RLDataFrameFactory():
 
         filtered_df : DataFrame = rls_by_publisher_df.copy(deep = True)
 
-        condition : Series = (filtered_df[RLCN.ISWORTH] == publisher_criteria)
+        condition : Series = (filtered_df[RLCN.ISWORTH] == criteria)
         filtered_df = filtered_df.loc[condition]
         
         filtered_df.reset_index(drop = True, inplace = True)
@@ -1525,8 +1525,9 @@ class RLDataFrameFactory():
             rounding_digits : int, 
             min_books : int, 
             min_ab_perc : float, 
-            min_avgrating : float, 
-            criteria : str) -> Tuple[DataFrame, DataFrame, str]:
+            min_avgrating : float,
+            n : Optional[int],             
+            criteria : Optional[Literal["Yes", "No"]]) -> Tuple[DataFrame, DataFrame, str]:
         
         """The method returns (rls_by_publisher_df, rls_by_publisher_flt_df, rls_by_publisher_footer)."""
   
@@ -1542,7 +1543,11 @@ class RLDataFrameFactory():
         rls_by_publisher_df = self.__create_rls_by_publisher_step_7(rls_by_publisher_df, min_books, min_ab_perc, min_avgrating)
         rls_by_publisher_df = self.__create_rls_by_publisher_step_8(rls_by_publisher_df)
 
-        rls_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(rls_by_publisher_df = rls_by_publisher_df, publisher_criteria = criteria)
+        if n:
+            rls_by_publisher_df = rls_by_publisher_df.head(n = n)
+
+        if criteria:
+            rls_by_publisher_df = self.__filter_by_is_worth(rls_by_publisher_df = rls_by_publisher_df, criteria = criteria)
 
         rls_by_publisher_footer : str = self.__create_rls_by_publisher_footer(
             publisher_min_books = min_books,
@@ -1550,7 +1555,7 @@ class RLDataFrameFactory():
             publisher_min_avgrating = min_avgrating
         )
 
-        return (rls_by_publisher_df, rls_by_publisher_flt_df, rls_by_publisher_footer)
+        return (rls_by_publisher_df, rls_by_publisher_df, rls_by_publisher_footer)
     def create_rls_by_rating_df(self, rl_df : DataFrame, number_as_stars : bool) -> DataFrame:
 
         '''
@@ -1921,6 +1926,7 @@ class RLAdapter():
             min_books = setting_bag.rls_by_publisher_min_books,
             min_ab_perc = setting_bag.rls_by_publisher_min_ab_perc,
             min_avgrating = setting_bag.rls_by_publisher_min_avgrating,
+            n = setting_bag.rls_by_publisher_n,
             criteria = setting_bag.rls_by_publisher_criteria
         )
 
@@ -2390,7 +2396,7 @@ class ReadingListProcessor():
         self.__validate_summary()
 
         options : list = self.__setting_bag.options_rls_by_publisher
-        df : DataFrame = self.__rl_summary.rls_by_publisher_tpl[0].head(n = self.__setting_bag.rls_by_publisher_n)
+        df : DataFrame = self.__rl_summary.rls_by_publisher_tpl[1]
         formatters : dict = self.__setting_bag.rls_by_publisher_formatters
         footer : str = self.__rl_summary.rls_by_publisher_tpl[2] + "\n"
 
