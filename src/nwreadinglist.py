@@ -6,16 +6,17 @@ Alias: nwrl
 
 # GLOBAL MODULES
 import copy
-from pathlib import Path
 import numpy as np
 import os
 import pandas as pd
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum, auto
 from numpy import float64
-from pandas import DataFrame
-from pandas import Series
+from pandas import DataFrame, Series
+from pathlib import Path
+from re import Match
 from sparklines import sparklines
 from typing import Any, Callable, Literal, Optional, Tuple
 from weasyprint import CSS, HTML
@@ -72,15 +73,14 @@ class DEFINITIONSTR(StrEnum):
     DEFINITION = "Definition"
     RL = "rl"
     RLS = "rls"
+    READINGLIST = "Reading List"
+    READINGSTATUS = "Reading Status"
 class OPTION(StrEnum):
 
     '''Represents a collection of options.'''
 
     display = auto()
-    display_c = auto()
-    logdef = auto()
-    logterm = auto()
-    logset = auto()
+    log = auto()
     plot = auto()
     save_html = auto()
     save_pdf = auto()
@@ -100,6 +100,12 @@ class REPORTSTR(StrEnum):
     RLSBYRATING = "By Rating"
     RLSBYUNDERLINES = "By Underlines"
     DEFINITIONS = "Definitions"
+class RSMODE(StrEnum):
+
+    '''Represents a collection of modes for RSHighlighter.'''
+
+    top_one_per_row = auto()
+    top_three = auto()
 
 # STATIC CLASSES
 class _MessageCollection():
@@ -109,6 +115,10 @@ class _MessageCollection():
     @staticmethod
     def please_run_initialize_first() -> str:
         return "Please run the 'initialize' method first."
+
+    @staticmethod
+    def provided_mode_not_supported(mode : RSMODE):
+        return f"The provided mode is not supported: '{mode}'."
 
 # DTOs
 @dataclass(frozen=True)
@@ -125,12 +135,11 @@ class RLSummary():
     rls_by_range_df : DataFrame
     rls_by_topic_df : DataFrame
     rls_by_topic_trend_df : DataFrame
-    rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]
+    rls_by_publisher_tpl : Tuple[DataFrame, str]
     rls_by_rating_df : DataFrame
     rls_by_underlines_df : DataFrame
+    rld_by_kbsize_df : DataFrame
     definitions_df : DataFrame
-
-    rls_by_kbsize_df : DataFrame
 
 # CLASSES
 class DefaultPathProvider():
@@ -171,7 +180,7 @@ class SettingBag():
     options_rls_by_range : list[Literal[OPTION.display]]
     options_rls_by_topic : list[Literal[OPTION.display]]
     options_rls_by_topic_trend : list[Literal[OPTION.display]]
-    options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]]
+    options_rls_by_publisher : list[Literal[OPTION.display, OPTION.log]]
     options_rls_by_rating : list[Literal[OPTION.display]]
     options_rls_by_underlines : list[Literal[OPTION.display]]
     options_definitions : list[Literal[OPTION.display]]
@@ -183,40 +192,55 @@ class SettingBag():
 	# With Defaults
     options_rl : list[Literal[OPTION.display]] = field(default_factory = list)
     options_rl_enriched : list[Literal[OPTION.display]] = field(default_factory = list)
-    options_rls_by_books_year : list[Literal[OPTION.plot]] = field(default_factory = list)
-    options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = field(default_factory = list)
+    options_rld_by_books_year : list[Literal[OPTION.plot]] = field(default_factory = list)
+    options_rld_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = field(default_factory = list)
     excel_skiprows : int = field(default = 0)
     excel_tabname : str = field(default = "Books")
     excel_null_value : str = field(default = "-")
     working_folder_path : str = field(default = "/home/nwreadinglist/")
     rounding_digits : int = field(default = 2)
     now : datetime = field(default = datetime.now())
+    enable_rs_highlighting : bool = field(default = True)
     report_last_update : datetime = field(default = datetime.now())
     rl_most_underlines_formatters : dict = field(default_factory = lambda : { RLCN.AVGUNDERLINES : "{:.2f}", RLCN.UPERC : "{:.2f}" })
-    rls_by_kbsize_n : int = field(default = 10)
-    rls_by_kbsize_ascending : bool = field(default = False)
-    rls_by_kbsize_remove_if_zero : bool = field(default = True)
-    rls_by_publisher_n : int = field(default = 10)
+    rld_by_kbsize_n : int = field(default = 10)
+    rld_by_kbsize_ascending : bool = field(default = False)
+    rld_by_kbsize_remove_if_zero : bool = field(default = True)
+    rls_by_publisher_n : Optional[int] = field(default = 15)
     rls_by_publisher_formatters : dict = field(default_factory = lambda : { RLCN.AVGRATING : "{:.2f}", RLCN.ABPERC : "{:.2f}", RLCN.AVGUNDERLINES : "{:.2f}" })
     rls_by_publisher_min_books : int = field(default = 8)
     rls_by_publisher_min_ab_perc : float = field(default = 100)
     rls_by_publisher_min_avgrating : float = field(default = 2.50)
-    rls_by_publisher_criteria : Literal["Yes", "No"] = field(default = "Yes")    
+    rls_by_publisher_criteria : Optional[Literal["Yes", "No"]] = field(default = None)
     rls_by_rating_number_as_stars : bool = field(default = True)
     rls_by_topic_trend_sparklines_maximum : bool = field(default = False)
 class RLDataFrameHelper():
 
     '''Collects helper functions for RLDataFrameFactory.'''
 
-    def format_reading_status(self, books : int, pages : int) -> str:
+    def box_rs(self, books : int, pages : int) -> str:
 
         '''
             13, 5157 => "13 (5157)"
         '''
         
-        reading_status : str = f"{books} ({pages})"
+        rs : str = f"{books} ({pages})"
         
-        return reading_status
+        return rs
+    def unbox_rs(self, rs : str) -> Tuple[int, int]:
+
+        '''
+            Books: "13 (5157)" => ["13", "(5157)"] => "13" => 13
+            Pages: "13 (5157)" => ["13", "(5157)"] => "5157" => 5157
+        '''    
+
+        tokens : list = rs.split(" ")
+
+        books : int = int(tokens[0])
+        pages : int = int(tokens[1].replace("(", "").replace(")", ""))
+
+        return (books, pages)
+       
     def get_default_sa_by_year(self, read_year : int) -> DataFrame:
 
         '''
@@ -240,15 +264,6 @@ class RLDataFrameHelper():
         default_df = default_df.astype({str(read_year): str})
 
         return default_df
-    def extract_books_from_trend(self, trend : str) -> int:
-
-        '''
-            "13 (5157)" => ["13", "(5157)"] => "13" => 13
-        '''
-
-        tokens : list = trend.split(" ")
-
-        return int(tokens[0])
     def get_trend(self, value_1 : int, value_2 : int) -> str:
 
         '''
@@ -266,7 +281,7 @@ class RLDataFrameHelper():
             trend = "="
 
         return trend
-    def get_trend_by_books(self, trend_1 : str, trend_2 : str) -> str:
+    def get_trend_by_books(self, rs_1 : str, rs_2 : str) -> str:
 
         '''
             "13 (5157)", "16 (3816)" => "↑"
@@ -274,10 +289,28 @@ class RLDataFrameHelper():
             "0 (0)", "0 (0)" => "="   
         '''
 
-        books_1 : int = self.extract_books_from_trend(trend = trend_1)
-        books_2 : int = self.extract_books_from_trend(trend = trend_2)
+        books_1 : int = self.unbox_rs(rs = rs_1)[0]
+        books_2 : int = self.unbox_rs(rs = rs_2)[0]
 
         trend : str = self.get_trend(value_1 = books_1, value_2 = books_2)
+
+        return trend
+    def get_trend_when_float64(self, value_1 : float64, value_2 : float64) -> str:
+
+        '''
+            1447.14, 2123.36 => "↑"
+            2123.36, 1447.14 => "↓"
+            0, 0 => "="
+        '''
+
+        trend : str = ""
+
+        if value_1 < value_2:
+            trend = "↑"
+        elif value_1 > value_2:
+            trend = "↓"
+        else:
+            trend = "="
 
         return trend
     def try_consolidate_trend_column_name(self, column_name : str) -> str:
@@ -291,16 +324,6 @@ class RLDataFrameHelper():
             return RLCN.TRENDSYMBOL
         
         return column_name
-    def extract_pages_from_trend(self, trend : str) -> int:
-
-        '''
-            "13 (5157)" => ["13", "(5157)"] => "5157" => 5157
-        '''
-
-        tokens : list = trend.split(" ")
-        token : str = tokens[1].replace("(", "").replace(")", "")
-
-        return int(token)
     def format_year_books_column_name(self, year_cn : str) -> str:
 
         '''
@@ -329,24 +352,6 @@ class RLDataFrameHelper():
         tokens : list = column_name.split("_")
 
         return tokens[0]
-    def get_trend_when_float64(self, value_1 : float64, value_2 : float64) -> str:
-
-        '''
-            1447.14, 2123.36 => "↑"
-            2123.36, 1447.14 => "↓"
-            0, 0 => "="
-        '''
-
-        trend : str = ""
-
-        if value_1 < value_2:
-            trend = "↑"
-        elif value_1 > value_2:
-            trend = "↓"
-        else:
-            trend = "="
-
-        return trend
     def create_read_years_dataframe(self, read_years : list[int]) -> DataFrame:
 
         '''Create a dataframe out of the provided list of Read Years.'''
@@ -545,7 +550,7 @@ class RLDataFrameFactory():
             how = "inner", 
             left_on = RLCN.READMONTH, 
             right_on = RLCN.READMONTH)
-        sa_by_year_df[read_year] = sa_by_year_df.apply(lambda x : self.__df_helper.format_reading_status(books = x[RLCN.BOOKS], pages = x[RLCN.PAGES]), axis = 1) 
+        sa_by_year_df[read_year] = sa_by_year_df.apply(lambda x : self.__df_helper.box_rs(books = x[RLCN.BOOKS], pages = x[RLCN.PAGES]), axis = 1) 
 
         sa_by_year_df[RLCN.MONTH] = sa_by_year_df[RLCN.READMONTH]
         sa_by_year_df = sa_by_year_df[[RLCN.MONTH, read_year]]
@@ -616,11 +621,11 @@ class RLDataFrameFactory():
 
         if add_trend == True:
 
-            cn_trend : str = f"↕{i}"
+            cn_trend : str = f"{RLCN.TRENDSYMBOL}{i}"
             cn_trend_1 : str = str(read_years[i-1])   # for ex. "2016"
             cn_trend_2 : str = str(read_years[i])     # for ex. "2017"
             
-            expansion_df[cn_trend] = expansion_df.apply(lambda x : self.__df_helper.get_trend_by_books(trend_1 = x[cn_trend_1], trend_2 = x[cn_trend_2]), axis = 1) 
+            expansion_df[cn_trend] = expansion_df.apply(lambda x : self.__df_helper.get_trend_by_books(rs_1 = x[cn_trend_1], rs_2 = x[cn_trend_2]), axis = 1) 
 
             new_column_names : list = [RLCN.MONTH, cn_trend_1, cn_trend, cn_trend_2]   # for ex. ["Month", "2016", "↕", "2017"]
             expansion_df = expansion_df.reindex(columns = new_column_names)
@@ -674,11 +679,11 @@ class RLDataFrameFactory():
 
             if i != (len(yeatrend) - 1):
 
-                cn_trend : str = f"↕{i}"
+                cn_trend : str = f"{RLCN.TRENDSYMBOL}{i}"
                 cn_trend_1 : str = str(yeatrend[i])       # 2016 => "2016"
                 cn_trend_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
                 
-                expanded_df[cn_trend] = expanded_df.apply(lambda x : self.__df_helper.get_trend_by_books(trend_1 = x[cn_trend_1], trend_2 = x[cn_trend_2]), axis = 1) 
+                expanded_df[cn_trend] = expanded_df.apply(lambda x : self.__df_helper.get_trend_by_books(rs_1 = x[cn_trend_1], rs_2 = x[cn_trend_2]), axis = 1) 
                 
                 new_item_position : int = (new_column_names.index(cn_trend_1) + 1)
                 new_column_names.insert(new_item_position, cn_trend)
@@ -705,7 +710,7 @@ class RLDataFrameFactory():
 
             if i != (len(yeatrend) - 1):
 
-                cn_trend : str = f"↕{i}"
+                cn_trend : str = f"{RLCN.TRENDSYMBOL}{i}"
                 cn_value_1 : str = str(yeatrend[i])       # 2016 => "2016"
                 cn_value_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
                 
@@ -909,7 +914,7 @@ class RLDataFrameFactory():
     def __create_rls_by_year_df(self, rls_by_month_df : DataFrame) -> DataFrame:
 
         '''
-            sas_by_year_df:
+            rls_by_year_df:
 
                     Month	2016	↕	2017	    ...	2022	↕	2023
                 0	1	    0 (0)	↑	13 (5157)	    0 (0)	=	0 (0)	
@@ -944,10 +949,8 @@ class RLDataFrameFactory():
 
         rls_by_year_df : DataFrame = rls_by_month_df.copy(deep = True)
 
-        cn_month : str = "Month"
-        cn_trend : str = "↕"
-        rls_by_year_df.drop(labels = cn_month, inplace = True, axis = 1)
-        rls_by_year_df.drop(labels = cn_trend, inplace = True, axis = 1)
+        rls_by_year_df.drop(labels = RLCN.MONTH, inplace = True, axis = 1)
+        rls_by_year_df.drop(labels = RLCN.TRENDSYMBOL, inplace = True, axis = 1)
 
         yeatrend : list = rls_by_year_df.columns.to_list()
         for year in yeatrend:
@@ -955,8 +958,8 @@ class RLDataFrameFactory():
             cn_year_books : str = self.__df_helper.format_year_books_column_name(year_cn = year)
             cn_year_pages : str = self.__df_helper.format_year_pages_column_name(year_cn = year)
 
-            rls_by_year_df[cn_year_books] = rls_by_year_df[year].apply(lambda x : self.__df_helper.extract_books_from_trend(trend = x))
-            rls_by_year_df[cn_year_pages] = rls_by_year_df[year].apply(lambda x : self.__df_helper.extract_pages_from_trend(trend = x))
+            rls_by_year_df[cn_year_books] = rls_by_year_df[year].apply(lambda x : self.__df_helper.unbox_rs(rs = x)[0])
+            rls_by_year_df[cn_year_pages] = rls_by_year_df[year].apply(lambda x : self.__df_helper.unbox_rs(rs = x)[1])
 
             rls_by_year_df.drop(labels = year, inplace = True, axis = 1)
 
@@ -967,7 +970,7 @@ class RLDataFrameFactory():
             cn_year_books = self.__df_helper.format_year_books_column_name(year_cn = year)
             cn_year_pages = self.__df_helper.format_year_pages_column_name(year_cn = year)
 
-            rls_by_year_df[year] = rls_by_year_df.apply(lambda x : self.__df_helper.format_reading_status(books = x[cn_year_books], pages = x[cn_year_pages]), axis = 1) 
+            rls_by_year_df[year] = rls_by_year_df.apply(lambda x : self.__df_helper.box_rs(books = x[cn_year_books], pages = x[cn_year_pages]), axis = 1) 
 
             rls_by_year_df.drop(labels = [cn_year_books, cn_year_pages], inplace = True, axis = 1)
 
@@ -1064,7 +1067,7 @@ class RLDataFrameFactory():
     def __create_rls_by_publisher_step_2(self, by_books_df : DataFrame, by_kbsize_df : DataFrame, rounding_digits : int) -> DataFrame:
 
         """
-            sas_by_publisher_df:
+            rls_by_publisher_df:
 
                     Publisher	Books	KBSize	A4Sheets
                 0	Syncfusion	38	    1254	7
@@ -1114,7 +1117,7 @@ class RLDataFrameFactory():
     def __create_rls_by_publisher_step_4(self, rls_by_publisher_df : DataFrame, by_avgrating_df: DataFrame) -> DataFrame:
         
         """
-            sas_by_publisher_df:
+            rls_by_publisher_df:
 
                     Publisher	Books	A4Sheets    AB%     AvgRating
                 0	Syncfusion	38	    7           34.00   2.55
@@ -1149,7 +1152,7 @@ class RLDataFrameFactory():
     def __create_rls_by_publisher_step_6(self, rls_by_publisher_df : DataFrame, by_avgunderlines_df : DataFrame) -> DataFrame:
         
         """
-            sas_by_publisher_df:
+            rls_by_publisher_df:
 
                     Publisher	Books	A4Sheets    AB%     AvgRating   AvgUnderlines
                 0	Syncfusion	38	    7           34.00   2.55        1.20
@@ -1216,7 +1219,7 @@ class RLDataFrameFactory():
             )
 
         return rls_by_publisher_footer
-    def __filter_by_is_worth(self, rls_by_publisher_df : DataFrame, publisher_criteria : str) -> DataFrame:
+    def __filter_by_is_worth(self, rls_by_publisher_df : DataFrame, criteria : Literal["Yes", "No"]) -> DataFrame:
 
         '''
                 Publisher	Books	AvgRating	IsWorth
@@ -1227,7 +1230,7 @@ class RLDataFrameFactory():
 
         filtered_df : DataFrame = rls_by_publisher_df.copy(deep = True)
 
-        condition : Series = (filtered_df[RLCN.ISWORTH] == publisher_criteria)
+        condition : Series = (filtered_df[RLCN.ISWORTH] == criteria)
         filtered_df = filtered_df.loc[condition]
         
         filtered_df.reset_index(drop = True, inplace = True)
@@ -1519,10 +1522,11 @@ class RLDataFrameFactory():
             rounding_digits : int, 
             min_books : int, 
             min_ab_perc : float, 
-            min_avgrating : float, 
-            criteria : str) -> Tuple[DataFrame, DataFrame, str]:
+            min_avgrating : float,
+            n : Optional[int],             
+            criteria : Optional[Literal["Yes", "No"]]) -> Tuple[DataFrame, str]:
         
-        """The method returns (rls_by_publisher_df, rls_by_publisher_flt_df, rls_by_publisher_footer)."""
+        """The method returns (rls_by_publisher_df, rls_by_publisher_footer)."""
   
         by_books_df, by_kbsize_df = self.__create_rls_by_publisher_step_1(rl_df)
         rls_by_publisher_df : DataFrame = self.__create_rls_by_publisher_step_2(by_books_df, by_kbsize_df, rounding_digits)
@@ -1536,7 +1540,11 @@ class RLDataFrameFactory():
         rls_by_publisher_df = self.__create_rls_by_publisher_step_7(rls_by_publisher_df, min_books, min_ab_perc, min_avgrating)
         rls_by_publisher_df = self.__create_rls_by_publisher_step_8(rls_by_publisher_df)
 
-        rls_by_publisher_flt_df : DataFrame = self.__filter_by_is_worth(rls_by_publisher_df = rls_by_publisher_df, publisher_criteria = criteria)
+        if n:
+            rls_by_publisher_df = rls_by_publisher_df.head(n = n)
+
+        if criteria:
+            rls_by_publisher_df = self.__filter_by_is_worth(rls_by_publisher_df = rls_by_publisher_df, criteria = criteria)
 
         rls_by_publisher_footer : str = self.__create_rls_by_publisher_footer(
             publisher_min_books = min_books,
@@ -1544,7 +1552,7 @@ class RLDataFrameFactory():
             publisher_min_avgrating = min_avgrating
         )
 
-        return (rls_by_publisher_df, rls_by_publisher_flt_df, rls_by_publisher_footer)
+        return (rls_by_publisher_df, rls_by_publisher_footer)
     def create_rls_by_rating_df(self, rl_df : DataFrame, number_as_stars : bool) -> DataFrame:
 
         '''
@@ -1592,30 +1600,7 @@ class RLDataFrameFactory():
                 .reset_index(name = RLCN.BOOKS))
 
         return rls_by_underlines_df
-    def create_definitions_df(self) -> DataFrame:
-
-        '''Creates a dataframe containing all the definitions in use in this application.'''
-
-        columns : list[str] = [DEFINITIONSTR.TERM, DEFINITIONSTR.DEFINITION]
-
-        definitions : dict[str, str] = {
-            DEFINITIONSTR.RL: "Reading List",
-            DEFINITIONSTR.RLS: "Reading List Summary",
-            RLCN.KBSIZE: "This metric is the word count of the notes I took about a given book",
-            RLCN.A4SHEETS: f"'{RLCN.KBSIZE}' converted into amount of A4 sheets",
-            RLCN.ABPERC: f"Calculated with the following formula: '({RLCN.A4SHEETS} / {RLCN.BOOKS}) * 100'",
-            RLCN.UNDERLINES: "Underlines are sentences that express a fundamental concept that can be understood as-is",
-            RLCN.UPERC: f"Calculated with the following formula: '({RLCN.UNDERLINES} / Average of Underlines) * 100'"
-        }
-        
-        definitions_df : DataFrame = DataFrame(
-            data = definitions.items(), 
-            columns = columns
-        )
-
-        return definitions_df    
-    
-    def create_rls_by_kbsize_df(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool, n : int) -> DataFrame:
+    def create_rld_by_kbsize_df(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool, n : int) -> DataFrame:
         
         '''
             Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
@@ -1624,24 +1609,224 @@ class RLDataFrameFactory():
             ...
         '''
 
-        rl_by_kbsize_df : DataFrame = self.__slice_by_kbsize(
+        rld_by_kbsize_df : DataFrame = self.__slice_by_kbsize(
             rl_df = rl_df, 
             ascending = ascending, 
             remove_if_zero = remove_if_zero)
         
-        rl_by_kbsize_df = self.__converter.convert_index_to_one_based(df = rl_by_kbsize_df)
-        rl_by_kbsize_df = rl_by_kbsize_df.head(n = n)
+        rld_by_kbsize_df = self.__converter.convert_index_to_one_based(df = rld_by_kbsize_df)
+        rld_by_kbsize_df = rld_by_kbsize_df.head(n = n)
 
-        return rl_by_kbsize_df   
+        return rld_by_kbsize_df
+    def create_definitions_df(self) -> DataFrame:
+
+        '''Creates a dataframe containing all the definitions in use in this application.'''
+
+        columns : list[str] = [DEFINITIONSTR.TERM, DEFINITIONSTR.DEFINITION]
+
+        definitions : dict[str, str] = {
+            DEFINITIONSTR.READINGLIST: f"A {DEFINITIONSTR.READINGLIST} is a list of books read as part of a continuous learning process.",
+            RLCN.TOPIC: f"A {RLCN.TOPIC} is a category label that best summarizes a book's content.",
+            RLCN.KBSIZE: "This metric is the total word count of the notes taken while reading a given book.",
+            RLCN.A4SHEETS: f"This metric represents {RLCN.KBSIZE} converted to the corresponding amount of A4 sheets (500 words ≅ 1 A4 sheet). The higher the amount, the better the book.",
+            RLCN.ABPERC: f"For a given publisher, {RLCN.ABPERC} is calculated as the total number of {RLCN.A4SHEETS} of notes taken across all books read from that publisher. The higher is {RLCN.ABPERC}, the better the publisher.",
+            RLCN.UNDERLINES: "Underlines are sentences that express a fundamental concept that can be understood as-is.",
+            RLCN.UPERC: f"For a given book, {RLCN.UPERC} is calculated as the number of {RLCN.UNDERLINES} in that book compared with the average number of {RLCN.UNDERLINES} across the entire reading list. The higher the {RLCN.UPERC}, the better the book.",
+            DEFINITIONSTR.READINGSTATUS: f"A {DEFINITIONSTR.READINGSTATUS} is a string that reports, at a specified time grain, the number of books read and the corresponding total pages.",
+            f"{RLCN.TREND} ({RLCN.TRENDSYMBOL})": "A trend is a gamification metric that indicates whether a measure (e.g., total books read) has increased or decreased over time."
+        }
+        
+        definitions_df : DataFrame = DataFrame(
+            data = definitions.items(), 
+            columns = columns
+        )
+
+        return definitions_df    
+@dataclass(frozen = True)
+class RSCell():
+    
+    '''Collects all the information related to a DataFrame cell that are required by RSHighlighter.'''
+
+    coordinate_pair : Tuple[int, int]
+    rs : str 
+    books : int
+    pages : int
+class RSHighlighter():
+
+    '''Encapsulates all the logic related to highlighting cells in dataframes containing reading stasuses.'''
+
+    __df_helper : RLDataFrameHelper
+
+    def __init__(self, df_helper : RLDataFrameHelper) -> None:
+
+        self.__df_helper = df_helper
+
+    def __is_rs(self, cell_content : str) -> bool :
+
+        '''Returns True if content in ["0 (0)", "2 (275)", "13 (5157)", "63 (18578)", ...].'''
+
+        pattern : str = r"^\d+\s*\(\d+\)$"
+        match : Optional[Match[str]] = re.fullmatch(pattern = pattern, string = cell_content)
+
+        if match is not None:
+            return True
+        else:
+            return False
+    def __append_new_rs_cell(self, rs_cells : list[RSCell], coordinate_pair : Tuple[int, int], cell_content : str) -> None:
+
+        '''Creates and append new RSCell object to rs_cells.'''
+
+        books, pages = self.__df_helper.unbox_rs(rs = cell_content)
+
+        rs_cell : RSCell = RSCell(
+            coordinate_pair = coordinate_pair,
+            rs = cell_content,
+            books = books,
+            pages = pages, 
+        )
+        
+        rs_cells.append(rs_cell)
+    def __extract_row(self, df : DataFrame, row_idx : int, column_names : list[str]) -> list[RSCell]:
+
+        '''Returns a collection of RSCell objects for provided arguments.'''
+
+        rs_cells : list[RSCell] = []
+        col_indices : list = [df.columns.get_loc(column_name) for column_name in column_names if column_name in df.columns]
+
+        for col_idx in col_indices:
+
+            coordinate_pair : Tuple[int, int] = (row_idx, col_idx)
+            cell_content : str = str(df.iloc[row_idx, col_idx])
+
+            if self.__is_rs(cell_content = cell_content):
+                self.__append_new_rs_cell(rs_cells, coordinate_pair, cell_content)
+
+        return rs_cells
+    def __extract_n(self, mode : RSMODE) -> int:
+
+        '''Extracts n from mode.'''
+
+        if mode == RSMODE.top_three:
+            return 3
+        elif mode == RSMODE.top_one_per_row:
+            return 1
+        else:
+            raise Exception(_MessageCollection.provided_mode_not_supported(mode))
+    def __extract_top_n_rs_cells(self, rs_cells : list[RSCell], n : int) -> list[RSCell]:
+
+        '''Extracts the n objects in rs_cells with the highest books.'''
+
+        sorted_cells : list[RSCell] = sorted(rs_cells, key = lambda cell : cell.books, reverse = True)
+        top_n : list[RSCell] = sorted_cells[:n]
+
+        return top_n
+    def __calculate_rs_cells(self, df : DataFrame, mode : RSMODE, column_names : list[str]) -> list[RSCell]:
+
+        '''Returns a list of RSCell objects according to df and mode.'''
+
+        rs_cells : list[RSCell] = []
+
+        last_row_idx : int = len(df)
+        n : int = self.__extract_n(mode = mode)
+        current : list[RSCell] = []
+
+        if mode == RSMODE.top_one_per_row:
+            for row_idx in range(last_row_idx):
+
+                current = self.__extract_row(df = df, row_idx = row_idx, column_names = column_names)
+                current = self.__extract_top_n_rs_cells(rs_cells = current, n = n)
+                rs_cells.extend(current)
+                
+        elif mode == RSMODE.top_three:
+            for row_idx in range(last_row_idx):
+                
+                current = self.__extract_row(df = df, row_idx = row_idx, column_names = column_names)
+                rs_cells.extend(current)
+
+            rs_cells = self.__extract_top_n_rs_cells(rs_cells = rs_cells, n = n)
+
+        else:
+            raise Exception(_MessageCollection.provided_mode_not_supported(mode))
+
+        return rs_cells
+    def __add_tags(self, df : DataFrame, rs_cells : list[RSCell], tags : Tuple[str, str]) -> DataFrame:
+
+        '''Adds two HTML tags around the content of the cells listed in rs_cells.'''
+
+        tagged_df : DataFrame = df.copy(deep = True)
+
+        left_h : str = tags[0]
+        right_h : str = tags[1]
+
+        for rs_cell in rs_cells:
+
+            row, col = rs_cell.coordinate_pair
+
+            if row < len(df) and col < len(df.columns):
+                tagged_df.iloc[row, col] = f"{left_h}{str(df.iloc[row, col])}{right_h}"
+            
+        return tagged_df
+    def __highlight_dataframe(self, df : DataFrame, mode : RSMODE, column_names : list[str] = []) -> DataFrame:
+
+        '''
+            Expects a df containing reading stasuses into cells - i.e. "0 (0)", "2 (275)".
+            Returns a df with highlighted cells as per arguments.
+
+            Note: column names are converted to string to aid column search when the dataframe has mixed type column names.
+        '''
+
+        highlighted_df : DataFrame = df.copy(deep = True)
+        highlighted_df.columns = highlighted_df.columns.map(str)
+
+        if len(column_names) == 0:
+            column_names = highlighted_df.columns.to_list()
+
+        rs_cells : list[RSCell] = self.__calculate_rs_cells(
+            df = highlighted_df, 
+            mode = mode,
+            column_names = column_names
+        )
+
+        tags : Tuple[str, str] = (f"<mark style='background-color: pink'>", "</mark>")
+        highlighted_df = self.__add_tags(df = highlighted_df, rs_cells = rs_cells, tags = tags)
+
+        return highlighted_df
+
+    def highlight_rls_by_month(self, rls_by_month_df : DataFrame) -> DataFrame:
+        
+        '''Returns the provided dataframe with adequate highlights.'''
+
+        mode : RSMODE = RSMODE.top_three
+
+        highlighted_df : DataFrame = self.__highlight_dataframe(
+            df = rls_by_month_df,
+            mode = mode
+        )
+        
+        return highlighted_df
+    def highlight_rls_by_year(self, rls_by_year_df : DataFrame) -> DataFrame:
+        
+        '''Returns the provided dataframe with adequate highlights.'''
+
+        mode : RSMODE = RSMODE.top_three
+
+        highlighted_df : DataFrame = self.__highlight_dataframe(
+            df = rls_by_year_df,
+            mode = mode
+        )
+        
+        return highlighted_df
 class RLAdapter():
 
     '''Adapts SettingBag properties for use in RL*Factory methods.'''
 
     __df_factory : RLDataFrameFactory
+    __rs_highlighter : RSHighlighter
 
-    def __init__(self, df_factory : RLDataFrameFactory) -> None:
+    def __init__(self, df_factory : RLDataFrameFactory, rs_highlighter : RSHighlighter) -> None:
         
         self.__df_factory = df_factory
+        self.__rs_highlighter = rs_highlighter
 
     def create_rl_df(self, setting_bag : SettingBag) -> DataFrame:
 
@@ -1727,16 +1912,17 @@ class RLAdapter():
         )
 
         return rls_by_topic_trend_df    
-    def create_rls_by_publisher_tpl(self, rl_df : DataFrame, setting_bag : SettingBag) -> Tuple[DataFrame, DataFrame, str]:
+    def create_rls_by_publisher_tpl(self, rl_df : DataFrame, setting_bag : SettingBag) -> Tuple[DataFrame, str]:
 
         '''Creates the expected dataframe using setting_bag and the provided arguments.'''
 
-        rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.__df_factory.create_rls_by_publisher_tpl(
+        rls_by_publisher_tpl : Tuple[DataFrame, str] = self.__df_factory.create_rls_by_publisher_tpl(
             rl_df = rl_df,
             rounding_digits = setting_bag.rounding_digits,
             min_books = setting_bag.rls_by_publisher_min_books,
             min_ab_perc = setting_bag.rls_by_publisher_min_ab_perc,
             min_avgrating = setting_bag.rls_by_publisher_min_avgrating,
+            n = setting_bag.rls_by_publisher_n,
             criteria = setting_bag.rls_by_publisher_criteria
         )
 
@@ -1751,19 +1937,18 @@ class RLAdapter():
         )
 
         return rls_by_rating_df     
-
-    def create_rls_by_kbsize_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+    def create_rld_by_kbsize_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
 
         '''Creates the expected dataframe using setting_bag and the provided arguments.'''
 
-        rls_by_kbsize_df : DataFrame = self.__df_factory.create_rls_by_kbsize_df(
+        rld_by_kbsize_df : DataFrame = self.__df_factory.create_rld_by_kbsize_df(
             rl_df = rl_df,
-            ascending = setting_bag.rls_by_kbsize_ascending,
-            remove_if_zero = setting_bag.rls_by_kbsize_remove_if_zero,
-            n = setting_bag.rls_by_kbsize_n
+            ascending = setting_bag.rld_by_kbsize_ascending,
+            remove_if_zero = setting_bag.rld_by_kbsize_remove_if_zero,
+            n = setting_bag.rld_by_kbsize_n
         )
 
-        return rls_by_kbsize_df
+        return rld_by_kbsize_df
 
     def create_summary(self, setting_bag : SettingBag) -> RLSummary:
 
@@ -1778,12 +1963,17 @@ class RLAdapter():
         rls_by_range_df : DataFrame = self.create_rls_by_range_df(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_topic_df : DataFrame = self.__df_factory.create_rls_by_topic_df(rl_df = rl_df)
         rls_by_topic_trend_df : DataFrame = self.create_rls_by_topic_trend_df(rl_df = rl_df, setting_bag = setting_bag)
-        rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.create_rls_by_publisher_tpl(rl_df = rl_df, setting_bag = setting_bag)
+        rls_by_publisher_tpl : Tuple[DataFrame, str] = self.create_rls_by_publisher_tpl(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_rating_df : DataFrame = self.create_rls_by_rating_df(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_underlines_df : DataFrame = self.__df_factory.create_rls_by_underlines_df(rl_enriched_df = rl_enriched_df)
+        rld_by_kbsize_df : DataFrame = self.create_rld_by_kbsize_df(rl_df = rl_df, setting_bag = setting_bag)
         definitions_df : DataFrame = self.__df_factory.create_definitions_df()
 
-        rls_by_kbsize_df : DataFrame = self.create_rls_by_kbsize_df(rl_df = rl_df, setting_bag = setting_bag)
+        if setting_bag.enable_rs_highlighting:
+            rls_by_month_tpl = (
+                self.__rs_highlighter.highlight_rls_by_month(rls_by_month_df = rls_by_month_tpl[0]),
+                self.__rs_highlighter.highlight_rls_by_month(rls_by_month_df = rls_by_month_tpl[1]))
+            rls_by_year_df = self.__rs_highlighter.highlight_rls_by_year(rls_by_year_df = rls_by_year_df)
 
         rl_summary : RLSummary = RLSummary(
             rl_df = rl_df,
@@ -1798,9 +1988,8 @@ class RLAdapter():
             rls_by_publisher_tpl = rls_by_publisher_tpl,
             rls_by_rating_df = rls_by_rating_df,
             rls_by_underlines_df = rls_by_underlines_df,
-            definitions_df = definitions_df,
-
-            rls_by_kbsize_df = rls_by_kbsize_df
+            rld_by_kbsize_df = rld_by_kbsize_df,
+            definitions_df = definitions_df
         )
 
         return rl_summary
@@ -1916,7 +2105,7 @@ class RLReportManager():
         html_sections.append(self.__create_html(rl_summary.rls_by_range_df, REPORTSTR.RLSBYRANGE, formatters))
         html_sections.append(self.__create_html(rl_summary.rls_by_topic_df, REPORTSTR.RLSBYTOPIC, formatters))
         html_sections.append(self.__create_html(rl_summary.rls_by_topic_trend_df, REPORTSTR.RLSBYTOPICTREND, formatters))
-        html_sections.append(self.__create_html(rl_summary.rls_by_publisher_tpl[1], REPORTSTR.RLSBYPUBLISHER, formatters, rl_summary.rls_by_publisher_tpl[2]))
+        html_sections.append(self.__create_html(rl_summary.rls_by_publisher_tpl[0], REPORTSTR.RLSBYPUBLISHER, formatters, rl_summary.rls_by_publisher_tpl[1]))
         html_sections.append(self.__create_html(rl_summary.rls_by_rating_df, REPORTSTR.RLSBYRATING, formatters))
         html_sections.append(self.__create_html(rl_summary.rl_rating_five_df, REPORTSTR.RLRATINGFIVE, formatters))
         html_sections.append(self.__create_html(rl_summary.rls_by_underlines_df, REPORTSTR.RLSBYUNDERLINES, formatters))
@@ -1930,11 +2119,14 @@ class RLReportManager():
 
         '''Creates HTML template.'''
 
+        report_title : str = "Reading List Report"
+        app_name : str = "nwreadinglist"
+
         full_html: str = f"""
         <html>
         <head>
             <meta charset="utf-8">
-            <title>Reading List Report | {self.__format_for_title(last_update)}</title>
+            <title>{report_title} | {self.__format_for_title(last_update)}</title>
             <style>
                 body {{
                     font-family: Arial, sans-serif;
@@ -1959,9 +2151,9 @@ class RLReportManager():
         </head>
         <body>
             <img src='https://avatars.githubusercontent.com/u/10279234' alt='NW logo' style='width:120px; height:120px; margin-bottom:10px;'>
-            <h1>Reading List Report | {self.__format_for_title(last_update)}</h1>
+            <h1>{report_title} | {self.__format_for_title(last_update)}</h1>
             {''.join(html_sections)}
-            <br/><p>© 2025 numbworks. This report is generated by 'nwreadinglist' and licensed under the MIT License. Additional information: <a href="https://github.com/numbworks">github.com/numbworks</a>.</p>
+            <br/><p>© numbworks. This report is generated by '{app_name}' and licensed under the MIT License. Additional information: <a href="https://github.com/numbworks">github.com/numbworks</a>.</p>
         </body>
         </html>
         """
@@ -1986,6 +2178,9 @@ class RLReportManager():
         
         '''Builds an HTML report from selected DataFrames in RLSummary and saves it as both HTML and PDF.'''
 
+        if save_html == False and save_pdf == False:
+            return
+
         html_path, pdf_path = self.__create_report_file_paths(folder_path = folder_path, last_update = last_update)
         html_sections : list[str] = self.__create_html_sections(rl_summary = rl_summary, formatters = formatters)
         full_html : str = self.__create_html_template(html_sections = html_sections, last_update = last_update)
@@ -2008,9 +2203,10 @@ class ComponentBag():
     rlr_manager : RLReportManager = field(default = RLReportManager(formatter = Formatter()))
     rl_adapter : RLAdapter = field(default = RLAdapter(
         df_factory = RLDataFrameFactory(
-                        converter = Converter(),
-                        formatter = Formatter(),
-                        df_helper = RLDataFrameHelper())))
+            converter = Converter(),
+            formatter = Formatter(),
+            df_helper = RLDataFrameHelper()),
+        rs_highlighter = RSHighlighter(df_helper = RLDataFrameHelper())))
 class ReadingListProcessor():
 
     '''Collects all the logic related to the processing of "Reading List.xlsx".'''
@@ -2193,14 +2389,14 @@ class ReadingListProcessor():
         self.__validate_summary()
 
         options : list = self.__setting_bag.options_rls_by_publisher
-        df : DataFrame = self.__rl_summary.rls_by_publisher_tpl[0].head(n = self.__setting_bag.rls_by_publisher_n)
+        df : DataFrame = self.__rl_summary.rls_by_publisher_tpl[0]
         formatters : dict = self.__setting_bag.rls_by_publisher_formatters
-        footer : str = self.__rl_summary.rls_by_publisher_tpl[2] + "\n"
+        footer : str = self.__rl_summary.rls_by_publisher_tpl[1] + "\n"
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df, formatters = formatters)
 
-        if OPTION.logset in options:
+        if OPTION.log in options:
             self.__component_bag.logging_function(footer)
     def process_rls_by_rating(self) -> None:
 
@@ -2232,6 +2428,41 @@ class ReadingListProcessor():
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df)
+    def process_rld_by_kbsize(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rld_by_kbsize.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_rld_by_kbsize
+        df : DataFrame = self.__rl_summary.rld_by_kbsize_df
+        x_name : str = RLCN.A4SHEETS
+
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df)
+
+        if OPTION.plot in options:
+            self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)
+    def process_rld_by_books_year(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rld_by_books_year.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_rld_by_books_year
+        df : DataFrame = self.__rl_summary.rl_df
+        x_name : str = RLCN.YEAR
+
+        if OPTION.plot in options:
+            self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)
     def process_definitions(self) -> None:
 
         '''
@@ -2247,42 +2478,6 @@ class ReadingListProcessor():
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df)
-
-    def process_rls_by_kbsize(self) -> None:
-
-        '''
-            Performs all the actions listed in __setting_bag.options_rl_by_kbsize.
-            
-            It raises an exception if the 'initialize' method has not been run yet.
-        '''
-
-        self.__validate_summary()
-
-        options : list = self.__setting_bag.options_rls_by_kbsize
-        df : DataFrame = self.__rl_summary.rls_by_kbsize_df
-        x_name : str = RLCN.A4SHEETS
-
-        if OPTION.display in options:
-            self.__component_bag.displayer.display(obj = df)
-
-        if OPTION.plot in options:
-            self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)            
-    def process_rls_by_books_year(self) -> None:
-
-        '''
-            Performs all the actions listed in __setting_bag.options_rl_by_books_year.
-            
-            It raises an exception if the 'initialize' method has not been run yet.
-        '''
-
-        self.__validate_summary()
-
-        options : list = self.__setting_bag.options_rls_by_books_year
-        df : DataFrame = self.__rl_summary.rl_df
-        x_name : str = RLCN.YEAR
-
-        if OPTION.plot in options:
-            self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)
     
     def get_summary(self) -> RLSummary:
 

@@ -6,7 +6,7 @@ Contact: numbworks@gmail.com
 | Date | Author | Description |
 |---|---|---|
 | 2023-08-10 | numbworks | Created. |
-| 2025-12-22 | numbworks | Updated to v4.4.0. |
+| 2025-12-29 | numbworks | Updated to v5.1.0. |
 
 ## Introduction
 
@@ -154,7 +154,7 @@ The expected outcome for `all-concise` is:
 
 ```
 MODULE_NAME: nwreadinglist
-MODULE_VERSION: 4.4.0
+MODULE_VERSION: 5.1.0
 COVERAGE_THRESHOLD: 70%
 [OK] type-concise: passed!
 [OK] changelog-concise: 'CHANGELOG' updated to current version!
@@ -178,6 +178,12 @@ Considering the old-fashioned syntax adopted by both `make` and `bash`, here a s
 | `$$` | Necessary to escape `$`. |
 | `$@` | Variable that stores the target name. |
 | `if [[ ... ]]` | Double square brackets to enable pattern matching. |
+
+## Architecture
+
+A partial class diagram showing the core architecture of the application:
+
+![Diagram-Architecture.png](Diagrams/Diagram-Architecture.png)
 
 ## Known Issues - nwshared
 
