@@ -78,10 +78,7 @@ class OPTION(StrEnum):
     '''Represents a collection of options.'''
 
     display = auto()
-    display_c = auto()
-    logdef = auto()
-    logterm = auto()
-    logset = auto()
+    log = auto()
     plot = auto()
     save_html = auto()
     save_pdf = auto()
@@ -182,7 +179,7 @@ class SettingBag():
     options_rls_by_range : list[Literal[OPTION.display]]
     options_rls_by_topic : list[Literal[OPTION.display]]
     options_rls_by_topic_trend : list[Literal[OPTION.display]]
-    options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]]
+    options_rls_by_publisher : list[Literal[OPTION.display, OPTION.log]]
     options_rls_by_rating : list[Literal[OPTION.display]]
     options_rls_by_underlines : list[Literal[OPTION.display]]
     options_definitions : list[Literal[OPTION.display]]
@@ -2178,6 +2175,9 @@ class RLReportManager():
         
         '''Builds an HTML report from selected DataFrames in RLSummary and saves it as both HTML and PDF.'''
 
+        if save_html == False and save_pdf == False:
+            return
+
         html_path, pdf_path = self.__create_report_file_paths(folder_path = folder_path, last_update = last_update)
         html_sections : list[str] = self.__create_html_sections(rl_summary = rl_summary, formatters = formatters)
         full_html : str = self.__create_html_template(html_sections = html_sections, last_update = last_update)
@@ -2393,7 +2393,7 @@ class ReadingListProcessor():
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df, formatters = formatters)
 
-        if OPTION.logset in options:
+        if OPTION.log in options:
             self.__component_bag.logging_function(footer)
     def process_rls_by_rating(self) -> None:
 

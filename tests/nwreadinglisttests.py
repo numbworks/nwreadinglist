@@ -280,7 +280,7 @@ class ObjectMother():
             options_rls_by_range = [OPTION.display],
             options_rls_by_topic = [OPTION.display],
             options_rls_by_topic_trend = [OPTION.display],
-            options_rls_by_publisher = [OPTION.display, OPTION.logset],
+            options_rls_by_publisher = [OPTION.display, OPTION.log],
             options_rls_by_rating = [OPTION.display],
             options_rls_by_underlines = [OPTION.display],
             options_definitions = [OPTION.display],
@@ -392,7 +392,7 @@ class SettingBagTestCase(unittest.TestCase):
         options_rls_by_range : list[Literal[OPTION.display]] = [OPTION.display]                                     # type: ignore[valid-type]
         options_rls_by_topic : list[Literal[OPTION.display]] = [OPTION.display]                                     # type: ignore[valid-type]
         options_rls_by_topic_trend : list[Literal[OPTION.display]] = [OPTION.display]                               # type: ignore[valid-type]
-        options_rls_by_publisher : list[Literal[OPTION.display, OPTION.logset]] = [OPTION.display, OPTION.logset]   # type: ignore[valid-type]
+        options_rls_by_publisher : list[Literal[OPTION.display, OPTION.log]] = [OPTION.display, OPTION.log]   # type: ignore[valid-type]
         options_rls_by_rating : list[Literal[OPTION.display]] = [OPTION.display]                                    # type: ignore[valid-type]
         options_rls_by_underlines : list[Literal[OPTION.display]] = [OPTION.display]                                # type: ignore[valid-type]
         options_definitions : list[Literal[OPTION.display]] = [OPTION.display]                                      # type: ignore[valid-type]
@@ -1744,6 +1744,568 @@ class RLReportManagerTestCase(unittest.TestCase):
             mocked_create_stylesheet.assert_called_once()
             html_instance.write_pdf.assert_called_once_with(target = str(pdf_path), stylesheets = [stylesheet])
 class ReadingListProcessorTestCase(unittest.TestCase):
+
+    def test_mergeformatters_shouldmergeformatters_wheninvoked(self) -> None:
+
+        # Arrange
+        component_bag : Mock = Mock()
+
+        setting_bag : Mock = Mock()
+        setting_bag.rl_most_underlines_formatters = {"a": "{:.2f}"}
+        setting_bag.rls_by_publisher_formatters = {"b": "{:.2f}"}
+
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+
+        # Act
+        actual : dict = rl_processor._ReadingListProcessor__merge_formatters()  # type: ignore
+
+        # Assert
+        self.assertEqual(actual, {"a": "{:.2f}", "b": "{:.2f}"})
+
+    def test_initialize_shouldcreatesummaryandassign_wheninvoked(self) -> None:
+
+        # Arrange
+        rl_summary : Mock = Mock()
+
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.rl_adapter = rl_adapter
+
+        setting_bag : Mock = Mock()
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+
+        # Assert
+        rl_adapter.create_summary.assert_called_once_with(setting_bag = setting_bag)
+    def test_processrl_shoulddisplay_whenoptionisdisplay(self) -> None:
+
+        # Arrange
+        rl_df : DataFrame = Mock()
+
+        rl_summary : Mock = Mock()
+        rl_summary.rl_df = rl_df
+
+        displayer : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.rl_adapter = rl_adapter
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rl = [OPTION.display]
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rl()
+
+        # Assert
+        displayer.display.assert_called_once_with(obj = rl_df)
+    def test_processrlenriched_shoulddisplay_whenoptionisdisplay(self) -> None:
+
+        # Arrange
+        rl_enriched_df : DataFrame = Mock()
+
+        rl_summary : Mock = Mock()
+        rl_summary.rl_enriched_df = rl_enriched_df
+
+        displayer : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.rl_adapter = rl_adapter
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rl_enriched = [OPTION.display]
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rl_enriched()
+
+        # Assert
+        displayer.display.assert_called_once_with(obj = rl_enriched_df)
+    def test_processrlratingfive_shoulddisplay_whenoptionisdisplay(self) -> None:
+
+        # Arrange
+        rl_rating_five_df : DataFrame = Mock()
+
+        rl_summary : Mock = Mock()
+        rl_summary.rl_rating_five_df = rl_rating_five_df
+
+        displayer : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.rl_adapter = rl_adapter
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rl_rating_five = [OPTION.display]
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rl_rating_five()
+
+        # Assert
+        displayer.display.assert_called_once_with(obj = rl_rating_five_df)
+    def test_processrlmostunderlines_shoulddisplaywithformatters_whenoptionisdisplay(self) -> None:
+
+        # Arrange
+        rl_most_underlines_df : DataFrame = Mock()
+
+        rl_summary : Mock = Mock()
+        rl_summary.rl_most_underlines_df = rl_most_underlines_df
+
+        displayer : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.rl_adapter = rl_adapter
+
+        formatters : dict = {RLCN.UNDERLINES: "{:.0f}"}
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rl_most_underlines = [OPTION.display]
+        setting_bag.rl_most_underlines_formatters = formatters
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rl_most_underlines()
+
+        # Assert
+        displayer.display.assert_called_once_with(obj = rl_most_underlines_df, formatters = formatters)
+    def test_processrlsbymonth_shoulddisplay_whenoptionisdisplay(self) -> None:
+
+        # Arrange
+        rls_by_month_df : DataFrame = Mock()
+        rls_by_month_tpl : tuple = ("ignored", rls_by_month_df, "ignored")
+
+        rl_summary : Mock = Mock()
+        rl_summary.rls_by_month_tpl = rls_by_month_tpl
+
+        displayer : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.rl_adapter = rl_adapter
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rls_by_month = [OPTION.display]
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rls_by_month()
+
+        # Assert
+        displayer.display.assert_called_once_with(obj = rls_by_month_df)
+    def test_processrlsbyyear_shoulddisplay_whenoptionisdisplay(self) -> None:
+
+        # Arrange
+        rls_by_year_df : DataFrame = Mock()
+
+        rl_summary : Mock = Mock()
+        rl_summary.rls_by_year_df = rls_by_year_df
+
+        displayer : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.rl_adapter = rl_adapter
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rls_by_month = [OPTION.display]
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rls_by_year()
+
+        # Assert
+        displayer.display.assert_called_once_with(obj = rls_by_year_df)
+    def test_processrlsbyrange_shoulddisplay_whenoptionisdisplay(self) -> None:
+
+        # Arrange
+        rls_by_range_df : DataFrame = Mock()
+
+        rl_summary : Mock = Mock()
+        rl_summary.rls_by_range_df = rls_by_range_df
+
+        displayer : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.rl_adapter = rl_adapter
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rls_by_range = [OPTION.display]
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rls_by_range()
+
+        # Assert
+        displayer.display.assert_called_once_with(obj = rls_by_range_df)
+    def test_processrlsbytopic_shoulddisplay_whenoptionisdisplay(self) -> None:
+
+        # Arrange
+        rls_by_topic_df : DataFrame = Mock()
+
+        rl_summary : Mock = Mock()
+        rl_summary.rls_by_topic_df = rls_by_topic_df
+
+        displayer : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.rl_adapter = rl_adapter
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rls_by_topic = [OPTION.display]
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rls_by_topic()
+
+        # Assert
+        displayer.display.assert_called_once_with(obj = rls_by_topic_df)
+    def test_processrlsbytopictrend_shoulddisplay_whenoptionisdisplay(self) -> None:
+
+        # Arrange
+        rls_by_topic_trend_df : DataFrame = Mock()
+
+        rl_summary : Mock = Mock()
+        rl_summary.rls_by_topic_trend_df = rls_by_topic_trend_df
+
+        displayer : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.rl_adapter = rl_adapter
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rls_by_topic_trend = [OPTION.display]  # type: ignore
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rls_by_topic_trend()
+
+        # Assert
+        displayer.display.assert_called_once_with(obj = rls_by_topic_trend_df)
+    def test_processrlsbypublisher_shoulddisplay_whenoptionisdisplay(self) -> None:
+
+        # Arrange
+        publisher_df : Mock = Mock()
+        publisher_df_head : DataFrame = Mock()
+        publisher_df.head.return_value = publisher_df_head
+
+        rls_by_publisher_tpl : tuple = (publisher_df, "ignored", "FOOTER")
+
+        rl_summary : Mock = Mock()
+        rl_summary.rls_by_publisher_tpl = rls_by_publisher_tpl
+
+        displayer : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.rl_adapter = rl_adapter
+        component_bag.logging_function = Mock()
+
+        formatters : dict = {RLCN.AVGRATING: "{:.2f}"}
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rls_by_publisher = [OPTION.display]
+        setting_bag.rls_by_publisher_n = 5
+        setting_bag.rls_by_publisher_formatters = formatters
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rls_by_publisher()
+
+        # Assert
+        publisher_df.head.assert_called_once_with(n = 5)
+        displayer.display.assert_called_once_with(obj = publisher_df_head, formatters = formatters)
+    def test_processrlsbypublisher_shouldlogfooterwithnewline_whenoptionislog(self) -> None:
+
+        # Arrange
+        publisher_df : Mock = Mock()
+        publisher_df.head.return_value = Mock()
+
+        footer : str = "FOOTER"
+        rls_by_publisher_tpl : tuple = (publisher_df, "ignored", footer)
+
+        rl_summary : Mock = Mock()
+        rl_summary.rls_by_publisher_tpl = rls_by_publisher_tpl
+
+        displayer : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        logging_function : Mock = Mock()
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.rl_adapter = rl_adapter
+        component_bag.logging_function = logging_function
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rls_by_publisher = [OPTION.log]
+        setting_bag.rls_by_publisher_n = 5
+        setting_bag.rls_by_publisher_formatters = {}
+
+        expected : str = footer + "\n"        
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rls_by_publisher()
+
+        # Assert
+        logging_function.assert_called_once_with(expected)
+    def test_processrlsbyrating_shoulddisplay_whenoptionisdisplay(self) -> None:
+
+        # Arrange
+        rls_by_rating_df : DataFrame = Mock()
+
+        rl_summary : Mock = Mock()
+        rl_summary.rls_by_rating_df = rls_by_rating_df
+
+        displayer : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.rl_adapter = rl_adapter
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rls_by_rating = [OPTION.display]  # type: ignore
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rls_by_rating()
+
+        # Assert
+        displayer.display.assert_called_once_with(obj = rls_by_rating_df)
+    def test_processrlsbyunderlines_shoulddisplay_whenoptionisdisplay(self) -> None:
+
+        # Arrange
+        rls_by_underlines_df : DataFrame = Mock()
+
+        rl_summary : Mock = Mock()
+        rl_summary.rls_by_underlines_df = rls_by_underlines_df
+
+        displayer : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.rl_adapter = rl_adapter
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rls_by_underlines = [OPTION.display]
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rls_by_underlines()
+
+        # Assert
+        displayer.display.assert_called_once_with(obj = rls_by_underlines_df)
+    def test_processdefinitions_shoulddisplay_whenoptionisdisplay(self) -> None:
+
+        # Arrange
+        definitions_df : DataFrame = Mock()
+
+        rl_summary : Mock = Mock()
+        rl_summary.definitions_df = definitions_df
+
+        displayer : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.rl_adapter = rl_adapter
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_definitions = [OPTION.display]
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_definitions()
+
+        # Assert
+        displayer.display.assert_called_once_with(obj = definitions_df)
+
+    def test_processrlsbykbsize_shoulddisplayandplot_whenoptionsaredisplayandplot(self) -> None:
+
+        # Arrange
+        rls_by_kbsize_df : DataFrame = Mock()
+
+        rl_summary : Mock = Mock()
+        rl_summary.rls_by_kbsize_df = rls_by_kbsize_df
+
+        displayer : Mock = Mock()
+        plot_manager : Mock = Mock()
+
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.plot_manager = plot_manager
+        component_bag.rl_adapter = rl_adapter
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rls_by_kbsize = [OPTION.display, OPTION.plot]
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rls_by_kbsize()
+
+        # Assert
+        displayer.display.assert_called_once_with(obj = rls_by_kbsize_df)
+        plot_manager.show_box_plot.assert_called_once_with(df = rls_by_kbsize_df, x_name = RLCN.A4SHEETS)
+    def test_processrlsbybooksyear_shouldplot_whenoptionisplot(self) -> None:
+
+        # Arrange
+        rl_df : DataFrame = Mock()
+
+        rl_summary : Mock = Mock()
+        rl_summary.rl_df = rl_df
+
+        plot_manager : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.plot_manager = plot_manager
+        component_bag.rl_adapter = rl_adapter
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rls_by_books_year = [OPTION.plot]
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rls_by_books_year()
+
+        # Assert
+        plot_manager.show_box_plot.assert_called_once_with(df = rl_df, x_name = RLCN.YEAR)
+
+    def test_saveasreport_shouldsavehtmlandpdf_whenoptionsaresavehtmlandsavepdf(self) -> None:
+
+        # Arrange
+        summary : Mock = Mock()
+
+        rlr_manager : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = summary
+
+        component_bag : Mock = Mock()
+        component_bag.rlr_manager = rlr_manager
+        component_bag.rl_adapter = rl_adapter
+
+        working_folder_path : str = "/home/readinglist"
+        now : datetime = datetime(2025, 12, 29, 1, 12,13)
+        rl_most_underlines_formatters : dict = {"a": "{:.2f}"}
+        rls_by_publisher_formatters : dict = {"b": "{:.0f}"}
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_report = [OPTION.save_html, OPTION.save_pdf]
+        setting_bag.working_folder_path = working_folder_path
+        setting_bag.now = now
+        setting_bag.rl_most_underlines_formatters = rl_most_underlines_formatters
+        setting_bag.rls_by_publisher_formatters = rls_by_publisher_formatters
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.save_as_report()
+
+        # Assert
+        rlr_manager.save_as_report.assert_called_once_with(
+            rl_summary = summary,
+            folder_path = working_folder_path,
+            last_update = now,
+            save_html = True,
+            save_pdf = True,
+            formatters = (rl_most_underlines_formatters | rls_by_publisher_formatters)
+        )
+    def test_saveasreport_shoulddonothing_whenoptionsreportisempty(self) -> None:
+
+        # Arrange
+        summary : Mock = Mock()
+
+        rlr_manager : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = summary
+
+        component_bag : Mock = Mock()
+        component_bag.rlr_manager = rlr_manager
+        component_bag.rl_adapter = rl_adapter
+
+        working_folder_path : str = "/home/readinglist"
+        now : datetime = datetime(2025, 12, 29, 1, 12,13)
+        rl_most_underlines_formatters : dict = {"a": "{:.2f}"}
+        rls_by_publisher_formatters : dict = {"b": "{:.0f}"}
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_report = []
+        setting_bag.working_folder_path = working_folder_path
+        setting_bag.now = now
+        setting_bag.rl_most_underlines_formatters = rl_most_underlines_formatters
+        setting_bag.rls_by_publisher_formatters = rls_by_publisher_formatters
+
+        # Act
+        processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        processor.initialize()
+        processor.save_as_report()
+
+        # Assert
+        rlr_manager.save_as_report.assert_called_once_with(
+            rl_summary = summary,
+            folder_path = working_folder_path,
+            last_update = now,
+            save_html = False,
+            save_pdf = False,
+            formatters = (rl_most_underlines_formatters | rls_by_publisher_formatters)
+        )
 
     @parameterized.expand([
         ["process_rl"],
