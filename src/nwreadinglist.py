@@ -622,7 +622,7 @@ class RLDataFrameFactory():
 
         if add_trend == True:
 
-            cn_trend : str = f"↕{i}"
+            cn_trend : str = f"{RLCN.TRENDSYMBOL}{i}"
             cn_trend_1 : str = str(read_years[i-1])   # for ex. "2016"
             cn_trend_2 : str = str(read_years[i])     # for ex. "2017"
             
@@ -680,7 +680,7 @@ class RLDataFrameFactory():
 
             if i != (len(yeatrend) - 1):
 
-                cn_trend : str = f"↕{i}"
+                cn_trend : str = f"{RLCN.TRENDSYMBOL}{i}"
                 cn_trend_1 : str = str(yeatrend[i])       # 2016 => "2016"
                 cn_trend_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
                 
@@ -711,7 +711,7 @@ class RLDataFrameFactory():
 
             if i != (len(yeatrend) - 1):
 
-                cn_trend : str = f"↕{i}"
+                cn_trend : str = f"{RLCN.TRENDSYMBOL}{i}"
                 cn_value_1 : str = str(yeatrend[i])       # 2016 => "2016"
                 cn_value_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
                 
@@ -915,7 +915,7 @@ class RLDataFrameFactory():
     def __create_rls_by_year_df(self, rls_by_month_df : DataFrame) -> DataFrame:
 
         '''
-            sas_by_year_df:
+            rls_by_year_df:
 
                     Month	2016	↕	2017	    ...	2022	↕	2023
                 0	1	    0 (0)	↑	13 (5157)	    0 (0)	=	0 (0)	
@@ -950,10 +950,8 @@ class RLDataFrameFactory():
 
         rls_by_year_df : DataFrame = rls_by_month_df.copy(deep = True)
 
-        cn_month : str = "Month"
-        cn_trend : str = "↕"
-        rls_by_year_df.drop(labels = cn_month, inplace = True, axis = 1)
-        rls_by_year_df.drop(labels = cn_trend, inplace = True, axis = 1)
+        rls_by_year_df.drop(labels = RLCN.MONTH, inplace = True, axis = 1)
+        rls_by_year_df.drop(labels = RLCN.TRENDSYMBOL, inplace = True, axis = 1)
 
         yeatrend : list = rls_by_year_df.columns.to_list()
         for year in yeatrend:
@@ -1070,7 +1068,7 @@ class RLDataFrameFactory():
     def __create_rls_by_publisher_step_2(self, by_books_df : DataFrame, by_kbsize_df : DataFrame, rounding_digits : int) -> DataFrame:
 
         """
-            sas_by_publisher_df:
+            rls_by_publisher_df:
 
                     Publisher	Books	KBSize	A4Sheets
                 0	Syncfusion	38	    1254	7
@@ -1120,7 +1118,7 @@ class RLDataFrameFactory():
     def __create_rls_by_publisher_step_4(self, rls_by_publisher_df : DataFrame, by_avgrating_df: DataFrame) -> DataFrame:
         
         """
-            sas_by_publisher_df:
+            rls_by_publisher_df:
 
                     Publisher	Books	A4Sheets    AB%     AvgRating
                 0	Syncfusion	38	    7           34.00   2.55
@@ -1155,7 +1153,7 @@ class RLDataFrameFactory():
     def __create_rls_by_publisher_step_6(self, rls_by_publisher_df : DataFrame, by_avgunderlines_df : DataFrame) -> DataFrame:
         
         """
-            sas_by_publisher_df:
+            rls_by_publisher_df:
 
                     Publisher	Books	A4Sheets    AB%     AvgRating   AvgUnderlines
                 0	Syncfusion	38	    7           34.00   2.55        1.20
