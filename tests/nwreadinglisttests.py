@@ -267,7 +267,7 @@ class ObjectMother():
         return definitions_df
 
     @staticmethod
-    def get_setting_bag() -> SettingBag:
+    def get_setting_bag(enable_rs_highlighting : bool = True) -> SettingBag:
 
         setting_bag : SettingBag = SettingBag(
             options_rl_rating_five = [OPTION.display],            
@@ -285,7 +285,7 @@ class ObjectMother():
             read_years = YearProvider().get_all_years(),
             excel_path = DefaultPathProvider().get_default_reading_list_path(),
             excel_nrows = 323,
-            enable_rs_highlighting = False
+            enable_rs_highlighting = enable_rs_highlighting
         )
 
         return setting_bag
@@ -1163,6 +1163,14 @@ class RLAdapterTestCase(unittest.TestCase):
         self.rls_by_publisher_criteria : str = "Yes"
         self.rls_by_rating_number_as_stars = True
 
+        self.mocked_df_factory : Mock = Mock(spec = RLDataFrameFactory)
+        self.mocked_rs_highlighter : Mock = Mock(spec = RSHighlighter)
+
+        self.adapter : RLAdapter = RLAdapter(
+            df_factory = self.mocked_df_factory,            # type: ignore
+            rs_highlighter = self.mocked_rs_highlighter     # type: ignore
+        )
+
     def test_createrldf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
         
         # Arrange
@@ -1346,6 +1354,7 @@ class RLAdapterTestCase(unittest.TestCase):
             rl_df = rl_df,
             number_as_stars = self.rls_by_rating_number_as_stars
         )
+
     def test_createsummary_shouldreturnexpectedsummary_wheninvoked(self) -> None:
 
         # Arrange
@@ -1379,7 +1388,8 @@ class RLAdapterTestCase(unittest.TestCase):
             df_factory = df_factory, 
             rs_highlighter = RSHighlighter(
                 df_helper = RLDataFrameHelper()))
-        setting_bag : SettingBag = ObjectMother.get_setting_bag()
+				
+        setting_bag : SettingBag = ObjectMother.get_setting_bag(enable_rs_highlighting = False)
 
         # Act
         actual : RLSummary = rl_adapter.create_summary(setting_bag = setting_bag)
@@ -1399,6 +1409,69 @@ class RLAdapterTestCase(unittest.TestCase):
         assert_frame_equal(actual.rls_by_kbsize_df, rls_by_kbsize_df)
         assert_frame_equal(actual.rls_by_rating_df, rls_by_rating_df)
         assert_frame_equal(actual.definitions_df, definitions_df)
+    def test_createsummary_shouldperformexpectedcalls_wheninvoked(self) -> None:
+
+        # Arrange
+        rl_df : DataFrame = DataFrame()
+        rl_enriched_df : DataFrame = DataFrame()
+        rl_rating_five_df : DataFrame = DataFrame()
+        rl_most_underlines_df : DataFrame = DataFrame()
+        rls_by_month_df_a : DataFrame = DataFrame()
+        rls_by_month_df_b : DataFrame = DataFrame()
+        rls_by_month_tpl : Tuple[DataFrame, DataFrame] = (rls_by_month_df_a, rls_by_month_df_b)
+        rls_by_year_df : DataFrame = DataFrame()
+        rls_by_range_df : DataFrame = DataFrame()
+        rls_by_topic_df : DataFrame = DataFrame()
+        rls_by_topic_trend_df : DataFrame = DataFrame()
+        rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = (DataFrame(), DataFrame(), "")
+        rls_by_rating_df : DataFrame = DataFrame()
+        rls_by_underlines_df : DataFrame = DataFrame()
+        definitions_df : DataFrame = DataFrame()
+        rls_by_kbsize_df : DataFrame = DataFrame()
+
+        setting_bag : SettingBag = ObjectMother.get_setting_bag(enable_rs_highlighting = True)
+
+        with (
+            patch.object(self.adapter, "create_rl_df", return_value = rl_df) as mocked_create_rl_df,
+            patch.object(self.adapter, "create_rl_enriched_df", return_value = rl_enriched_df) as mocked_create_rl_enriched_df,
+            patch.object(self.adapter, "create_rl_rating_five_df", return_value = rl_rating_five_df) as mocked_create_rl_rating_five_df,
+            patch.object(self.adapter, "create_rl_most_underlines_df", return_value = rl_most_underlines_df) as mocked_create_rl_most_underlines_df,
+            patch.object(self.adapter, "create_rls_by_month_tpl", return_value = rls_by_month_tpl) as mocked_create_rls_by_month_tpl,
+            patch.object(self.adapter, "create_rls_by_year_df", return_value = rls_by_year_df) as mocked_create_rls_by_year_df,
+            patch.object(self.adapter, "create_rls_by_range_df", return_value = rls_by_range_df) as mocked_create_rls_by_range_df,
+            patch.object(self.mocked_df_factory, "create_rls_by_topic_df", return_value = rls_by_topic_df) as mocked_create_rls_by_topic_df,
+            patch.object(self.adapter, "create_rls_by_topic_trend_df", return_value = rls_by_topic_trend_df) as mocked_create_rls_by_topic_trend_df,
+            patch.object(self.adapter, "create_rls_by_publisher_tpl", return_value = rls_by_publisher_tpl) as mocked_create_rls_by_publisher_tpl,
+            patch.object(self.adapter, "create_rls_by_rating_df", return_value = rls_by_rating_df) as mocked_create_rls_by_rating_df,
+            patch.object(self.mocked_df_factory, "create_rls_by_underlines_df", return_value = rls_by_underlines_df) as mocked_create_rls_by_underlines_df,
+            patch.object(self.mocked_df_factory, "create_definitions_df", return_value = definitions_df) as mocked_create_definitions_df,
+            patch.object(self.adapter, "create_rls_by_kbsize_df", return_value = rls_by_kbsize_df) as mocked_create_rls_by_kbsize_df
+        ):
+
+            self.mocked_rs_highlighter.highlight_rls_by_month = Mock(return_value = rls_by_month_df_a)
+            self.mocked_rs_highlighter.highlight_rls_by_year = Mock(return_value = rls_by_year_df)
+
+            # Act
+            self.adapter.create_summary(setting_bag = setting_bag)
+
+            # Assert
+            mocked_create_rl_df.assert_called_once_with(setting_bag = setting_bag)
+            mocked_create_rl_enriched_df.assert_called_once_with(rl_df = rl_df)
+            mocked_create_rl_rating_five_df.assert_called_once_with(rl_enriched_df = rl_enriched_df, setting_bag = setting_bag)
+            mocked_create_rl_most_underlines_df.assert_called_once_with(rl_enriched_df = rl_enriched_df, setting_bag = setting_bag)
+            mocked_create_rls_by_month_tpl.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
+            mocked_create_rls_by_year_df.assert_called_once_with(rls_by_month_tpl = rls_by_month_tpl, rl_df = rl_df, setting_bag = setting_bag)
+            mocked_create_rls_by_range_df.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
+            mocked_create_rls_by_topic_df.assert_called_once_with(rl_df = rl_df)
+            mocked_create_rls_by_topic_trend_df.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
+            mocked_create_rls_by_publisher_tpl.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
+            mocked_create_rls_by_rating_df.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
+            mocked_create_rls_by_underlines_df.assert_called_once_with(rl_enriched_df = rl_enriched_df)
+            mocked_create_definitions_df.assert_called_once_with()
+            mocked_create_rls_by_kbsize_df.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
+
+            self.mocked_rs_highlighter.highlight_rls_by_month.assert_called()
+            self.mocked_rs_highlighter.highlight_rls_by_year.assert_called_once_with(rls_by_year_df = rls_by_year_df)
 class ReadingListProcessorTestCase(unittest.TestCase):
 
     @parameterized.expand([
