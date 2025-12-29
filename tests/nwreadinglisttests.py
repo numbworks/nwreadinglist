@@ -284,7 +284,8 @@ class ObjectMother():
             options_report = [OPTION.save_html, OPTION.save_pdf],
             read_years = YearProvider().get_all_years(),
             excel_path = DefaultPathProvider().get_default_reading_list_path(),
-            excel_nrows = 323
+            excel_nrows = 323,
+            enable_rs_highlighting = False
         )
 
         return setting_bag
