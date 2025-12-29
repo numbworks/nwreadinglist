@@ -135,7 +135,7 @@ class RLSummary():
     rls_by_range_df : DataFrame
     rls_by_topic_df : DataFrame
     rls_by_topic_trend_df : DataFrame
-    rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str]
+    rls_by_publisher_tpl : Tuple[DataFrame, str]
     rls_by_rating_df : DataFrame
     rls_by_underlines_df : DataFrame
     definitions_df : DataFrame
@@ -1527,9 +1527,9 @@ class RLDataFrameFactory():
             min_ab_perc : float, 
             min_avgrating : float,
             n : Optional[int],             
-            criteria : Optional[Literal["Yes", "No"]]) -> Tuple[DataFrame, DataFrame, str]:
+            criteria : Optional[Literal["Yes", "No"]]) -> Tuple[DataFrame, str]:
         
-        """The method returns (rls_by_publisher_df, rls_by_publisher_flt_df, rls_by_publisher_footer)."""
+        """The method returns (rls_by_publisher_df, rls_by_publisher_footer)."""
   
         by_books_df, by_kbsize_df = self.__create_rls_by_publisher_step_1(rl_df)
         rls_by_publisher_df : DataFrame = self.__create_rls_by_publisher_step_2(by_books_df, by_kbsize_df, rounding_digits)
@@ -1555,7 +1555,7 @@ class RLDataFrameFactory():
             publisher_min_avgrating = min_avgrating
         )
 
-        return (rls_by_publisher_df, rls_by_publisher_df, rls_by_publisher_footer)
+        return (rls_by_publisher_df, rls_by_publisher_footer)
     def create_rls_by_rating_df(self, rl_df : DataFrame, number_as_stars : bool) -> DataFrame:
 
         '''
@@ -1916,11 +1916,11 @@ class RLAdapter():
         )
 
         return rls_by_topic_trend_df    
-    def create_rls_by_publisher_tpl(self, rl_df : DataFrame, setting_bag : SettingBag) -> Tuple[DataFrame, DataFrame, str]:
+    def create_rls_by_publisher_tpl(self, rl_df : DataFrame, setting_bag : SettingBag) -> Tuple[DataFrame, str]:
 
         '''Creates the expected dataframe using setting_bag and the provided arguments.'''
 
-        rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.__df_factory.create_rls_by_publisher_tpl(
+        rls_by_publisher_tpl : Tuple[DataFrame, str] = self.__df_factory.create_rls_by_publisher_tpl(
             rl_df = rl_df,
             rounding_digits = setting_bag.rounding_digits,
             min_books = setting_bag.rls_by_publisher_min_books,
@@ -1968,7 +1968,7 @@ class RLAdapter():
         rls_by_range_df : DataFrame = self.create_rls_by_range_df(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_topic_df : DataFrame = self.__df_factory.create_rls_by_topic_df(rl_df = rl_df)
         rls_by_topic_trend_df : DataFrame = self.create_rls_by_topic_trend_df(rl_df = rl_df, setting_bag = setting_bag)
-        rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = self.create_rls_by_publisher_tpl(rl_df = rl_df, setting_bag = setting_bag)
+        rls_by_publisher_tpl : Tuple[DataFrame, str] = self.create_rls_by_publisher_tpl(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_rating_df : DataFrame = self.create_rls_by_rating_df(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_underlines_df : DataFrame = self.__df_factory.create_rls_by_underlines_df(rl_enriched_df = rl_enriched_df)
         definitions_df : DataFrame = self.__df_factory.create_definitions_df()
@@ -2112,7 +2112,7 @@ class RLReportManager():
         html_sections.append(self.__create_html(rl_summary.rls_by_range_df, REPORTSTR.RLSBYRANGE, formatters))
         html_sections.append(self.__create_html(rl_summary.rls_by_topic_df, REPORTSTR.RLSBYTOPIC, formatters))
         html_sections.append(self.__create_html(rl_summary.rls_by_topic_trend_df, REPORTSTR.RLSBYTOPICTREND, formatters))
-        html_sections.append(self.__create_html(rl_summary.rls_by_publisher_tpl[1], REPORTSTR.RLSBYPUBLISHER, formatters, rl_summary.rls_by_publisher_tpl[2]))
+        html_sections.append(self.__create_html(rl_summary.rls_by_publisher_tpl[0], REPORTSTR.RLSBYPUBLISHER, formatters, rl_summary.rls_by_publisher_tpl[1]))
         html_sections.append(self.__create_html(rl_summary.rls_by_rating_df, REPORTSTR.RLSBYRATING, formatters))
         html_sections.append(self.__create_html(rl_summary.rl_rating_five_df, REPORTSTR.RLRATINGFIVE, formatters))
         html_sections.append(self.__create_html(rl_summary.rls_by_underlines_df, REPORTSTR.RLSBYUNDERLINES, formatters))
@@ -2396,9 +2396,9 @@ class ReadingListProcessor():
         self.__validate_summary()
 
         options : list = self.__setting_bag.options_rls_by_publisher
-        df : DataFrame = self.__rl_summary.rls_by_publisher_tpl[1]
+        df : DataFrame = self.__rl_summary.rls_by_publisher_tpl[0]
         formatters : dict = self.__setting_bag.rls_by_publisher_formatters
-        footer : str = self.__rl_summary.rls_by_publisher_tpl[2] + "\n"
+        footer : str = self.__rl_summary.rls_by_publisher_tpl[1] + "\n"
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df, formatters = formatters)

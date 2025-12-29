@@ -207,7 +207,7 @@ class ObjectMother():
             RLCN.A4SHEETS: np.array([0, 1, 0], dtype = np.int64)
         }, index=pd.RangeIndex(start=0, stop=3, step=1))
     @staticmethod
-    def get_rls_by_publisher_tpl() -> Tuple[DataFrame, DataFrame, str]:
+    def get_rls_by_publisher_tpl() -> Tuple[DataFrame, str]:
 
         rls_by_publisher_df : DataFrame = DataFrame({
             RLCN.PUBLISHER: np.array(["Self-Published", "Packt", "CRC Press", "MLI", "Apress", "O'Reilly", "Manning", "Pearson Education", "Pragmatic Bookshelf"], dtype=object),
@@ -219,19 +219,9 @@ class ObjectMother():
             RLCN.ISWORTH: np.array(["No", "No", "No", "No", "No", "No", "No", "No", "No"], dtype=object)
         }, index=pd.Index([0, 1, 2, 3, 4, 5, 6, 7, 8], dtype="int64"))
 
-        rls_by_publisher_flt_df : DataFrame = DataFrame({
-            RLCN.PUBLISHER: np.array([], dtype=object),
-            RLCN.BOOKS: np.array([], dtype=np.int64),
-            RLCN.AVGRATING: np.array([], dtype=float64),
-            RLCN.A4SHEETS: np.array([], dtype=np.int64),
-            RLCN.ABPERC: np.array([], dtype=float64),
-            RLCN.AVGUNDERLINES: np.array([], dtype=float64),
-            RLCN.ISWORTH: np.array([], dtype=object)
-        }, index=pd.Index([], dtype="int64"))
-
         rls_by_publisher_footer : str = "'Yes' if 'Books' >= '8' & ('AvgRating' >= '100' | 'AB%' >= '2.5')"
     
-        return (rls_by_publisher_df, rls_by_publisher_flt_df, rls_by_publisher_footer)  
+        return (rls_by_publisher_df, rls_by_publisher_footer)  
     @staticmethod
     def get_rls_by_rating_df() -> DataFrame:
 
@@ -314,9 +304,9 @@ class RLSummaryTestCase(unittest.TestCase):
         
         # Arrange
         df : DataFrame = DataFrame({"col1": [1, 2], "col2": [3, 4]})
-        tpl : Tuple[DataFrame, DataFrame] = (df, df)
+        rls_by_month_tpl : Tuple[DataFrame, DataFrame] = (df, df)
         footer : str = "Some Markdown footer."
-        tpl_footer: Tuple[DataFrame, DataFrame, str] = (df, df, footer)
+        rls_by_publisher_tpl: Tuple[DataFrame, str] = (df, footer)
 
         # Act
         rl_summary : RLSummary = RLSummary(
@@ -324,12 +314,12 @@ class RLSummaryTestCase(unittest.TestCase):
             rl_enriched_df = df,
             rl_rating_five_df = df,
             rl_most_underlines_df = df,
-            rls_by_month_tpl = tpl,
+            rls_by_month_tpl = rls_by_month_tpl,
             rls_by_year_df = df,
             rls_by_range_df = df,
             rls_by_topic_df = df,
             rls_by_topic_trend_df = df,
-            rls_by_publisher_tpl = tpl_footer,
+            rls_by_publisher_tpl = rls_by_publisher_tpl,
             rls_by_rating_df = df,
             rls_by_underlines_df = df,
             definitions_df = df,
@@ -349,8 +339,7 @@ class RLSummaryTestCase(unittest.TestCase):
         assert_frame_equal(rl_summary.rls_by_topic_df, df)
         assert_frame_equal(rl_summary.rls_by_topic_trend_df, df)
         assert_frame_equal(rl_summary.rls_by_publisher_tpl[0], df)
-        assert_frame_equal(rl_summary.rls_by_publisher_tpl[1], df)
-        self.assertEqual(rl_summary.rls_by_publisher_tpl[2], footer)
+        self.assertEqual(rl_summary.rls_by_publisher_tpl[1], footer)
         assert_frame_equal(rl_summary.rls_by_rating_df, df)
         assert_frame_equal(rl_summary.definitions_df, df)
 
@@ -689,7 +678,7 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         self.rls_by_publisher_min_books : int = 8
         self.rls_by_publisher_min_ab_perc : float = 2.50
         self.rls_by_publisher_min_avgrating : float = 100
-        self.rls_by_publisher_criteria : Literal["Yes", "No"] = "Yes"
+        self.rls_by_publisher_criteria : Optional[Literal["Yes", "No"]] = None
         self.rls_by_topic_trend_sparklines_maximum : bool = True
         self.rounding_digits : int = 2
 
@@ -796,23 +785,22 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         
         # Arrange
         rl_df : DataFrame = ObjectMother().get_rl_tpl()[0]
-        (expected_1, expected_2, expected_3) = ObjectMother().get_rls_by_publisher_tpl()
+        (expected_1, expected_2) = ObjectMother().get_rls_by_publisher_tpl()
 
         # Act
-        (actual_1, actual_2, actual_3) = self.df_factory.create_rls_by_publisher_tpl(
+        (actual_1, actual_2) = self.df_factory.create_rls_by_publisher_tpl(
             rl_df = rl_df,
             rounding_digits = 2,
             min_books = self.rls_by_publisher_min_books,
             min_ab_perc = self.rls_by_publisher_min_ab_perc,
             min_avgrating = self.rls_by_publisher_min_avgrating,
-            n = None,
+            n = self.rls_by_publisher_n,
             criteria = self.rls_by_publisher_criteria
         )
 
         # Assert
         assert_frame_equal(expected_1, actual_1)
-        assert_frame_equal(expected_2, actual_2)
-        self.assertEqual(expected_3, actual_3)
+        self.assertEqual(expected_2, actual_2)
     def test_createrlsbyratingdf_shouldreturnexpecteddataframe_whenformattedratingequalstotrue(self):
         
         # Arrange
@@ -1374,7 +1362,7 @@ class RLAdapterTestCase(unittest.TestCase):
         rls_by_range_df : DataFrame = ObjectMother.get_rls_by_range_df()
         rls_by_topic_df : DataFrame = ObjectMother.get_rls_by_topic_df()
         rls_by_topic_trend_df : DataFrame = ObjectMother.get_rls_by_topic_trend_df()
-        rls_by_publisher_tpl : Tuple[DataFrame, DataFrame, str] = ObjectMother.get_rls_by_publisher_tpl()
+        rls_by_publisher_tpl : Tuple[DataFrame, str] = ObjectMother.get_rls_by_publisher_tpl()
 
         rls_by_kbsize_df : DataFrame = ObjectMother.get_rls_by_kbsize_df()
         rls_by_rating_df : DataFrame = ObjectMother.get_rls_by_rating_df()
@@ -1412,8 +1400,7 @@ class RLAdapterTestCase(unittest.TestCase):
         assert_frame_equal(actual.rls_by_topic_df, rls_by_topic_df)
         assert_frame_equal(actual.rls_by_topic_trend_df, rls_by_topic_trend_df)
         assert_frame_equal(actual.rls_by_publisher_tpl[0], rls_by_publisher_tpl[0])
-        assert_frame_equal(actual.rls_by_publisher_tpl[1], rls_by_publisher_tpl[1])
-        self.assertEqual(actual.rls_by_publisher_tpl[2], rls_by_publisher_tpl[2])
+        self.assertEqual(actual.rls_by_publisher_tpl[1], rls_by_publisher_tpl[1])
 
         assert_frame_equal(actual.rls_by_kbsize_df, rls_by_kbsize_df)
         assert_frame_equal(actual.rls_by_rating_df, rls_by_rating_df)
@@ -1499,7 +1486,7 @@ class RLReportManagerTestCase(unittest.TestCase):
             rls_by_range_df = empty_df,
             rls_by_topic_df = empty_df,
             rls_by_topic_trend_df = empty_df,
-            rls_by_publisher_tpl = (empty_df, empty_df, ""),
+            rls_by_publisher_tpl = (empty_df, ""),
             rls_by_rating_df = empty_df,
             rls_by_underlines_df = empty_df,
             definitions_df = empty_df,
@@ -1644,7 +1631,7 @@ class RLReportManagerTestCase(unittest.TestCase):
         expected_call_02 : _Call = call(self.rl_summary.rls_by_range_df, REPORTSTR.RLSBYRANGE, formatters)
         expected_call_03 : _Call = call(self.rl_summary.rls_by_topic_df, REPORTSTR.RLSBYTOPIC, formatters)
         expected_call_04 : _Call = call(self.rl_summary.rls_by_topic_trend_df, REPORTSTR.RLSBYTOPICTREND, formatters)
-        expected_call_05 : _Call = call(self.rl_summary.rls_by_publisher_tpl[1], REPORTSTR.RLSBYPUBLISHER, formatters, self.rl_summary.rls_by_publisher_tpl[2])
+        expected_call_05 : _Call = call(self.rl_summary.rls_by_publisher_tpl[0], REPORTSTR.RLSBYPUBLISHER, formatters, self.rl_summary.rls_by_publisher_tpl[1])
         expected_call_06 : _Call = call(self.rl_summary.rls_by_rating_df, REPORTSTR.RLSBYRATING, formatters)
         expected_call_07 : _Call = call(self.rl_summary.rl_rating_five_df, REPORTSTR.RLRATINGFIVE, formatters)
         expected_call_08 : _Call = call(self.rl_summary.rls_by_underlines_df, REPORTSTR.RLSBYUNDERLINES, formatters)
@@ -2029,7 +2016,7 @@ class ReadingListProcessorTestCase(unittest.TestCase):
 
         # Arrange
         rls_by_publisher_df : Mock = Mock()
-        rls_by_publisher_tpl : tuple = ("ignored", rls_by_publisher_df, "FOOTER")
+        rls_by_publisher_tpl : Tuple[DataFrame, str] = (rls_by_publisher_df, "FOOTER")
 
         rl_summary : Mock = Mock()
         rl_summary.rls_by_publisher_tpl = rls_by_publisher_tpl
@@ -2064,7 +2051,7 @@ class ReadingListProcessorTestCase(unittest.TestCase):
         publisher_df.head.return_value = Mock()
 
         footer : str = "FOOTER"
-        rls_by_publisher_tpl : tuple = (publisher_df, "ignored", footer)
+        rls_by_publisher_tpl : Tuple[DataFrame, str] = (publisher_df, footer)
 
         rl_summary : Mock = Mock()
         rl_summary.rls_by_publisher_tpl = rls_by_publisher_tpl
