@@ -73,6 +73,8 @@ class DEFINITIONSTR(StrEnum):
     DEFINITION = "Definition"
     RL = "rl"
     RLS = "rls"
+    READINGLIST = "Reading List"
+    READINGSTATUS = "Reading Status"
 class OPTION(StrEnum):
 
     '''Represents a collection of options.'''
@@ -1603,13 +1605,15 @@ class RLDataFrameFactory():
         columns : list[str] = [DEFINITIONSTR.TERM, DEFINITIONSTR.DEFINITION]
 
         definitions : dict[str, str] = {
-            DEFINITIONSTR.RL: "Reading List",
-            DEFINITIONSTR.RLS: "Reading List Summary",
-            RLCN.KBSIZE: "This metric is the word count of the notes I took about a given book",
-            RLCN.A4SHEETS: f"'{RLCN.KBSIZE}' converted into amount of A4 sheets",
-            RLCN.ABPERC: f"Calculated with the following formula: '({RLCN.A4SHEETS} / {RLCN.BOOKS}) * 100'",
-            RLCN.UNDERLINES: "Underlines are sentences that express a fundamental concept that can be understood as-is",
-            RLCN.UPERC: f"Calculated with the following formula: '({RLCN.UNDERLINES} / Average of Underlines) * 100'"
+            DEFINITIONSTR.READINGLIST: f"A {DEFINITIONSTR.READINGLIST} is a list of books read as part of a continuous learning process.",
+            RLCN.TOPIC: f"A {RLCN.TOPIC} is a category label that best summarizes a book's content.",
+            RLCN.KBSIZE: "This metric is the total word count of the notes taken while reading a given book.",
+            RLCN.A4SHEETS: f"This metric represents {RLCN.KBSIZE} converted to the corresponding amount of A4 sheets (500 words ≅ 1 A4 sheet). The higher the amount, the better the book.",
+            RLCN.ABPERC: f"For a given publisher, {RLCN.ABPERC} is calculated as the total number of {RLCN.A4SHEETS} of notes taken across all books read from that publisher. The higher is {RLCN.ABPERC}, the better the publisher.",
+            RLCN.UNDERLINES: "Underlines are sentences that express a fundamental concept that can be understood as-is.",
+            RLCN.UPERC: f"For a given book, {RLCN.UPERC} is calculated as the number of {RLCN.UNDERLINES} in that book compared with the average number of {RLCN.UNDERLINES} across the entire reading list. The higher the {RLCN.UPERC}, the better the book.",
+            DEFINITIONSTR.READINGSTATUS: f"A {DEFINITIONSTR.READINGSTATUS} is a string that reports, at a specified time grain, the number of books read and the corresponding total pages.",
+            f"{RLCN.TREND} ({RLCN.TRENDSYMBOL})": "A trend is a gamification metric that indicates whether a measure (e.g., total books read) has increased or decreased over time."
         }
         
         definitions_df : DataFrame = DataFrame(
