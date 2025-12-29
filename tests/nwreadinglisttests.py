@@ -393,17 +393,22 @@ class SettingBagTestCase(unittest.TestCase):
         options_rls_by_underlines : list[Literal[OPTION.display]] = [OPTION.display]                                # type: ignore[valid-type]
         options_definitions : list[Literal[OPTION.display]] = [OPTION.display]                                      # type: ignore[valid-type]
         options_report : list[Literal[OPTION.save_html, OPTION.save_pdf]] = [OPTION.save_html, OPTION.save_pdf]     # type: ignore[valid-type]
-
-        options_rl : list[Literal[OPTION.display]] = [OPTION.display]                                               # type: ignore[valid-type]
-        options_rl_enriched : list[Literal[OPTION.display]] = [OPTION.display]                                      # type: ignore[valid-type]
-        options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = [OPTION.display, OPTION.plot]          # type: ignore[valid-type]
-        options_rls_by_books_year : list[Literal[OPTION.plot]] = [OPTION.plot]                                      # type: ignore[valid-type]
         read_years : list[int] = [2022, 2023]
         excel_path : str = "Reading List.xlsx"
         excel_nrows : int = 100
+
+        options_rl : list[Literal[OPTION.display]] = [OPTION.display]                                               # type: ignore[valid-type]
+        options_rl_enriched : list[Literal[OPTION.display]] = [OPTION.display]                                      # type: ignore[valid-type]
+        options_rls_by_books_year : list[Literal[OPTION.plot]] = [OPTION.plot]                                      # type: ignore[valid-type]
+        options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = [OPTION.display, OPTION.plot]          # type: ignore[valid-type]
         excel_skiprows : int = 0
         excel_tabname : str = "Books"
         excel_null_value : str = "-"
+        working_folder_path : str = "/home/nwreadinglist/"
+        rounding_digits : int = 2
+        now : datetime = datetime.now()
+        enable_rs_highlighting : bool = True
+        report_last_update : datetime = datetime.now()
         rl_most_underlines_formatters : dict[str, str] = {"AvgRating": "{:.2f}", "AB%": "{:.2f}", "AvgUnderlines": "{:.2f}"}
         rls_by_kbsize_ascending : bool = False
         rls_by_kbsize_remove_if_zero : bool = True
@@ -416,9 +421,6 @@ class SettingBagTestCase(unittest.TestCase):
         rls_by_publisher_min_ab_perc : float = 100.0
         rls_by_publisher_criteria : Literal["Yes", "No"] = "Yes"
         rls_by_topic_bt_sparklines_maximum : bool = False
-        working_folder_path : str = "/home/nwreadinglist/"
-        now : datetime = datetime.now()
-        rounding_digits : int = 2
 
         # Act
         setting_bag : SettingBag = SettingBag(
@@ -474,20 +476,22 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.options_rls_by_rating, options_rls_by_rating)
         self.assertEqual(setting_bag.options_definitions, options_definitions)
         self.assertEqual(setting_bag.options_report, options_report)
+        self.assertEqual(setting_bag.read_years, read_years)
+        self.assertEqual(setting_bag.excel_path, excel_path)
+        self.assertEqual(setting_bag.excel_nrows, excel_nrows)
 
         self.assertEqual(setting_bag.options_rl, options_rl)
         self.assertEqual(setting_bag.options_rl_enriched, options_rl_enriched)
         self.assertEqual(setting_bag.options_rls_by_books_year, options_rls_by_books_year)
         self.assertEqual(setting_bag.options_rls_by_kbsize, options_rls_by_kbsize)
-        self.assertEqual(setting_bag.read_years, read_years)
-        self.assertEqual(setting_bag.excel_path, excel_path)
-        self.assertEqual(setting_bag.excel_nrows, excel_nrows)
         self.assertEqual(setting_bag.excel_skiprows, excel_skiprows)
         self.assertEqual(setting_bag.excel_tabname, excel_tabname)
         self.assertEqual(setting_bag.excel_null_value, excel_null_value)
         self.assertEqual(setting_bag.working_folder_path, working_folder_path)
         self.assertEqual(setting_bag.rounding_digits, rounding_digits)
         self.assertEqual(setting_bag.now, now)
+        self.assertEqual(setting_bag.enable_rs_highlighting, enable_rs_highlighting)
+        self.assertEqual(setting_bag.report_last_update, report_last_update)
         self.assertEqual(setting_bag.rl_most_underlines_formatters, rl_most_underlines_formatters)
         self.assertEqual(setting_bag.rls_by_kbsize_ascending, rls_by_kbsize_ascending)
         self.assertEqual(setting_bag.rls_by_kbsize_remove_if_zero, rls_by_kbsize_remove_if_zero)
@@ -1160,7 +1164,10 @@ class RLAdapterTestCase(unittest.TestCase):
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
+        rl_adapter : RLAdapter = RLAdapter(
+            df_factory = df_factory, 
+            rs_highlighter = RSHighlighter(
+                df_helper = RLDataFrameHelper()))
 
         setting_bag : SettingBag = Mock()
         setting_bag.excel_path = self.excel_path
@@ -1184,7 +1191,10 @@ class RLAdapterTestCase(unittest.TestCase):
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
+        rl_adapter : RLAdapter = RLAdapter(
+            df_factory = df_factory, 
+            rs_highlighter = RSHighlighter(
+                df_helper = RLDataFrameHelper()))
 
         setting_bag : SettingBag = Mock()
         setting_bag.read_years = self.read_years
@@ -1205,7 +1215,10 @@ class RLAdapterTestCase(unittest.TestCase):
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
+        rl_adapter : RLAdapter = RLAdapter(
+            df_factory = df_factory, 
+            rs_highlighter = RSHighlighter(
+                df_helper = RLDataFrameHelper()))
 
         setting_bag : SettingBag = Mock()
         setting_bag.read_years = self.read_years
@@ -1232,7 +1245,10 @@ class RLAdapterTestCase(unittest.TestCase):
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
+        rl_adapter : RLAdapter = RLAdapter(
+            df_factory = df_factory, 
+            rs_highlighter = RSHighlighter(
+                df_helper = RLDataFrameHelper()))
 
         setting_bag : SettingBag = Mock()
         setting_bag.rounding_digits = self.rounding_digits
@@ -1253,7 +1269,10 @@ class RLAdapterTestCase(unittest.TestCase):
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
+        rl_adapter : RLAdapter = RLAdapter(
+            df_factory = df_factory, 
+            rs_highlighter = RSHighlighter(
+                df_helper = RLDataFrameHelper()))
 
         setting_bag : SettingBag = Mock()
         setting_bag.rls_by_kbsize_n = self.rls_by_kbsize_n
@@ -1276,7 +1295,10 @@ class RLAdapterTestCase(unittest.TestCase):
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
+        rl_adapter : RLAdapter = RLAdapter(
+            df_factory = df_factory, 
+            rs_highlighter = RSHighlighter(
+                df_helper = RLDataFrameHelper()))
 
         setting_bag : SettingBag = Mock()
         setting_bag.rounding_digits = self.rounding_digits
@@ -1303,7 +1325,10 @@ class RLAdapterTestCase(unittest.TestCase):
         
         # Arrange
         df_factory : RLDataFrameFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
+        rl_adapter : RLAdapter = RLAdapter(
+            df_factory = df_factory, 
+            rs_highlighter = RSHighlighter(
+                df_helper = RLDataFrameHelper()))
 
         setting_bag : SettingBag = Mock()
         setting_bag.rls_by_rating_number_as_stars = self.rls_by_rating_number_as_stars
@@ -1347,7 +1372,10 @@ class RLAdapterTestCase(unittest.TestCase):
         df_factory.create_rls_by_rating_df = Mock(return_value = rls_by_rating_df)
         df_factory.create_definitions_df.return_value = definitions_df
 
-        rl_adapter : RLAdapter = RLAdapter(df_factory = df_factory)
+        rl_adapter : RLAdapter = RLAdapter(
+            df_factory = df_factory, 
+            rs_highlighter = RSHighlighter(
+                df_helper = RLDataFrameHelper()))
         setting_bag : SettingBag = ObjectMother.get_setting_bag()
 
         # Act

@@ -202,6 +202,7 @@ class SettingBag():
     working_folder_path : str = field(default = "/home/nwreadinglist/")
     rounding_digits : int = field(default = 2)
     now : datetime = field(default = datetime.now())
+    enable_rs_highlighting : bool = field(default = True)
     report_last_update : datetime = field(default = datetime.now())
     rl_most_underlines_formatters : dict = field(default_factory = lambda : { RLCN.AVGUNDERLINES : "{:.2f}", RLCN.UPERC : "{:.2f}" })
     rls_by_kbsize_n : int = field(default = 10)
@@ -1818,10 +1819,12 @@ class RLAdapter():
     '''Adapts SettingBag properties for use in RL*Factory methods.'''
 
     __df_factory : RLDataFrameFactory
+    __rs_highlighter : RSHighlighter
 
-    def __init__(self, df_factory : RLDataFrameFactory) -> None:
+    def __init__(self, df_factory : RLDataFrameFactory, rs_highlighter : RSHighlighter) -> None:
         
         self.__df_factory = df_factory
+        self.__rs_highlighter = rs_highlighter
 
     def create_rl_df(self, setting_bag : SettingBag) -> DataFrame:
 
@@ -1964,6 +1967,12 @@ class RLAdapter():
         definitions_df : DataFrame = self.__df_factory.create_definitions_df()
 
         rls_by_kbsize_df : DataFrame = self.create_rls_by_kbsize_df(rl_df = rl_df, setting_bag = setting_bag)
+
+        if setting_bag.enable_rs_highlighting:
+            rls_by_month_tpl = (
+                self.__rs_highlighter.highlight_rls_by_month(rls_by_month_df = rls_by_month_tpl[0]),
+                self.__rs_highlighter.highlight_rls_by_month(rls_by_month_df = rls_by_month_tpl[1]))
+            rls_by_year_df = self.__rs_highlighter.highlight_rls_by_year(rls_by_year_df = rls_by_year_df)
 
         rl_summary : RLSummary = RLSummary(
             rl_df = rl_df,
@@ -2188,9 +2197,10 @@ class ComponentBag():
     rlr_manager : RLReportManager = field(default = RLReportManager(formatter = Formatter()))
     rl_adapter : RLAdapter = field(default = RLAdapter(
         df_factory = RLDataFrameFactory(
-                        converter = Converter(),
-                        formatter = Formatter(),
-                        df_helper = RLDataFrameHelper())))
+            converter = Converter(),
+            formatter = Formatter(),
+            df_helper = RLDataFrameHelper()),
+        rs_highlighter = RSHighlighter(df_helper = RLDataFrameHelper())))
 class ReadingListProcessor():
 
     '''Collects all the logic related to the processing of "Reading List.xlsx".'''
