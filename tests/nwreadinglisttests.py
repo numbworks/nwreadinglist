@@ -394,7 +394,7 @@ class SettingBagTestCase(unittest.TestCase):
 
         options_rl : list[Literal[OPTION.display]] = [OPTION.display]                                               # type: ignore[valid-type]
         options_rl_enriched : list[Literal[OPTION.display]] = [OPTION.display]                                      # type: ignore[valid-type]
-        options_rls_by_books_year : list[Literal[OPTION.plot]] = [OPTION.plot]                                      # type: ignore[valid-type]
+        options_rld_by_books_year : list[Literal[OPTION.plot]] = [OPTION.plot]                                      # type: ignore[valid-type]
         options_rld_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = [OPTION.display, OPTION.plot]          # type: ignore[valid-type]
         excel_skiprows : int = 0
         excel_tabname : str = "Books"
@@ -438,7 +438,7 @@ class SettingBagTestCase(unittest.TestCase):
             options_rl = options_rl,
             options_rl_enriched = options_rl_enriched,
             options_rld_by_kbsize = options_rld_by_kbsize,
-            options_rls_by_books_year = options_rls_by_books_year,
+            options_rld_by_books_year = options_rld_by_books_year,
             excel_skiprows = excel_skiprows,
             excel_tabname = excel_tabname,
             excel_null_value = excel_null_value,
@@ -479,7 +479,7 @@ class SettingBagTestCase(unittest.TestCase):
 
         self.assertEqual(setting_bag.options_rl, options_rl)
         self.assertEqual(setting_bag.options_rl_enriched, options_rl_enriched)
-        self.assertEqual(setting_bag.options_rls_by_books_year, options_rls_by_books_year)
+        self.assertEqual(setting_bag.options_rld_by_books_year, options_rld_by_books_year)
         self.assertEqual(setting_bag.options_rld_by_kbsize, options_rld_by_kbsize)
         self.assertEqual(setting_bag.excel_skiprows, excel_skiprows)
         self.assertEqual(setting_bag.excel_tabname, excel_tabname)
@@ -2208,12 +2208,12 @@ class ReadingListProcessorTestCase(unittest.TestCase):
         component_bag.rl_adapter = rl_adapter
 
         setting_bag : Mock = Mock()
-        setting_bag.options_rls_by_books_year = [OPTION.plot]
+        setting_bag.options_rld_by_books_year = [OPTION.plot]
 
         # Act
         rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
         rl_processor.initialize()
-        rl_processor.process_rls_by_books_year()
+        rl_processor.process_rld_by_books_year()
 
         # Assert
         plot_manager.show_box_plot.assert_called_once_with(df = rl_df, x_name = RLCN.YEAR)
@@ -2310,9 +2310,9 @@ class ReadingListProcessorTestCase(unittest.TestCase):
         ["process_rls_by_publisher"],
         ["process_rls_by_rating"],
         ["process_rls_by_underlines"],
-        ["process_definitions"],
         ["process_rld_by_kbsize"],
-        ["process_rls_by_books_year"],
+        ["process_rld_by_books_year"],
+        ["process_definitions"],
         ["get_summary"],
         ["save_as_report"]
     ])

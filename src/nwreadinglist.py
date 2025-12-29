@@ -192,7 +192,7 @@ class SettingBag():
 	# With Defaults
     options_rl : list[Literal[OPTION.display]] = field(default_factory = list)
     options_rl_enriched : list[Literal[OPTION.display]] = field(default_factory = list)
-    options_rls_by_books_year : list[Literal[OPTION.plot]] = field(default_factory = list)
+    options_rld_by_books_year : list[Literal[OPTION.plot]] = field(default_factory = list)
     options_rld_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = field(default_factory = list)
     excel_skiprows : int = field(default = 0)
     excel_tabname : str = field(default = "Books")
@@ -2447,6 +2447,22 @@ class ReadingListProcessor():
 
         if OPTION.plot in options:
             self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)
+    def process_rld_by_books_year(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rld_by_books_year.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_rld_by_books_year
+        df : DataFrame = self.__rl_summary.rl_df
+        x_name : str = RLCN.YEAR
+
+        if OPTION.plot in options:
+            self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)
     def process_definitions(self) -> None:
 
         '''
@@ -2462,23 +2478,6 @@ class ReadingListProcessor():
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df)
-
-    def process_rls_by_books_year(self) -> None:
-
-        '''
-            Performs all the actions listed in __setting_bag.options_rl_by_books_year.
-            
-            It raises an exception if the 'initialize' method has not been run yet.
-        '''
-
-        self.__validate_summary()
-
-        options : list = self.__setting_bag.options_rls_by_books_year
-        df : DataFrame = self.__rl_summary.rl_df
-        x_name : str = RLCN.YEAR
-
-        if OPTION.plot in options:
-            self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)
     
     def get_summary(self) -> RLSummary:
 
