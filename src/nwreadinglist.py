@@ -138,9 +138,8 @@ class RLSummary():
     rls_by_publisher_tpl : Tuple[DataFrame, str]
     rls_by_rating_df : DataFrame
     rls_by_underlines_df : DataFrame
+    rld_by_kbsize_df : DataFrame
     definitions_df : DataFrame
-
-    rls_by_kbsize_df : DataFrame
 
 # CLASSES
 class DefaultPathProvider():
@@ -194,7 +193,7 @@ class SettingBag():
     options_rl : list[Literal[OPTION.display]] = field(default_factory = list)
     options_rl_enriched : list[Literal[OPTION.display]] = field(default_factory = list)
     options_rls_by_books_year : list[Literal[OPTION.plot]] = field(default_factory = list)
-    options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = field(default_factory = list)
+    options_rld_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = field(default_factory = list)
     excel_skiprows : int = field(default = 0)
     excel_tabname : str = field(default = "Books")
     excel_null_value : str = field(default = "-")
@@ -204,9 +203,9 @@ class SettingBag():
     enable_rs_highlighting : bool = field(default = True)
     report_last_update : datetime = field(default = datetime.now())
     rl_most_underlines_formatters : dict = field(default_factory = lambda : { RLCN.AVGUNDERLINES : "{:.2f}", RLCN.UPERC : "{:.2f}" })
-    rls_by_kbsize_n : int = field(default = 10)
-    rls_by_kbsize_ascending : bool = field(default = False)
-    rls_by_kbsize_remove_if_zero : bool = field(default = True)
+    rld_by_kbsize_n : int = field(default = 10)
+    rld_by_kbsize_ascending : bool = field(default = False)
+    rld_by_kbsize_remove_if_zero : bool = field(default = True)
     rls_by_publisher_n : Optional[int] = field(default = 15)
     rls_by_publisher_formatters : dict = field(default_factory = lambda : { RLCN.AVGRATING : "{:.2f}", RLCN.ABPERC : "{:.2f}", RLCN.AVGUNDERLINES : "{:.2f}" })
     rls_by_publisher_min_books : int = field(default = 8)
@@ -1601,6 +1600,24 @@ class RLDataFrameFactory():
                 .reset_index(name = RLCN.BOOKS))
 
         return rls_by_underlines_df
+    def create_rld_by_kbsize_df(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool, n : int) -> DataFrame:
+        
+        '''
+            Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
+            1	    Machine Learning For Dummies	                2017	Data Analysis, Data Science, ML	Wiley	4	    3732	8
+            2	    Machine Learning Projects for .NET Developers	2017	Data Analysis, Data Science, ML	Apress	4	    3272	7        
+            ...
+        '''
+
+        rld_by_kbsize_df : DataFrame = self.__slice_by_kbsize(
+            rl_df = rl_df, 
+            ascending = ascending, 
+            remove_if_zero = remove_if_zero)
+        
+        rld_by_kbsize_df = self.__converter.convert_index_to_one_based(df = rld_by_kbsize_df)
+        rld_by_kbsize_df = rld_by_kbsize_df.head(n = n)
+
+        return rld_by_kbsize_df
     def create_definitions_df(self) -> DataFrame:
 
         '''Creates a dataframe containing all the definitions in use in this application.'''
@@ -1625,25 +1642,6 @@ class RLDataFrameFactory():
         )
 
         return definitions_df    
-    
-    def create_rls_by_kbsize_df(self, rl_df : DataFrame, ascending : bool, remove_if_zero : bool, n : int) -> DataFrame:
-        
-        '''
-            Title	ReadYear	                                    Topic	Publisher	                            Rating	KBSize	A4Sheets
-            1	    Machine Learning For Dummies	                2017	Data Analysis, Data Science, ML	Wiley	4	    3732	8
-            2	    Machine Learning Projects for .NET Developers	2017	Data Analysis, Data Science, ML	Apress	4	    3272	7        
-            ...
-        '''
-
-        rl_by_kbsize_df : DataFrame = self.__slice_by_kbsize(
-            rl_df = rl_df, 
-            ascending = ascending, 
-            remove_if_zero = remove_if_zero)
-        
-        rl_by_kbsize_df = self.__converter.convert_index_to_one_based(df = rl_by_kbsize_df)
-        rl_by_kbsize_df = rl_by_kbsize_df.head(n = n)
-
-        return rl_by_kbsize_df   
 @dataclass(frozen = True)
 class RSCell():
     
@@ -1939,19 +1937,18 @@ class RLAdapter():
         )
 
         return rls_by_rating_df     
-
-    def create_rls_by_kbsize_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
+    def create_rld_by_kbsize_df(self, rl_df : DataFrame, setting_bag : SettingBag) -> DataFrame:
 
         '''Creates the expected dataframe using setting_bag and the provided arguments.'''
 
-        rls_by_kbsize_df : DataFrame = self.__df_factory.create_rls_by_kbsize_df(
+        rld_by_kbsize_df : DataFrame = self.__df_factory.create_rld_by_kbsize_df(
             rl_df = rl_df,
-            ascending = setting_bag.rls_by_kbsize_ascending,
-            remove_if_zero = setting_bag.rls_by_kbsize_remove_if_zero,
-            n = setting_bag.rls_by_kbsize_n
+            ascending = setting_bag.rld_by_kbsize_ascending,
+            remove_if_zero = setting_bag.rld_by_kbsize_remove_if_zero,
+            n = setting_bag.rld_by_kbsize_n
         )
 
-        return rls_by_kbsize_df
+        return rld_by_kbsize_df
 
     def create_summary(self, setting_bag : SettingBag) -> RLSummary:
 
@@ -1969,9 +1966,8 @@ class RLAdapter():
         rls_by_publisher_tpl : Tuple[DataFrame, str] = self.create_rls_by_publisher_tpl(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_rating_df : DataFrame = self.create_rls_by_rating_df(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_underlines_df : DataFrame = self.__df_factory.create_rls_by_underlines_df(rl_enriched_df = rl_enriched_df)
+        rld_by_kbsize_df : DataFrame = self.create_rld_by_kbsize_df(rl_df = rl_df, setting_bag = setting_bag)
         definitions_df : DataFrame = self.__df_factory.create_definitions_df()
-
-        rls_by_kbsize_df : DataFrame = self.create_rls_by_kbsize_df(rl_df = rl_df, setting_bag = setting_bag)
 
         if setting_bag.enable_rs_highlighting:
             rls_by_month_tpl = (
@@ -1992,9 +1988,8 @@ class RLAdapter():
             rls_by_publisher_tpl = rls_by_publisher_tpl,
             rls_by_rating_df = rls_by_rating_df,
             rls_by_underlines_df = rls_by_underlines_df,
-            definitions_df = definitions_df,
-
-            rls_by_kbsize_df = rls_by_kbsize_df
+            rld_by_kbsize_df = rld_by_kbsize_df,
+            definitions_df = definitions_df
         )
 
         return rl_summary
@@ -2433,6 +2428,25 @@ class ReadingListProcessor():
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df)
+    def process_rld_by_kbsize(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rld_by_kbsize.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_rld_by_kbsize
+        df : DataFrame = self.__rl_summary.rld_by_kbsize_df
+        x_name : str = RLCN.A4SHEETS
+
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df)
+
+        if OPTION.plot in options:
+            self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)
     def process_definitions(self) -> None:
 
         '''
@@ -2449,25 +2463,6 @@ class ReadingListProcessor():
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df)
 
-    def process_rls_by_kbsize(self) -> None:
-
-        '''
-            Performs all the actions listed in __setting_bag.options_rl_by_kbsize.
-            
-            It raises an exception if the 'initialize' method has not been run yet.
-        '''
-
-        self.__validate_summary()
-
-        options : list = self.__setting_bag.options_rls_by_kbsize
-        df : DataFrame = self.__rl_summary.rls_by_kbsize_df
-        x_name : str = RLCN.A4SHEETS
-
-        if OPTION.display in options:
-            self.__component_bag.displayer.display(obj = df)
-
-        if OPTION.plot in options:
-            self.__component_bag.plot_manager.show_box_plot(df = df, x_name = x_name)            
     def process_rls_by_books_year(self) -> None:
 
         '''

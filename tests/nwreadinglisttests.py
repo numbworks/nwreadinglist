@@ -160,7 +160,7 @@ class ObjectMother():
 
         return rls_by_range_df
     @staticmethod
-    def get_rls_by_kbsize_df() -> DataFrame:
+    def get_rld_by_kbsize_df() -> DataFrame:
 
         return pd.DataFrame({
             RLCN.TITLE: np.array(["ProxMox VE Administration Guide - Release 7.2"], dtype = object),
@@ -305,7 +305,7 @@ class RLSummaryTestCase(unittest.TestCase):
         # Arrange
         df : DataFrame = DataFrame({"col1": [1, 2], "col2": [3, 4]})
         rls_by_month_tpl : Tuple[DataFrame, DataFrame] = (df, df)
-        footer : str = "Some Markdown footer."
+        footer : str = "Some footer."
         rls_by_publisher_tpl: Tuple[DataFrame, str] = (df, footer)
 
         # Act
@@ -324,7 +324,7 @@ class RLSummaryTestCase(unittest.TestCase):
             rls_by_underlines_df = df,
             definitions_df = df,
 
-            rls_by_kbsize_df = df
+            rld_by_kbsize_df = df
         )
 
         # Assert
@@ -343,7 +343,7 @@ class RLSummaryTestCase(unittest.TestCase):
         assert_frame_equal(rl_summary.rls_by_rating_df, df)
         assert_frame_equal(rl_summary.definitions_df, df)
 
-        assert_frame_equal(rl_summary.rls_by_kbsize_df, df)
+        assert_frame_equal(rl_summary.rld_by_kbsize_df, df)
 class DefaultPathProviderTestCase(unittest.TestCase):
 
     def test_getdefaultreadinglistpath_shouldreturnexpectedpath_wheninvoked(self):
@@ -395,7 +395,7 @@ class SettingBagTestCase(unittest.TestCase):
         options_rl : list[Literal[OPTION.display]] = [OPTION.display]                                               # type: ignore[valid-type]
         options_rl_enriched : list[Literal[OPTION.display]] = [OPTION.display]                                      # type: ignore[valid-type]
         options_rls_by_books_year : list[Literal[OPTION.plot]] = [OPTION.plot]                                      # type: ignore[valid-type]
-        options_rls_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = [OPTION.display, OPTION.plot]          # type: ignore[valid-type]
+        options_rld_by_kbsize : list[Literal[OPTION.display, OPTION.plot]] = [OPTION.display, OPTION.plot]          # type: ignore[valid-type]
         excel_skiprows : int = 0
         excel_tabname : str = "Books"
         excel_null_value : str = "-"
@@ -404,13 +404,13 @@ class SettingBagTestCase(unittest.TestCase):
         now : datetime = datetime(2025, 12, 28, 1, 12, 13, 890)
         enable_rs_highlighting : bool = False
         report_last_update : datetime = datetime(2025, 12, 28, 1, 12, 13, 890)
-        rl_most_underlines_formatters : dict[str, str] = {"AvgRating": "{:.2f}", "AB%": "{:.2f}", "AvgUnderlines": "{:.2f}"}
-        rls_by_kbsize_ascending : bool = False
-        rls_by_kbsize_remove_if_zero : bool = True
-        rls_by_kbsize_n : int = 10
+        rl_most_underlines_formatters : dict[str, str] = {RLCN.AVGRATING: "{:.2f}", RLCN.ABPERC: "{:.2f}", RLCN.AVGUNDERLINES: "{:.2f}"}
+        rld_by_kbsize_ascending : bool = False
+        rld_by_kbsize_remove_if_zero : bool = True
+        rld_by_kbsize_n : int = 10
         rls_by_rating_number_as_stars : bool = True
         rls_by_publisher_n : Optional[int] = 10
-        rls_by_publisher_formatters : dict[str, str] = {"AvgUnderlines": "{:.2f}", "U%": "{:.2f}"}
+        rls_by_publisher_formatters : dict[str, str] = {RLCN.AVGUNDERLINES: "{:.2f}", RLCN.UPERC: "{:.2f}"}
         rls_by_publisher_min_books : int = 8
         rls_by_publisher_min_avgrating : float = 2.5
         rls_by_publisher_min_ab_perc : float = 100.0
@@ -437,7 +437,7 @@ class SettingBagTestCase(unittest.TestCase):
 
             options_rl = options_rl,
             options_rl_enriched = options_rl_enriched,
-            options_rls_by_kbsize = options_rls_by_kbsize,
+            options_rld_by_kbsize = options_rld_by_kbsize,
             options_rls_by_books_year = options_rls_by_books_year,
             excel_skiprows = excel_skiprows,
             excel_tabname = excel_tabname,
@@ -448,9 +448,9 @@ class SettingBagTestCase(unittest.TestCase):
             enable_rs_highlighting = enable_rs_highlighting,
             report_last_update = report_last_update,
             rl_most_underlines_formatters = rl_most_underlines_formatters,
-            rls_by_kbsize_ascending = rls_by_kbsize_ascending,
-            rls_by_kbsize_remove_if_zero = rls_by_kbsize_remove_if_zero,
-            rls_by_kbsize_n = rls_by_kbsize_n,
+            rld_by_kbsize_ascending = rld_by_kbsize_ascending,
+            rld_by_kbsize_remove_if_zero = rld_by_kbsize_remove_if_zero,
+            rld_by_kbsize_n = rld_by_kbsize_n,
             rls_by_publisher_n = rls_by_publisher_n,
             rls_by_publisher_formatters = rls_by_publisher_formatters,
             rls_by_publisher_min_books = rls_by_publisher_min_books,
@@ -480,7 +480,7 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.options_rl, options_rl)
         self.assertEqual(setting_bag.options_rl_enriched, options_rl_enriched)
         self.assertEqual(setting_bag.options_rls_by_books_year, options_rls_by_books_year)
-        self.assertEqual(setting_bag.options_rls_by_kbsize, options_rls_by_kbsize)
+        self.assertEqual(setting_bag.options_rld_by_kbsize, options_rld_by_kbsize)
         self.assertEqual(setting_bag.excel_skiprows, excel_skiprows)
         self.assertEqual(setting_bag.excel_tabname, excel_tabname)
         self.assertEqual(setting_bag.excel_null_value, excel_null_value)
@@ -490,9 +490,9 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.enable_rs_highlighting, enable_rs_highlighting)
         self.assertEqual(setting_bag.report_last_update, report_last_update)
         self.assertEqual(setting_bag.rl_most_underlines_formatters, rl_most_underlines_formatters)
-        self.assertEqual(setting_bag.rls_by_kbsize_ascending, rls_by_kbsize_ascending)
-        self.assertEqual(setting_bag.rls_by_kbsize_remove_if_zero, rls_by_kbsize_remove_if_zero)
-        self.assertEqual(setting_bag.rls_by_kbsize_n, rls_by_kbsize_n)
+        self.assertEqual(setting_bag.rld_by_kbsize_ascending, rld_by_kbsize_ascending)
+        self.assertEqual(setting_bag.rld_by_kbsize_remove_if_zero, rld_by_kbsize_remove_if_zero)
+        self.assertEqual(setting_bag.rld_by_kbsize_n, rld_by_kbsize_n)
         self.assertEqual(setting_bag.rls_by_publisher_n, rls_by_publisher_n)
         self.assertEqual(setting_bag.rls_by_publisher_formatters, rls_by_publisher_formatters)
         self.assertEqual(setting_bag.rls_by_publisher_min_books, rls_by_publisher_min_books)
@@ -669,9 +669,9 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         self.excel_books_skiprows : int = 0
         self.excel_books_tabname : str = "Books"
         self.excel_null_value : str = "-"
-        self.rls_by_kbsize_ascending : bool = False
-        self.rls_by_kbsize_remove_if_zero : bool = True  
-        self.rls_by_kbsize_n : int = 10
+        self.rld_by_kbsize_ascending : bool = False
+        self.rld_by_kbsize_remove_if_zero : bool = True  
+        self.rld_by_kbsize_n : int = 10
         self.rls_by_rating_number_as_stars : bool = True
         self.rls_by_publisher_n : int = 10
         self.rls_by_publisher_formatters : dict = { "AvgRating" : "{:.2f}", "AB%" : "{:.2f}" }
@@ -681,6 +681,22 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         self.rls_by_publisher_criteria : Optional[Literal["Yes", "No"]] = None
         self.rls_by_topic_trend_sparklines_maximum : bool = True
         self.rounding_digits : int = 2
+
+    def test_trycompletesabyyear_shouldreturnoriginaldataframe_whenmonthcountis12(self):
+        
+        # Arrange
+        sa_by_year_dict: dict[str, list] = {
+            RLCN.MONTH: [str(i) for i in range(1, 13)], 
+            RLCN.READYEAR: [2023] * 12
+        }
+        sa_by_year_df : DataFrame = pd.DataFrame(sa_by_year_dict)
+        read_year: int = 2023
+
+        # Act
+        actual : DataFrame = self.df_factory._RLDataFrameFactory__try_complete_sa_by_year(sa_by_year_df = sa_by_year_df, read_year = read_year) # type: ignore
+
+        # Assert
+        assert_frame_equal(sa_by_year_df, actual)
 
     def test_createrldf_shouldreturnexpecteddataframe_wheninvoked(self):
 
@@ -753,23 +769,6 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected, actual)    
-    
-    def test_createrlsbykbsizedf_shouldreturnexpecteddataframe_wheninvoked(self):
-        
-        # Arrange
-        rl_df : DataFrame = ObjectMother().get_rl_tpl()[0]
-        expected : DataFrame = ObjectMother().get_rls_by_kbsize_df()
-
-        # Act
-        actual : DataFrame = self.df_factory.create_rls_by_kbsize_df(
-            rl_df = rl_df,
-            ascending = self.rls_by_kbsize_ascending,
-            remove_if_zero = self.rls_by_kbsize_remove_if_zero,
-            n = self.rls_by_kbsize_n
-        )
-
-        # Assert
-        assert_frame_equal(expected, actual)
     def test_createrlsbytopicdf_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
@@ -837,21 +836,23 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected, actual)
-    def test_trycompletesabyyear_shouldreturnoriginaldataframe_whenmonthcountis12(self):
+
+    def test_createrldbykbsizedf_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
-        sa_by_year_dict: dict[str, list] = {
-            RLCN.MONTH: [str(i) for i in range(1, 13)], 
-            RLCN.READYEAR: [2023] * 12
-        }
-        sa_by_year_df : DataFrame = pd.DataFrame(sa_by_year_dict)
-        read_year: int = 2023
+        rl_df : DataFrame = ObjectMother().get_rl_tpl()[0]
+        expected : DataFrame = ObjectMother().get_rld_by_kbsize_df()
 
         # Act
-        actual : DataFrame = self.df_factory._RLDataFrameFactory__try_complete_sa_by_year(sa_by_year_df = sa_by_year_df, read_year = read_year) # type: ignore
+        actual : DataFrame = self.df_factory.create_rld_by_kbsize_df(
+            rl_df = rl_df,
+            ascending = self.rld_by_kbsize_ascending,
+            remove_if_zero = self.rld_by_kbsize_remove_if_zero,
+            n = self.rld_by_kbsize_n
+        )
 
         # Assert
-        assert_frame_equal(sa_by_year_df, actual)
+        assert_frame_equal(expected, actual)
 class RSCellTestCase(unittest.TestCase):
 
     def test_init_shouldinitializeobjectwithexpectedproperties_whenvalidarguments(self) -> None:
@@ -1148,9 +1149,9 @@ class RLAdapterTestCase(unittest.TestCase):
         self.excel_null_value : str = "-"
         self.rounding_digits : int = 2
         self.now : datetime = datetime(2024, 1, 1)
-        self.rls_by_kbsize_n  : int = 5
-        self.rls_by_kbsize_ascending : bool = True
-        self.rls_by_kbsize_remove_if_zero : bool = False
+        self.rld_by_kbsize_n  : int = 5
+        self.rld_by_kbsize_ascending : bool = True
+        self.rld_by_kbsize_remove_if_zero : bool = False
         self.rls_by_publisher_n = None
         self.rls_by_publisher_min_books : int = 8
         self.rls_by_publisher_min_ab_perc : float = 100
@@ -1270,33 +1271,6 @@ class RLAdapterTestCase(unittest.TestCase):
             rl_df = rl_df,
             rounding_digits = self.rounding_digits
         )        
-
-    def test_createrlsbykbdf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
-        
-        # Arrange
-        df_factory : RLDataFrameFactory = Mock()
-        rl_adapter : RLAdapter = RLAdapter(
-            df_factory = df_factory, 
-            rs_highlighter = RSHighlighter(
-                df_helper = RLDataFrameHelper()))
-
-        setting_bag : SettingBag = Mock()
-        setting_bag.rls_by_kbsize_n = self.rls_by_kbsize_n
-        setting_bag.rls_by_kbsize_ascending = self.rls_by_kbsize_ascending
-        setting_bag.rls_by_kbsize_remove_if_zero = self.rls_by_kbsize_remove_if_zero
-
-        rl_df : DataFrame = Mock()
-
-        # Act
-        rl_adapter.create_rls_by_kbsize_df(rl_df = rl_df, setting_bag = setting_bag)
-
-        # Assert
-        df_factory.create_rls_by_kbsize_df.assert_called_once_with(
-            rl_df = rl_df,
-            n = self.rls_by_kbsize_n,
-            ascending = self.rls_by_kbsize_ascending,
-            remove_if_zero = self.rls_by_kbsize_remove_if_zero,
-        )
     def test_createrlsbypublishertpl_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
         
         # Arrange
@@ -1351,6 +1325,33 @@ class RLAdapterTestCase(unittest.TestCase):
             rl_df = rl_df,
             number_as_stars = self.rls_by_rating_number_as_stars
         )
+    
+    def test_createrldbykbdf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
+        
+        # Arrange
+        df_factory : RLDataFrameFactory = Mock()
+        rl_adapter : RLAdapter = RLAdapter(
+            df_factory = df_factory, 
+            rs_highlighter = RSHighlighter(
+                df_helper = RLDataFrameHelper()))
+
+        setting_bag : SettingBag = Mock()
+        setting_bag.rld_by_kbsize_n = self.rld_by_kbsize_n
+        setting_bag.rld_by_kbsize_ascending = self.rld_by_kbsize_ascending
+        setting_bag.rld_by_kbsize_remove_if_zero = self.rld_by_kbsize_remove_if_zero
+
+        rl_df : DataFrame = Mock()
+
+        # Act
+        rl_adapter.create_rld_by_kbsize_df(rl_df = rl_df, setting_bag = setting_bag)
+
+        # Assert
+        df_factory.create_rld_by_kbsize_df.assert_called_once_with(
+            rl_df = rl_df,
+            n = self.rld_by_kbsize_n,
+            ascending = self.rld_by_kbsize_ascending,
+            remove_if_zero = self.rld_by_kbsize_remove_if_zero,
+        )
 
     def test_createsummary_shouldreturnexpectedsummary_wheninvoked(self) -> None:
 
@@ -1364,7 +1365,7 @@ class RLAdapterTestCase(unittest.TestCase):
         rls_by_topic_trend_df : DataFrame = ObjectMother.get_rls_by_topic_trend_df()
         rls_by_publisher_tpl : Tuple[DataFrame, str] = ObjectMother.get_rls_by_publisher_tpl()
 
-        rls_by_kbsize_df : DataFrame = ObjectMother.get_rls_by_kbsize_df()
+        rld_by_kbsize_df : DataFrame = ObjectMother.get_rld_by_kbsize_df()
         rls_by_rating_df : DataFrame = ObjectMother.get_rls_by_rating_df()
         definitions_df : DataFrame = ObjectMother.get_definitions_df()
 
@@ -1377,7 +1378,7 @@ class RLAdapterTestCase(unittest.TestCase):
         df_factory.create_rls_by_topic_trend_df = Mock(return_value = rls_by_topic_trend_df)
         df_factory.create_rls_by_publisher_tpl = Mock(return_value = rls_by_publisher_tpl)
 
-        df_factory.create_rls_by_kbsize_df = Mock(return_value = rls_by_kbsize_df)
+        df_factory.create_rld_by_kbsize_df = Mock(return_value = rld_by_kbsize_df)
         df_factory.create_rls_by_rating_df = Mock(return_value = rls_by_rating_df)
         df_factory.create_definitions_df.return_value = definitions_df
 
@@ -1402,7 +1403,7 @@ class RLAdapterTestCase(unittest.TestCase):
         assert_frame_equal(actual.rls_by_publisher_tpl[0], rls_by_publisher_tpl[0])
         self.assertEqual(actual.rls_by_publisher_tpl[1], rls_by_publisher_tpl[1])
 
-        assert_frame_equal(actual.rls_by_kbsize_df, rls_by_kbsize_df)
+        assert_frame_equal(actual.rld_by_kbsize_df, rld_by_kbsize_df)
         assert_frame_equal(actual.rls_by_rating_df, rls_by_rating_df)
         assert_frame_equal(actual.definitions_df, definitions_df)
     def test_createsummary_shouldperformexpectedcalls_wheninvoked(self) -> None:
@@ -1423,7 +1424,7 @@ class RLAdapterTestCase(unittest.TestCase):
         rls_by_rating_df : DataFrame = DataFrame()
         rls_by_underlines_df : DataFrame = DataFrame()
         definitions_df : DataFrame = DataFrame()
-        rls_by_kbsize_df : DataFrame = DataFrame()
+        rld_by_kbsize_df : DataFrame = DataFrame()
 
         setting_bag : SettingBag = ObjectMother.get_setting_bag(enable_rs_highlighting = True)
 
@@ -1440,8 +1441,8 @@ class RLAdapterTestCase(unittest.TestCase):
             patch.object(self.adapter, "create_rls_by_publisher_tpl", return_value = rls_by_publisher_tpl) as mocked_create_rls_by_publisher_tpl,
             patch.object(self.adapter, "create_rls_by_rating_df", return_value = rls_by_rating_df) as mocked_create_rls_by_rating_df,
             patch.object(self.mocked_df_factory, "create_rls_by_underlines_df", return_value = rls_by_underlines_df) as mocked_create_rls_by_underlines_df,
-            patch.object(self.mocked_df_factory, "create_definitions_df", return_value = definitions_df) as mocked_create_definitions_df,
-            patch.object(self.adapter, "create_rls_by_kbsize_df", return_value = rls_by_kbsize_df) as mocked_create_rls_by_kbsize_df
+            patch.object(self.adapter, "create_rld_by_kbsize_df", return_value = rld_by_kbsize_df) as mocked_create_rld_by_kbsize_df,
+            patch.object(self.mocked_df_factory, "create_definitions_df", return_value = definitions_df) as mocked_create_definitions_df
         ):
 
             self.mocked_rs_highlighter.highlight_rls_by_month = Mock(return_value = rls_by_month_df_a)
@@ -1463,8 +1464,8 @@ class RLAdapterTestCase(unittest.TestCase):
             mocked_create_rls_by_publisher_tpl.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
             mocked_create_rls_by_rating_df.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
             mocked_create_rls_by_underlines_df.assert_called_once_with(rl_enriched_df = rl_enriched_df)
+            mocked_create_rld_by_kbsize_df.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
             mocked_create_definitions_df.assert_called_once_with()
-            mocked_create_rls_by_kbsize_df.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
 
             self.mocked_rs_highlighter.highlight_rls_by_month.assert_called()
             self.mocked_rs_highlighter.highlight_rls_by_year.assert_called_once_with(rls_by_year_df = rls_by_year_df)
@@ -1490,7 +1491,7 @@ class RLReportManagerTestCase(unittest.TestCase):
             rls_by_rating_df = empty_df,
             rls_by_underlines_df = empty_df,
             definitions_df = empty_df,
-            rls_by_kbsize_df = empty_df
+            rld_by_kbsize_df = empty_df
         )
 
         self.rl_enriched_df : DataFrame = DataFrame(data = {
@@ -2163,10 +2164,10 @@ class ReadingListProcessorTestCase(unittest.TestCase):
     def test_processrlsbykbsize_shoulddisplayandplot_whenoptionsaredisplayandplot(self) -> None:
 
         # Arrange
-        rls_by_kbsize_df : DataFrame = Mock()
+        rld_by_kbsize_df : DataFrame = Mock()
 
         rl_summary : Mock = Mock()
-        rl_summary.rls_by_kbsize_df = rls_by_kbsize_df
+        rl_summary.rld_by_kbsize_df = rld_by_kbsize_df
 
         displayer : Mock = Mock()
         plot_manager : Mock = Mock()
@@ -2180,16 +2181,16 @@ class ReadingListProcessorTestCase(unittest.TestCase):
         component_bag.rl_adapter = rl_adapter
 
         setting_bag : Mock = Mock()
-        setting_bag.options_rls_by_kbsize = [OPTION.display, OPTION.plot]
+        setting_bag.options_rld_by_kbsize = [OPTION.display, OPTION.plot]
 
         # Act
         rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
         rl_processor.initialize()
-        rl_processor.process_rls_by_kbsize()
+        rl_processor.process_rld_by_kbsize()
 
         # Assert
-        displayer.display.assert_called_once_with(obj = rls_by_kbsize_df)
-        plot_manager.show_box_plot.assert_called_once_with(df = rls_by_kbsize_df, x_name = RLCN.A4SHEETS)
+        displayer.display.assert_called_once_with(obj = rld_by_kbsize_df)
+        plot_manager.show_box_plot.assert_called_once_with(df = rld_by_kbsize_df, x_name = RLCN.A4SHEETS)
     def test_processrlsbybooksyear_shouldplot_whenoptionisplot(self) -> None:
 
         # Arrange
@@ -2310,7 +2311,7 @@ class ReadingListProcessorTestCase(unittest.TestCase):
         ["process_rls_by_rating"],
         ["process_rls_by_underlines"],
         ["process_definitions"],
-        ["process_rls_by_kbsize"],
+        ["process_rld_by_kbsize"],
         ["process_rls_by_books_year"],
         ["get_summary"],
         ["save_as_report"]
