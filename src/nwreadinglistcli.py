@@ -61,9 +61,17 @@ class _MessageCollectionValidator:
     @staticmethod
     def provided_nrows_less_one(nrows : str) -> str:
         return f"The provided 'nrows' can't be less than one: '{nrows}'."
+class _MessageCollectionCLIManager:
+
+    '''Collects all the messages used for logging and for the exceptions used by CLIManager.'''
+
+    @staticmethod
+    def report_successfully_saved() -> str:
+        return "The report has been successfully saved."
 class _MessageCollection(
         _MessageCollectionAsciiBannerManager,
-        _MessageCollectionValidator):
+        _MessageCollectionValidator,
+        _MessageCollectionCLIManager):
 
     '''Collects all the messages used for logging and for the exceptions.'''
 
@@ -326,23 +334,32 @@ class CLIManager():
         )
 
         return setting_bag
-    def __dispatch(self, namespace : Namespace) -> None:
+    def __run_when_save(self, namespace : Namespace) -> None:
         
         '''Dispatches the provided arguments to the corresponding actions.'''
-       
-        if not namespace.folder_path:
-            namespace.folder_path = self.__get_cwd_path()
+
+        component_bag : ComponentBag = ComponentBag()
 
         setting_bag : SettingBag = self.__create_setting_bag(
             input_path = namespace.input_path,
             nrows = namespace.nrows,
             folder_path = namespace.folder_path
         )
-        component_bag : ComponentBag = ComponentBag()
 
         rl_processor : ReadingListProcessor = self.__rl_factory.create(component_bag, setting_bag)
         rl_processor.initialize()
         rl_processor.save_as_report()
+
+        self.__logging_function(_MessageCollection.report_successfully_saved())
+    def __dispatch(self, namespace : Namespace) -> None:
+        
+        '''Dispatches the provided arguments to the corresponding actions.'''
+
+        if not namespace.folder_path:
+            namespace.folder_path = self.__get_cwd_path()
+
+        if namespace.command == CLISTRING.COMMAND_SAVE_NAME:
+            self.__run_when_save(namespace)
 
     def run_and_log(self) -> None:
 
