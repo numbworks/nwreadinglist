@@ -10,7 +10,7 @@ Contact: numbworks@gmail.com
 
 From the documentation:
 
-> `nwreadinglist` is a library that can run several automated data‑analysis tasks on a reading list and save the results as a PDF report. It’s designed to facilitate and gamify a continuous learning journey.
+> `nwreadinglist` is a library that can run several automated data analysis tasks on a reading list and save the results as a PDF report. It's designed to facilitate and gamify a continuous learning journey.
 
 > `nwreadinglistcli` is a command-line application built on the top of `nwreadinglist`.
 

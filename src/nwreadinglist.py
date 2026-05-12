@@ -1,7 +1,7 @@
 '''
-A collection of components to handle "Reading List.xlsx".
+A library that can run several automated data analysis tasks on a reading list and save the results as a PDF report.
 
-Alias: nwrl
+Alias: nwread
 '''
 
 # GLOBAL MODULES
@@ -120,7 +120,7 @@ class _MessageCollection():
     def provided_mode_not_supported(mode : RSMODE):
         return f"The provided mode is not supported: '{mode}'."
 
-# DTOs
+# CLASSES
 @dataclass(frozen=True)
 class RLSummary():
 
@@ -140,8 +140,6 @@ class RLSummary():
     rls_by_underlines_df : DataFrame
     rld_by_kbsize_df : DataFrame
     definitions_df : DataFrame
-
-# CLASSES
 class DefaultPathProvider():
 
     '''Responsible for proviving the default path to the dataset.'''
