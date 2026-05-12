@@ -1,5 +1,5 @@
 # GLOBAL MODULES
-from argparse import _SubParsersAction, ArgumentParser
+from argparse import _SubParsersAction, ArgumentParser, Namespace
 import importlib
 from io import StringIO
 import numpy as np
@@ -20,7 +20,7 @@ from unittest.mock import _Call, Mock, call, patch
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
 from nwreadinglist import ComponentBag, ReadingListProcessor, SettingBag
-from nwreadinglistcli import CLISTRING, APFactory, AsciiBannerManager, _MessageCollection, CLIValidator, ReadingListProcessorFactory, Validator
+from nwreadinglistcli import CLISTRING, APFactory, AsciiBannerManager, _MessageCollection, CLIManager, CLIValidator, ReadingListProcessorFactory, Validator
 
 # SUPPORT METHODS
 # TEST CLASSES
@@ -198,6 +198,38 @@ class ReadingListProcessorFactoryTestCase(unittest.TestCase):
         self.assertIsInstance(actual, ReadingListProcessor)
         self.assertEqual(actual._ReadingListProcessor__component_bag, component_bag)  # type: ignore
         self.assertEqual(actual._ReadingListProcessor__setting_bag, setting_bag)      # type: ignore
+class CLIManagerTestCase(unittest.TestCase):
+
+    def test_lognamespace_shouldlogallarguments_wheninvoked(self) -> None:
+
+        # Arrange
+        namespace : Namespace = Namespace(input_path = "readinglist.xlsx", output_path = "readinglist.pdf")
+        logging_function : Mock = Mock()
+        cli_manager : CLIManager = CLIManager(logging_function = logging_function)
+
+        # Act
+        cli_manager._CLIManager__log_namespace(namespace = namespace) # type: ignore
+
+        # Assert
+        self.assertEqual(logging_function.call_count, 3)
+        logging_function.assert_any_call("input_path: 'readinglist.xlsx'")
+        logging_function.assert_any_call("output_path: 'readinglist.pdf'")
+        logging_function.assert_any_call("")
+    
+    def test_getdefaultoutputpath_shouldreturnexpectedstring_wheninvoked(self) -> None:
+
+        # Arrange
+        input_path : str = "readinglist.xlsx"
+        expected : str = "/current/directory/readinglist.pdf"
+        
+        with patch("os.getcwd", return_value = "/current/directory"), \
+             patch("os.path.splitext", return_value = ("readinglist", ".xlsx")):
+            
+            # Act
+            actual : str = CLIManager()._CLIManager__get_default_output_path(input_path = input_path)  # type: ignore
+
+            # Assert
+            self.assertEqual(expected, actual)   
 
 # MAIN
 if __name__ == "__main__":

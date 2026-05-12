@@ -218,6 +218,31 @@ class CLIManager():
         self.__rl_factory = rl_factory
         self.__logging_function = logging_function
 
+    def __log_ascii_banner(self) -> None:
+
+        '''Logs the ASCII banner.'''
+
+        self.__logging_function(self.__ascii_banner_manager.create(PROJECT_VERSION))
+    def __log_namespace(self, namespace : Namespace):
+
+        '''Logs the provided args.'''
+
+        for key, value in vars(namespace).items():
+            self.__logging_function(f"{key}: '{value}'")
+            
+        self.__logging_function("")
+
+    def __get_default_output_path(self, input_path : str) -> str:
+
+        '''
+            Example:
+                - filename.xlsx => <current_folder>/filename.pdf
+        '''
+
+        base_name : str = os.path.splitext(input_path)[0]
+        output_path : str = os.path.join(os.getcwd(), f"{base_name}.pdf")
+
+        return output_path
 
 # MAIN
 def main(): pass
