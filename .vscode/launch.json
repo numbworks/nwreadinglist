@@ -8,7 +8,15 @@
             "request": "launch",
             "program": "${workspaceFolder}/src/nwreadinglistcli.py",
             "console": "integratedTerminal",
-            "args": ["save"],
+            "args": [
+                "save", 
+                "--input_path", 
+                "/workspaces/nwreadinglist/data/Reading List.xlsx", 
+                "--nrows", 
+                "371",
+                "--folder_path",
+                "/home/nwreadinglist/"
+            ],
             "justMyCode": true
         }
     ]

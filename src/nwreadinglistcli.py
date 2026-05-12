@@ -213,7 +213,7 @@ class APFactory():
             help = CLISTRING.OPTION_NROWS_HELP,
             type = self.__cli_validator.validate_nrows
         )
-    def __add_option_output_path(self, argument_parser : ArgumentParser) -> None:
+    def __add_option_folder_path(self, argument_parser : ArgumentParser) -> None:
         
         '''Adds the option mentioned in the method name.'''
         
@@ -222,7 +222,7 @@ class APFactory():
             dest = CLISTRING.OPTION_FOLDERPATH_DEST,
             required = CLISTRING.OPTION_FOLDERPATH_REQUIRED,
             help = CLISTRING.OPTION_FOLDERPATH_HELP,
-            type = self.__cli_validator.validate_file_path
+            type = self.__cli_validator.validate_folder_path
         )
 
     def create(self) -> ArgumentParser:
@@ -245,7 +245,7 @@ class APFactory():
 
         self.__add_option_input_path(saveparser)
         self.__add_option_nrows(saveparser)
-        self.__add_option_output_path(saveparser)
+        self.__add_option_folder_path(saveparser)
 
         return argument_parser
 class ReadingListProcessorFactory:
