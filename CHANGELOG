@@ -1,3 +1,13 @@
+v6.0.0 - BREAKING CHANGES
+- Application:
+	- Feature: added support for AsciiBanner, streamlined command-line interface.
+- Maintenance:
+	- Moved from a devcontainer to a named devcontainer, upgraded pip (24.3.1 -> 26.0.1), added timezone support.
+	- Added support for nwbuilders and nwmakefiles.
+	- Removed nwshared as dependency.
+- Documentation:
+	- Feature: updated to v6.0.0.
+
 v5.1.0
 - Library:
 	- Feature: added the possibility to highlight reading statuses.
