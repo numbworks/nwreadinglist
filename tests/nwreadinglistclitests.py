@@ -5,12 +5,12 @@ import unittest
 from argparse import _SubParsersAction, ArgumentParser, Namespace
 from io import StringIO
 from parameterized import parameterized
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
 from nwreadinglist import ComponentBag, ReadingListProcessor, SettingBag
-from nwreadinglistcli import CLISTRING, APFactory, AsciiBannerManager, _MessageCollection
+from nwreadinglistcli import CLISTRING, _MessageCollectionCLIManager, APFactory, AsciiBannerManager, _MessageCollection
 from nwreadinglistcli import CLIManager, CLIValidator, ReadingListProcessorFactory, Validator
 
 # SUPPORT METHODS
@@ -328,6 +328,82 @@ class CLIManagerTestCase(unittest.TestCase):
 
             # Assert
             self.assertEqual(expected, actual)   
+
+    def test_runandlog_shouldcallexpectedmethods_whencommandissave(self) -> None:
+
+        # Arrange       
+        namespace : Namespace = Namespace(
+            command = CLISTRING.COMMAND_SAVE_NAME,
+            input_path = "Reading List.xlsx",
+            nrows = "371",
+            folder_path = "/home/nwreadinglist/"
+        )
+
+        argument_parser : MagicMock = MagicMock(spec = ArgumentParser)
+        argument_parser.parse_args.return_value = namespace
+
+        ap_factory : MagicMock = MagicMock(spec = APFactory)
+        ap_factory.create.return_value = argument_parser
+
+        rl_processor : MagicMock = MagicMock(spec = ReadingListProcessor)
+        rl_factory : MagicMock = MagicMock(spec = ReadingListProcessorFactory)
+        rl_factory.create.return_value = rl_processor
+
+        logging_function : MagicMock = MagicMock()
+        message : str = _MessageCollectionCLIManager.pdf_report_successfully_saved()
+
+        cli_manager : CLIManager = CLIManager(
+            ap_factory = ap_factory,
+            rl_factory = rl_factory,
+            logging_function = logging_function
+        )
+
+        # Act
+        with patch.object(cli_manager, "_CLIManager__log_ascii_banner") as log_ascii_banner, \
+             patch.object(cli_manager, "_CLIManager__log_namespace") as log_namespace, \
+             patch("nwreadinglistcli.YearProvider.get_all_years", return_value = [2023, 2024]), \
+             patch("nwreadinglistcli._MessageCollection.pdf_report_successfully_saved", return_value = message):
+
+            cli_manager.run_and_log()
+
+            # Assert
+            log_ascii_banner.assert_called_once()
+            ap_factory.create.assert_called_once()
+            argument_parser.parse_args.assert_called_once()
+            log_namespace.assert_called_once_with(namespace)
+            
+            rl_factory.create.assert_called_once()
+            rl_processor.initialize.assert_called_once()
+            rl_processor.save_as_report.assert_called_once()
+            logging_function.assert_any_call(message)
+    def test_runandlog_shouldsetdefaultfolderpath_whenfolderpathisnotprovided(self) -> None:
+
+        # Arrange
+        cwd_path : str = "/current/working/dir"
+        namespace : Namespace = Namespace(
+            command = CLISTRING.COMMAND_SAVE_NAME,
+            input_path = "Reading List.xlsx",
+            nrows = "371",
+            folder_path = None
+        )
+
+        argument_parser : MagicMock = MagicMock(spec = ArgumentParser)
+        argument_parser.parse_args.return_value = namespace
+
+        ap_factory : MagicMock = MagicMock(spec = APFactory)
+        ap_factory.create.return_value = argument_parser
+
+        cli_manager : CLIManager = CLIManager(ap_factory = ap_factory)
+
+        # Act
+        with patch.object(cli_manager, "_CLIManager__log_ascii_banner"), \
+             patch.object(cli_manager, "_CLIManager__log_namespace"), \
+             patch.object(cli_manager, "_CLIManager__get_cwd_path", return_value = cwd_path):
+
+            cli_manager.run_and_log()
+
+            # Assert
+            self.assertEqual(namespace.folder_path, cwd_path)
 
 # MAIN
 if __name__ == "__main__":

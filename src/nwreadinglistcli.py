@@ -66,7 +66,7 @@ class _MessageCollectionCLIManager:
     '''Collects all the messages used for logging and for the exceptions used by CLIManager.'''
 
     @staticmethod
-    def report_successfully_saved() -> str:
+    def pdf_report_successfully_saved() -> str:
         return "The PDF report has been successfully saved."
 class _MessageCollection(
         _MessageCollectionAsciiBannerManager,
@@ -350,7 +350,7 @@ class CLIManager():
         rl_processor.initialize()
         rl_processor.save_as_report()
 
-        self.__logging_function(_MessageCollection.report_successfully_saved())
+        self.__logging_function(_MessageCollection.pdf_report_successfully_saved())
     def __dispatch(self, namespace : Namespace) -> None:
         
         '''Dispatches the provided arguments to the corresponding actions.'''
