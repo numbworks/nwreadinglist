@@ -196,6 +196,62 @@ class CLIValidatorTestCase(unittest.TestCase):
                 CLIValidator().validate_file_path(file_path = file_path)
             
             self.assertEqual(message, str(context.exception))
+
+    def test_validatefolderpath_shouldreturnfolderpath_whenvalidfolderpath(self) -> None:
+
+        # Arrange
+        folder_path : str = "valid_folder/"
+
+        # Act
+        with patch("nwreadinglistcli.Validator.validate_folder_path") as validate_folder_path:
+            validate_folder_path.return_value = None
+            actual : str = CLIValidator().validate_folder_path(folder_path = folder_path)
+
+        # Assert
+        self.assertEqual(folder_path, actual)
+    def test_validatefolderpath_shouldraiseexception_wheninvalidfolderpath(self) -> None:
+
+        # Arrange
+        folder_path : str = "invalid_folder/"
+        message : str = "The provided 'folder_path' doesn't exist: 'invalid_folder/'."
+
+        # Act, Assert
+        with patch("nwreadinglistcli.Validator") as validator_class:
+            validator_instance = validator_class.return_value
+            validator_instance.validate_folder_path.side_effect = Exception(message)
+            
+            with self.assertRaises(Exception) as context:
+                CLIValidator().validate_folder_path(folder_path = folder_path)
+            
+            self.assertEqual(message, str(context.exception))
+
+    def test_validatenrows_shouldreturnnrows_whenvalidnrows(self) -> None:
+
+        # Arrange
+        nrows : str = "10"
+
+        # Act
+        with patch("nwreadinglistcli.Validator.validate_nrows") as validate_nrows:
+            validate_nrows.return_value = None
+            actual : str = CLIValidator().validate_nrows(nrows = nrows)
+
+        # Assert
+        self.assertEqual(nrows, actual)
+    def test_validatenrows_shouldraiseexception_wheninvalidnrows(self) -> None:
+
+        # Arrange
+        nrows : str = "-1"
+        message : str = "The provided 'nrows' must be greater than or equal to 1."
+
+        # Act, Assert
+        with patch("nwreadinglistcli.Validator") as validator_class:
+            validator_instance = validator_class.return_value
+            validator_instance.validate_nrows.side_effect = Exception(message)
+            
+            with self.assertRaises(Exception) as context:
+                CLIValidator().validate_nrows(nrows = nrows)
+            
+            self.assertEqual(message, str(context.exception))
 class APFactoryTestCase(unittest.TestCase):
 
     @parameterized.expand([
@@ -267,19 +323,17 @@ class CLIManagerTestCase(unittest.TestCase):
         logging_function.assert_any_call("input_path: 'readinglist.xlsx'")
         logging_function.assert_any_call("nrows: '371'")
         logging_function.assert_any_call("folder_path: '/current/directory/'")
-        logging_function.assert_any_call("")
+        logging_function.assert_any_call("")   
     
     def test_getdefaultoutputpath_shouldreturnexpectedstring_wheninvoked(self) -> None:
 
         # Arrange
-        input_path : str = "readinglist.xlsx"
-        expected : str = "/current/directory/readinglist.pdf"
+        expected : str = "/current/directory/"
         
-        with patch("os.getcwd", return_value = "/current/directory"), \
-             patch("os.path.splitext", return_value = ("readinglist", ".xlsx")):
+        with patch("os.getcwd", return_value = "/current/directory/"):
             
             # Act
-            actual : str = CLIManager()._CLIManager__get_default_output_path(input_path = input_path)  # type: ignore
+            actual : str = CLIManager()._CLIManager__get_cwd_path()  # type: ignore
 
             # Assert
             self.assertEqual(expected, actual)   
