@@ -4,7 +4,7 @@
 
 # GLOBAL MODULES
 import os
-from argparse import ArgumentParser, Namespace
+from argparse import _SubParsersAction, ArgumentParser, Namespace
 from typing import Any, Final
 
 # LOCAL/NW MODULES
@@ -20,8 +20,8 @@ class CLISTRING:
     COMMAND_REQUIRED : Final[bool] = True
     COMMAND_ARGS : dict[str, Any] = { "dest": COMMAND_DEST, "required": COMMAND_REQUIRED }
 
-    COMMAND_LOCALFETCH_NAME : Final[str] = "save"
-    COMMAND_LOCALFETCH_HELP : Final[str] = "Runs all the data analysis tasks against the reading list and save the outcome as PDF report."
+    COMMAND_SAVE_NAME : Final[str] = "save"
+    COMMAND_SAVE_HELP : Final[str] = "Runs all the data analysis tasks against the reading list and save the outcome as PDF report."
 
     OPTION_INPUTPATH_FLAGS : Final[list[str]] = ["--input_path"]
     OPTION_INPUTPATH_DEST : Final[str] = "input_path"
@@ -134,6 +134,61 @@ class CLIValidator:
         Validator().validate_file_path(file_path)
 
         return file_path
+class APFactory():
+
+    '''Encapsulates all the logic related to the creation of a custom instance of argparse.ArgumentParser.'''
+
+    __cli_validator : CLIValidator
+
+    def __init__(self, cli_validator : CLIValidator = CLIValidator()) -> None:
+        self.__cli_validator = cli_validator
+
+    def __add_option_input_path(self, argument_parser : ArgumentParser) -> None:
+        
+        '''Adds the option mentioned in the method name.'''
+        
+        argument_parser.add_argument(
+            *CLISTRING.OPTION_INPUTPATH_FLAGS,
+            dest = CLISTRING.OPTION_INPUTPATH_DEST,
+            required = CLISTRING.OPTION_INPUTPATH_REQUIRED,
+            help = CLISTRING.OPTION_INPUTPATH_HELP,
+            type = self.__cli_validator.validate_file_path
+        )
+    def __add_option_output_path(self, argument_parser : ArgumentParser) -> None:
+        
+        '''Adds the option mentioned in the method name.'''
+        
+        argument_parser.add_argument(
+            *CLISTRING.OPTION_OUTPUTPATH_FLAGS,
+            dest = CLISTRING.OPTION_OUTPUTPATH_DEST,
+            required = CLISTRING.OPTION_OUTPUTPATH_REQUIRED,
+            help = CLISTRING.OPTION_OUTPUTPATH_HELP,
+            type = self.__cli_validator.validate_file_path
+        )
+
+    def create(self) -> ArgumentParser:
+
+        '''
+            Creates a custom instance of argparse.ArgumentParser.
+
+            The "prog" argument is not provided in order to make the "usage" statement dynamic:
+
+                usage: nwreadinglistcli.py [-h] ...
+        '''
+
+        argument_parser : ArgumentParser = ArgumentParser(description = CLI_DESCRIPTION)
+        root : _SubParsersAction[ArgumentParser] = argument_parser.add_subparsers(**CLISTRING.COMMAND_ARGS)
+
+        savefetcher : ArgumentParser = root.add_parser(
+            name = CLISTRING.COMMAND_SAVE_NAME, 
+            help = CLISTRING.COMMAND_SAVE_HELP
+        )
+
+        self.__add_option_input_path(savefetcher)
+        self.__add_option_output_path(savefetcher)
+
+        return argument_parser
+
 
 # MAIN
 def main(): pass

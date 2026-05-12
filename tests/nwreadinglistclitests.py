@@ -1,5 +1,7 @@
 # GLOBAL MODULES
+from argparse import _SubParsersAction, ArgumentParser
 import importlib
+from io import StringIO
 import numpy as np
 import os
 import pandas as pd
@@ -17,7 +19,7 @@ from unittest.mock import _Call, Mock, call, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglistcli import AsciiBannerManager, _MessageCollection, CLIValidator, Validator
+from nwreadinglistcli import CLISTRING, APFactory, AsciiBannerManager, _MessageCollection, CLIValidator, Validator
 
 # SUPPORT METHODS
 # TEST CLASSES
@@ -142,6 +144,40 @@ class CLIValidatorTestCase(unittest.TestCase):
                 CLIValidator().validate_file_path(file_path = file_path)
             
             self.assertEqual(message, str(context.exception))
+class APFactoryTestCase(unittest.TestCase):
+
+    @parameterized.expand([
+        ("save", CLISTRING.OPTION_INPUTPATH_FLAGS[0]),
+        ("save", CLISTRING.OPTION_OUTPUTPATH_FLAGS[0])
+    ])
+    def test_create_shouldreturnexpectedargumentparser_wheninvoked(self, command_name : str, flag : str) -> None:
+
+        # Arrange
+        # Act
+        argument_parser : ArgumentParser = APFactory().create()
+
+        # Assert
+        self.assertIsInstance(argument_parser, ArgumentParser)
+
+        arguments : list[str] = []
+        for command in argument_parser._actions:
+            if isinstance(command, _SubParsersAction):
+                if command_name in command.choices:
+                    for action in command._name_parser_map[command_name]._actions:
+                        arguments.extend(action.option_strings)
+
+        self.assertIn(flag, arguments)
+    
+    def test_create_shouldraiseerror_whenrequiredruntimeargumentismissing(self):
+
+        # Arrange
+        args_list : list[str] = CLISTRING.OPTION_INPUTPATH_FLAGS
+        argument_parser : ArgumentParser = APFactory().create()
+
+        # Act, Assert
+        with patch("sys.stderr", new_callable = StringIO):
+            with self.assertRaises(SystemExit):
+                argument_parser.parse_args(args_list)
 
 # MAIN
 if __name__ == "__main__":
