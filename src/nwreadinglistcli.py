@@ -4,21 +4,53 @@
 
 # GLOBAL MODULES
 import os
+from argparse import ArgumentParser, Namespace
+from typing import Any, Final
 
 # LOCAL/NW MODULES
 from nwreadinglist import ReadingListProcessor, RLSummary, ComponentBag, SettingBag
+from setupinfo import PROJECT_VERSION, PROJECT_ALIAS, CLI_DESCRIPTION
 
 # CONSTANTS
+class CLISTRING:
+
+    '''Collects all the CLI-related strings.'''
+
+    COMMAND_DEST : Final[str] = "command"
+    COMMAND_REQUIRED : Final[bool] = True
+    COMMAND_ARGS : dict[str, Any] = { "dest": COMMAND_DEST, "required": COMMAND_REQUIRED }
+
+    COMMAND_LOCALFETCH_NAME : Final[str] = "save"
+    COMMAND_LOCALFETCH_HELP : Final[str] = "Runs all the data analysis tasks against the reading list and save the outcome as PDF report."
+
+    OPTION_INPUTPATH_FLAGS : Final[list[str]] = ["--input_path"]
+    OPTION_INPUTPATH_DEST : Final[str] = "input_path"
+    OPTION_INPUTPATH_REQUIRED : Final[bool] = True
+    OPTION_INPUTPATH_HELP : Final[str] = "The path to the reading list file in Excel format."
+
+    OPTION_OUTPUTPATH_FLAGS : Final[list[str]] = ["--output_path"]
+    OPTION_OUTPUTPATH_DEST : Final[str] = "output_path"
+    OPTION_OUTPUTPATH_REQUIRED : Final[bool] = False
+    OPTION_OUTPUTPATH_HELP : Final[str] = "The path to the outcome report in PDF format."
+
 # STATIC CLASSES
-class _MessageCollectionAsciiBannerManager():
+class _MessageCollectionAsciiBannerManager:
 
     '''Collects all the messages used for logging and for the exceptions.'''
 
     @staticmethod
     def provided_version_empty_whitespace() -> str:
         return "The provided 'version' is empty or whitespace."
+class _MessageCollectionValidator:
+
+    '''Collects all the messages used for logging and for the exceptions used by Validator.'''
+
+    @staticmethod
+    def provided_file_path_doesnt_exist(file_path : str) -> str:
+        return f"The provided 'file_path' doesn't exist: '{file_path}'."
 class _MessageCollection(
-        _MessageCollectionAsciiBannerManager):
+        _MessageCollectionAsciiBannerManager,
+        _MessageCollectionValidator):
 
     '''Collects all the messages used for logging and for the exceptions.'''
 
@@ -80,6 +112,28 @@ class AsciiBannerManager:
         ])
 
         return ascii_banner
+class Validator:
+
+    '''Collects all validation methods.'''
+
+    @staticmethod
+    def validate_file_path(file_path : str) -> None:
+
+        '''Returns file_path or raises Exception.'''
+        
+        if not os.path.isfile(file_path):
+            raise Exception(_MessageCollection.provided_file_path_doesnt_exist(file_path))
+class CLIValidator:
+
+    '''Handles CLI argument validation.'''
+
+    def validate_file_path(self, file_path: str) -> str:
+
+        '''Returns file_path or raises Exception.'''
+
+        Validator().validate_file_path(file_path)
+
+        return file_path
 
 # MAIN
 def main(): pass

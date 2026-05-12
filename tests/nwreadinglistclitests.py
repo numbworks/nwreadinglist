@@ -17,7 +17,7 @@ from unittest.mock import _Call, Mock, call, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglistcli import AsciiBannerManager, _MessageCollection
+from nwreadinglistcli import AsciiBannerManager, _MessageCollection, CLIValidator, Validator
 
 # SUPPORT METHODS
 # TEST CLASSES
@@ -91,6 +91,57 @@ class AsciiBannerManagerTestCase(unittest.TestCase):
             self.assertIn("top_border", actual)
             self.assertIn("ascii_art", actual)
             self.assertIn("bottom_border", actual)
+class ValidatorTestCase(unittest.TestCase):
+
+    def test_validatefilepath_shouldraiseexceptionwithexpectedmessage_whenfiledoesnotexist(self):
+
+        # Arrange
+        file_path : str = r"C:/NonExistentFile.txt"
+        expected : str = _MessageCollection.provided_file_path_doesnt_exist(file_path)
+
+        # Act, Assert
+        with patch("os.path.isfile", return_value = False):
+            with self.assertRaises(Exception) as context:
+                Validator.validate_file_path(file_path = file_path)
+            
+            self.assertEqual(str(context.exception), expected)
+    def test_validatefilepath_shoulddonothing_whenfileexists(self):
+
+        # Arrange
+        file_path : str = r"C:/Exists.txt"
+
+        # Act, Assert
+        with patch("os.path.isfile", return_value = True):
+            Validator.validate_file_path(file_path = file_path)
+class CLIValidatorTestCase(unittest.TestCase):
+
+    def test_validatefilepath_shouldreturnfilepath_whenvalidfilepath(self) -> None:
+
+        # Arrange
+        file_path : str = "valid_file.py"
+
+        # Act
+        with patch("nwreadinglistcli.Validator.validate_file_path") as validate_file_path:
+            validate_file_path.return_value = None
+            actual : str = CLIValidator().validate_file_path(file_path = file_path)
+
+        # Assert
+        self.assertEqual(file_path, actual)
+    def test_validatefilepath_shouldraiseexception_wheninvalidfilepath(self) -> None:
+
+        # Arrange
+        file_path : str = "invalid_file.py"
+        message : str = "The provided 'file_path' doesn't exist: 'invalid_file.py'."
+
+        # Act, Assert
+        with patch("nwreadinglistcli.Validator") as validator_class:
+            validator_instance = validator_class.return_value
+            validator_instance.validate_file_path.side_effect = Exception(message)
+            
+            with self.assertRaises(Exception) as context:
+                CLIValidator().validate_file_path(file_path = file_path)
+            
+            self.assertEqual(message, str(context.exception))
 
 # MAIN
 if __name__ == "__main__":
