@@ -1,26 +1,17 @@
 # GLOBAL MODULES
-from argparse import _SubParsersAction, ArgumentParser, Namespace
-import importlib
-from io import StringIO
-import numpy as np
 import os
-import pandas as pd
 import sys
 import unittest
-from datetime import datetime, date
-from numpy import float64, int32
-from pandas import DataFrame
-from pandas import RangeIndex
-from pandas.testing import assert_frame_equal
+from argparse import _SubParsersAction, ArgumentParser, Namespace
+from io import StringIO
 from parameterized import parameterized
-from pathlib import Path
-from typing import Any, Literal, Optional, Tuple, cast
-from unittest.mock import _Call, Mock, call, patch
+from unittest.mock import Mock, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
 from nwreadinglist import ComponentBag, ReadingListProcessor, SettingBag
-from nwreadinglistcli import CLISTRING, APFactory, AsciiBannerManager, _MessageCollection, CLIManager, CLIValidator, ReadingListProcessorFactory, Validator
+from nwreadinglistcli import CLISTRING, APFactory, AsciiBannerManager, _MessageCollection
+from nwreadinglistcli import CLIManager, CLIValidator, ReadingListProcessorFactory, Validator
 
 # SUPPORT METHODS
 # TEST CLASSES

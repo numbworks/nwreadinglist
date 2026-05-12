@@ -8,7 +8,7 @@ from argparse import _SubParsersAction, ArgumentParser, Namespace
 from typing import Any, Callable, Final
 
 # LOCAL/NW MODULES
-from nwreadinglist import OPTION, ReadingListProcessor, RLSummary, ComponentBag, SettingBag, YearProvider
+from nwreadinglist import OPTION, ReadingListProcessor, ComponentBag, SettingBag, YearProvider
 from setupinfo import PROJECT_VERSION, PROJECT_ALIAS, CLI_DESCRIPTION
 
 # CONSTANTS
