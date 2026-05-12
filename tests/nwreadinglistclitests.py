@@ -116,6 +116,57 @@ class ValidatorTestCase(unittest.TestCase):
         # Act, Assert
         with patch("os.path.isfile", return_value = True):
             Validator.validate_file_path(file_path = file_path)
+    
+    def test_validatefolderpath_shouldraiseexceptionwithexpectedmessage_whenfolderdoesnotexist(self):
+
+        # Arrange
+        folder_path : str = r"C:/NonExistent/"
+        expected : str = _MessageCollection.provided_path_doesnt_exist(folder_path)
+
+        # Act, Assert
+        with patch("os.path.isdir", return_value = False):
+            with self.assertRaises(Exception) as context:
+                Validator.validate_folder_path(folder_path = folder_path)
+            
+            self.assertEqual(str(context.exception), expected)
+    def test_validatefolderpath_shoulddonothing_whenfolderexists(self):
+
+        # Arrange
+        folder_path : str = r"C:/Existent/"
+
+        # Act, Assert
+        with patch("os.path.isdir", return_value = True):
+            Validator.validate_folder_path(folder_path = folder_path)
+
+    def test_validatenrows_shouldraiseexceptionwithexpectedmessage_whennrowsisnotaninteger(self):
+
+        # Arrange
+        nrows : str = "abc"
+        expected : str = _MessageCollection.provided_nrows_not_valid_integer(nrows)
+
+        # Act, Assert
+        with self.assertRaises(Exception) as context:
+            Validator.validate_nrows(nrows = nrows)
+        
+        self.assertEqual(str(context.exception), expected)
+    def test_validatenrows_shouldraiseexceptionwithexpectedmessage_whennrowsislessthanone(self):
+
+        # Arrange
+        nrows : str = "0"
+        expected : str = _MessageCollection.provided_nrows_less_one(nrows)
+
+        # Act, Assert
+        with self.assertRaises(Exception) as context:
+            Validator.validate_nrows(nrows = nrows)
+        
+        self.assertEqual(str(context.exception), expected)
+    def test_validatenrows_shoulddonothing_whennrowsisvalidinteger(self):
+
+        # Arrange
+        nrows : str = "10"
+
+        # Act, Assert
+        Validator.validate_nrows(nrows = nrows)
 class CLIValidatorTestCase(unittest.TestCase):
 
     def test_validatefilepath_shouldreturnfilepath_whenvalidfilepath(self) -> None:
