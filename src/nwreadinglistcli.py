@@ -5,7 +5,7 @@
 # GLOBAL MODULES
 import os
 from argparse import _SubParsersAction, ArgumentParser, Namespace
-from typing import Any, Final
+from typing import Any, Callable, Final
 
 # LOCAL/NW MODULES
 from nwreadinglist import ReadingListProcessor, RLSummary, ComponentBag, SettingBag
@@ -188,6 +188,35 @@ class APFactory():
         self.__add_option_output_path(savefetcher)
 
         return argument_parser
+class ReadingListProcessorFactory:
+
+    '''Factory for ReadingListProcessor.'''
+
+    def create(self, component_bag : ComponentBag, setting_bag : SettingBag) -> ReadingListProcessor:
+
+        '''Creates instances of ReadingListProcessor'''
+
+        return ReadingListProcessor(component_bag, setting_bag)
+class CLIManager():
+
+    '''Collects all the logic related to the CLI management.'''
+
+    __ap_factory : APFactory
+    __ascii_banner_manager : AsciiBannerManager
+    __rl_factory : ReadingListProcessorFactory
+    __logging_function : Callable[[str], None]
+
+    def __init__(
+        self, 
+        ap_factory : APFactory = APFactory(), 
+        ascii_banner_manager : AsciiBannerManager = AsciiBannerManager(),
+        rl_factory : ReadingListProcessorFactory = ReadingListProcessorFactory(),
+        logging_function : Callable[[str], None] = lambda msg : print(msg)) -> None:
+        
+        self.__ap_factory = ap_factory
+        self.__ascii_banner_manager = ascii_banner_manager
+        self.__rl_factory = rl_factory
+        self.__logging_function = logging_function
 
 
 # MAIN

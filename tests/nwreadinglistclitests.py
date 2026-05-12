@@ -19,7 +19,8 @@ from unittest.mock import _Call, Mock, call, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglistcli import CLISTRING, APFactory, AsciiBannerManager, _MessageCollection, CLIValidator, Validator
+from nwreadinglist import ComponentBag, ReadingListProcessor, SettingBag
+from nwreadinglistcli import CLISTRING, APFactory, AsciiBannerManager, _MessageCollection, CLIValidator, ReadingListProcessorFactory, Validator
 
 # SUPPORT METHODS
 # TEST CLASSES
@@ -178,6 +179,25 @@ class APFactoryTestCase(unittest.TestCase):
         with patch("sys.stderr", new_callable = StringIO):
             with self.assertRaises(SystemExit):
                 argument_parser.parse_args(args_list)
+class ReadingListProcessorFactoryTestCase(unittest.TestCase):
+
+    def test_create_shouldreturnreadinglistprocessor_wheninvoked(self) -> None:
+
+        # Arrange
+        component_bag : Mock = Mock(spec = ComponentBag)
+        setting_bag : Mock = Mock(spec = SettingBag)
+        factory : ReadingListProcessorFactory = ReadingListProcessorFactory()
+
+        # Act
+        actual : ReadingListProcessor = factory.create(
+            component_bag = component_bag, 
+            setting_bag = setting_bag
+        )
+
+        # Assert
+        self.assertIsInstance(actual, ReadingListProcessor)
+        self.assertEqual(actual._ReadingListProcessor__component_bag, component_bag)  # type: ignore
+        self.assertEqual(actual._ReadingListProcessor__setting_bag, setting_bag)      # type: ignore
 
 # MAIN
 if __name__ == "__main__":
