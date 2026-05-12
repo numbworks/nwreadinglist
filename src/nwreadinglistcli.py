@@ -8,7 +8,7 @@ from argparse import _SubParsersAction, ArgumentParser, Namespace
 from typing import Any, Callable, Final
 
 # LOCAL/NW MODULES
-from nwreadinglist import ReadingListProcessor, RLSummary, ComponentBag, SettingBag
+from nwreadinglist import OPTION, ReadingListProcessor, RLSummary, ComponentBag, SettingBag, YearProvider
 from setupinfo import PROJECT_VERSION, PROJECT_ALIAS, CLI_DESCRIPTION
 
 # CONSTANTS
@@ -28,10 +28,15 @@ class CLISTRING:
     OPTION_INPUTPATH_REQUIRED : Final[bool] = True
     OPTION_INPUTPATH_HELP : Final[str] = "The path to the reading list file in Excel format."
 
-    OPTION_OUTPUTPATH_FLAGS : Final[list[str]] = ["--output_path"]
-    OPTION_OUTPUTPATH_DEST : Final[str] = "output_path"
-    OPTION_OUTPUTPATH_REQUIRED : Final[bool] = False
-    OPTION_OUTPUTPATH_HELP : Final[str] = "The path to the outcome report in PDF format."
+    OPTION_NROWS_FLAGS : Final[list[str]] = ["--nrows"]
+    OPTION_NROWS_DEST : Final[str] = "nrows"
+    OPTION_NROWS_REQUIRED : Final[bool] = True
+    OPTION_NROWS_HELP : Final[str] = "Latest row number to process in the reading list."
+
+    OPTION_FOLDERPATH_FLAGS : Final[list[str]] = ["--folder_path"]
+    OPTION_FOLDERPATH_DEST : Final[str] = "folder_path"
+    OPTION_FOLDERPATH_REQUIRED : Final[bool] = False
+    OPTION_FOLDERPATH_HELP : Final[str] = "The path to the folder into which the PDF report will be saved. Default: current folder."
 
 # STATIC CLASSES
 class _MessageCollectionAsciiBannerManager:
@@ -46,8 +51,16 @@ class _MessageCollectionValidator:
     '''Collects all the messages used for logging and for the exceptions used by Validator.'''
 
     @staticmethod
-    def provided_file_path_doesnt_exist(file_path : str) -> str:
-        return f"The provided 'file_path' doesn't exist: '{file_path}'."
+    def provided_path_doesnt_exist(path : str) -> str:
+        return f"The provided path doesn't exist: '{path}'."
+
+    @staticmethod
+    def provided_nrows_not_valid_integer(nrows : str) -> str:
+        return f"The provided 'nrows' is not a valid integer: '{nrows}'."
+
+    @staticmethod
+    def provided_nrows_less_one(nrows : str) -> str:
+        return f"The provided 'nrows' can't be less than one: '{nrows}'."
 class _MessageCollection(
         _MessageCollectionAsciiBannerManager,
         _MessageCollectionValidator):
@@ -119,10 +132,31 @@ class Validator:
     @staticmethod
     def validate_file_path(file_path : str) -> None:
 
-        '''Returns file_path or raises Exception.'''
+        """Raises an exception if file_path doesn't exist."""
         
         if not os.path.isfile(file_path):
-            raise Exception(_MessageCollection.provided_file_path_doesnt_exist(file_path))
+            raise Exception(_MessageCollection.provided_path_doesnt_exist(file_path))
+    
+    @staticmethod
+    def validate_folder_path(folder_path : str) -> None:
+
+        """Raises an exception if folder_path doesn't exist."""
+        
+        if not os.path.isdir(folder_path):
+            raise Exception(_MessageCollection.provided_path_doesnt_exist(folder_path))
+
+    @staticmethod
+    def validate_nrows(nrows : str) -> None:
+
+        """Raises an exception if nrows is not a valid integer or if it's < 1."""
+        
+        try:
+            int(nrows)
+        except ValueError:
+            raise Exception(_MessageCollection.provided_nrows_not_valid_integer(nrows))
+        
+        if int(nrows) < 1:
+            raise Exception(_MessageCollection.provided_nrows_less_one(nrows))
 class CLIValidator:
 
     '''Handles CLI argument validation.'''
@@ -134,6 +168,20 @@ class CLIValidator:
         Validator().validate_file_path(file_path)
 
         return file_path
+    def validate_folder_path(self, folder_path: str) -> str:
+
+        '''Returns folder_path or raises Exception.'''
+
+        Validator().validate_folder_path(folder_path)
+
+        return folder_path
+    def validate_nrows(self, nrows : str) -> str:
+
+        '''Returns nrows or raises Exception.'''
+
+        Validator().validate_nrows(nrows)
+
+        return nrows
 class APFactory():
 
     '''Encapsulates all the logic related to the creation of a custom instance of argparse.ArgumentParser.'''
@@ -154,15 +202,26 @@ class APFactory():
             help = CLISTRING.OPTION_INPUTPATH_HELP,
             type = self.__cli_validator.validate_file_path
         )
+    def __add_option_nrows(self, argument_parser : ArgumentParser) -> None:
+        
+        '''Adds the option mentioned in the method name.'''
+        
+        argument_parser.add_argument(
+            *CLISTRING.OPTION_NROWS_FLAGS,
+            dest = CLISTRING.OPTION_NROWS_DEST,
+            required = CLISTRING.OPTION_NROWS_REQUIRED,
+            help = CLISTRING.OPTION_NROWS_HELP,
+            type = self.__cli_validator.validate_nrows
+        )
     def __add_option_output_path(self, argument_parser : ArgumentParser) -> None:
         
         '''Adds the option mentioned in the method name.'''
         
         argument_parser.add_argument(
-            *CLISTRING.OPTION_OUTPUTPATH_FLAGS,
-            dest = CLISTRING.OPTION_OUTPUTPATH_DEST,
-            required = CLISTRING.OPTION_OUTPUTPATH_REQUIRED,
-            help = CLISTRING.OPTION_OUTPUTPATH_HELP,
+            *CLISTRING.OPTION_FOLDERPATH_FLAGS,
+            dest = CLISTRING.OPTION_FOLDERPATH_DEST,
+            required = CLISTRING.OPTION_FOLDERPATH_REQUIRED,
+            help = CLISTRING.OPTION_FOLDERPATH_HELP,
             type = self.__cli_validator.validate_file_path
         )
 
@@ -179,13 +238,14 @@ class APFactory():
         argument_parser : ArgumentParser = ArgumentParser(description = CLI_DESCRIPTION)
         root : _SubParsersAction[ArgumentParser] = argument_parser.add_subparsers(**CLISTRING.COMMAND_ARGS)
 
-        savefetcher : ArgumentParser = root.add_parser(
+        saveparser : ArgumentParser = root.add_parser(
             name = CLISTRING.COMMAND_SAVE_NAME, 
             help = CLISTRING.COMMAND_SAVE_HELP
         )
 
-        self.__add_option_input_path(savefetcher)
-        self.__add_option_output_path(savefetcher)
+        self.__add_option_input_path(saveparser)
+        self.__add_option_nrows(saveparser)
+        self.__add_option_output_path(saveparser)
 
         return argument_parser
 class ReadingListProcessorFactory:
@@ -231,21 +291,85 @@ class CLIManager():
             self.__logging_function(f"{key}: '{value}'")
             
         self.__logging_function("")
+    
+    def __get_cwd_path(self) -> str:
 
-    def __get_default_output_path(self, input_path : str) -> str:
+        '''Get current folder.'''
+
+        cwd_path : str = os.getcwd()
+
+        return cwd_path
+    def __create_setting_bag(self, input_path : str, nrows : str, folder_path : str) -> SettingBag:
+
+        """Creates a SettingBag object."""
+
+        setting_bag : SettingBag = SettingBag(
+            options_rl = [OPTION.display],
+            options_rl_rating_five = [OPTION.display],
+            options_rl_most_underlines = [OPTION.display],
+            options_rls_by_month = [OPTION.display],
+            options_rls_by_year = [OPTION.display],
+            options_rls_by_range = [OPTION.display],
+            options_rls_by_topic = [OPTION.display],
+            options_rls_by_topic_trend = [OPTION.display],
+            options_rls_by_publisher = [OPTION.display, OPTION.log],
+            options_rls_by_rating = [OPTION.display],
+            options_rls_by_underlines = [OPTION.display],
+            options_rld_by_kbsize = [OPTION.display],
+            options_rld_by_books_year = [],
+            options_definitions = [OPTION.display],
+            options_report = [OPTION.save_pdf],
+            read_years = YearProvider().get_all_years(),
+            excel_path = input_path,
+            excel_nrows = int(nrows),
+            working_folder_path = folder_path
+        )
+
+        return setting_bag
+    def __dispatch(self, namespace : Namespace) -> None:
+        
+        '''Dispatches the provided arguments to the corresponding actions.'''
+       
+        if not namespace.folder_path:
+            namespace.folder_path = self.__get_cwd_path()
+
+        setting_bag : SettingBag = self.__create_setting_bag(
+            input_path = namespace.input_path,
+            nrows = namespace.nrows,
+            folder_path = namespace.folder_path
+        )
+        component_bag : ComponentBag = ComponentBag()
+
+        rl_processor : ReadingListProcessor = self.__rl_factory.create(component_bag, setting_bag)
+        rl_processor.initialize()
+        rl_processor.save_as_report()
+
+    def run_and_log(self) -> None:
 
         '''
-            Example:
-                - filename.xlsx => <current_folder>/filename.pdf
+            Performs the user-provided and log them.
+            
+            The SystemExit exception occurs when a required option is not provided.
+            SystemExit doesn't inherit from Exception and has no message, therefore we need to handle it accordingly.            
         '''
 
-        base_name : str = os.path.splitext(input_path)[0]
-        output_path : str = os.path.join(os.getcwd(), f"{base_name}.pdf")
+        try:
 
-        return output_path
+            self.__log_ascii_banner()
+
+            argument_parser : ArgumentParser = self.__ap_factory.create()
+            namespace : Namespace = argument_parser.parse_args()
+
+            self.__log_namespace(namespace)          
+            self.__dispatch(namespace)
+
+        except (Exception, SystemExit) as e:
+            
+            if not isinstance(e, SystemExit):
+                self.__logging_function(str(e))
 
 # MAIN
-def main(): pass
+def main(): CLIManager().run_and_log()
 
 if __name__ == "__main__":
     main()

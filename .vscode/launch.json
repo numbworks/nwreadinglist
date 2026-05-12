@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "Debug: nwreadinglistcli",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/nwreadinglistcli.py",
+            "console": "integratedTerminal",
+            "args": ["save"],
+            "justMyCode": true
+        }
+    ]
+}

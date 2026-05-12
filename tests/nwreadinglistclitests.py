@@ -100,7 +100,7 @@ class ValidatorTestCase(unittest.TestCase):
 
         # Arrange
         file_path : str = r"C:/NonExistentFile.txt"
-        expected : str = _MessageCollection.provided_file_path_doesnt_exist(file_path)
+        expected : str = _MessageCollection.provided_path_doesnt_exist(file_path)
 
         # Act, Assert
         with patch("os.path.isfile", return_value = False):
@@ -149,7 +149,8 @@ class APFactoryTestCase(unittest.TestCase):
 
     @parameterized.expand([
         ("save", CLISTRING.OPTION_INPUTPATH_FLAGS[0]),
-        ("save", CLISTRING.OPTION_OUTPUTPATH_FLAGS[0])
+        ("save", CLISTRING.OPTION_NROWS_FLAGS[0]),
+        ("save", CLISTRING.OPTION_FOLDERPATH_FLAGS[0])
     ])
     def test_create_shouldreturnexpectedargumentparser_wheninvoked(self, command_name : str, flag : str) -> None:
 
@@ -203,7 +204,7 @@ class CLIManagerTestCase(unittest.TestCase):
     def test_lognamespace_shouldlogallarguments_wheninvoked(self) -> None:
 
         # Arrange
-        namespace : Namespace = Namespace(input_path = "readinglist.xlsx", output_path = "readinglist.pdf")
+        namespace : Namespace = Namespace(input_path = "readinglist.xlsx", nrows = 371, folder_path = "/current/directory/")
         logging_function : Mock = Mock()
         cli_manager : CLIManager = CLIManager(logging_function = logging_function)
 
@@ -211,9 +212,10 @@ class CLIManagerTestCase(unittest.TestCase):
         cli_manager._CLIManager__log_namespace(namespace = namespace) # type: ignore
 
         # Assert
-        self.assertEqual(logging_function.call_count, 3)
+        self.assertEqual(logging_function.call_count, 4)
         logging_function.assert_any_call("input_path: 'readinglist.xlsx'")
-        logging_function.assert_any_call("output_path: 'readinglist.pdf'")
+        logging_function.assert_any_call("nrows: '371'")
+        logging_function.assert_any_call("folder_path: '/current/directory/'")
         logging_function.assert_any_call("")
     
     def test_getdefaultoutputpath_shouldreturnexpectedstring_wheninvoked(self) -> None:
