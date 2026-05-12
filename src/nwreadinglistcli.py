@@ -67,7 +67,7 @@ class _MessageCollectionCLIManager:
 
     @staticmethod
     def report_successfully_saved() -> str:
-        return "The report has been successfully saved."
+        return "The PDF report has been successfully saved."
 class _MessageCollection(
         _MessageCollectionAsciiBannerManager,
         _MessageCollectionValidator,
