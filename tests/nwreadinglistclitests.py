@@ -361,8 +361,7 @@ class CLIManagerTestCase(unittest.TestCase):
         # Act
         with patch.object(cli_manager, "_CLIManager__log_ascii_banner") as log_ascii_banner, \
              patch.object(cli_manager, "_CLIManager__log_namespace") as log_namespace, \
-             patch("nwreadinglistcli.YearProvider.get_all_years", return_value = [2023, 2024]), \
-             patch("nwreadinglistcli._MessageCollection.pdf_report_successfully_saved", return_value = message):
+             patch("nwreadinglistcli.YearProvider.get_all_years", return_value = [2023, 2024]):
 
             cli_manager.run_and_log()
 
