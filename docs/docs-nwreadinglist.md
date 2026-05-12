@@ -267,6 +267,12 @@ RUN pip install weasyprint==66.0
 ...
 ```
 
+## See Also: `nwmakefiles`
+
+This project includes portions of the `nwmakefiles` project, which is documented here:
+
+- [docs-nwmakefiles.md](SeeAlso-nwmakefiles/docs-nwmakefiles.md)
+
 ## Markdown Toolset
 
 Suggested toolset to view and edit this Markdown file:
