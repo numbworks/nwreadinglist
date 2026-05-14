@@ -22,7 +22,7 @@ from typing import Any, Callable, Literal, Optional, Tuple
 from weasyprint import CSS, HTML
 
 # LOCAL/NW MODULES
-from nwshared import FilePathManager, FileManager
+from nwshared import FileManager
 from nwshared import LambdaProvider, Displayer, PlotManager
 
 # CONSTANTS
@@ -203,6 +203,38 @@ class Converter():
         A4_sheets += 1
 
         return A4_sheets
+class FilePathManager():
+    
+    '''Collects all the logic related to the file path management.'''
+
+    def create_file_path(self, folder_path : str, file_name : str) -> str:
+
+        '''Creates a file path.'''
+
+        return os.path.join(folder_path, file_name) 
+    def create_numbered_file_path(self, folder_path : str, number : int, extension : str) -> str:
+
+        r'''Creates a numbered file path. Example: ("C:\\", 1, "html") => "C:\\1.html"'''
+
+        file_name : str = f"{number}.{extension}"
+        file_path : str = self.create_file_path(folder_path = folder_path, file_name = file_name)    
+
+        return file_path
+    def create_numbered_file_paths(self, folder_path : str, range_start : int, range_end : int, extension : str) -> list[str]:
+
+        '''
+            Creates a collection of numbered file paths.
+
+            If range_start = 1 and range_end = 3, only two items will be created (range_end is excluded).
+        '''
+
+        file_paths : list[str] = []
+        for i in range(range_start, range_end):
+            file_path : str = self.create_numbered_file_path(folder_path = folder_path, number = i, extension = extension)
+            file_paths.append(file_path)
+
+        return file_paths
+
 
 
 @dataclass(frozen=True)

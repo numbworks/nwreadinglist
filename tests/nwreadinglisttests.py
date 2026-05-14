@@ -16,12 +16,12 @@ from unittest.mock import _Call, Mock, call, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import Formatter, Converter
+from nwreadinglist import Formatter, Converter, FilePathManager
 from nwreadinglist import REPORTSTR, RLCN, DEFINITIONSTR, OPTION, RSMODE, _MessageCollection
 from nwreadinglist import RLReportManager, RLSummary, DefaultPathProvider, RSCell, RSHighlighter
 from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
 from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor
-from nwshared import FilePathManager, FileManager, Displayer, PlotManager
+from nwshared import FileManager, Displayer, PlotManager
 
 # SUPPORT METHODS
 class SupportMethodProvider():
@@ -393,7 +393,43 @@ class ConverterTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(actual, expected)
+class FilePathManagerTestCase(unittest.TestCase):
 
+    def test_createfilepath_shouldreturnexpectedfilepath_whenproperarguments(self):
+        
+        '''"C:/", "somefile.txt" => "C:/somefile.txt"'''
+
+        # Arrange
+        # Act
+        actual : str = FilePathManager().create_file_path(folder_path = "C:/", file_name = "somefile.txt")
+        
+        # Assert
+        self.assertEqual("C:/somefile.txt", actual)
+    def test_createnumberedfilepath_shouldreturnexpectedfilepath_whenproperarguments(self):
+
+        '''"C:/", "html" => "C:/1.html"'''        
+        
+        # Arrange
+        
+        # Act
+        actual : str = FilePathManager().create_numbered_file_path(folder_path = "C:/", number = 1, extension = "html")
+        
+        # Assert
+        self.assertEqual("C:/1.html", actual)
+    def test_createnumberedfilepaths_shouldreturnexpectedfilepaths_whenproperarguments(self):
+
+        '''
+            "C:/", 1, 3 => [ "C:/1.html", "C:/2.html" ]
+        ''' 
+
+        # Arrange
+        expected : list[str] = ["C:/1.html", "C:/2.html"]
+
+        # Act
+        actual : list[str] = FilePathManager().create_numbered_file_paths(folder_path = "C:/", range_start = 1, range_end = 3, extension = "html")
+        
+        # Assert
+        self.assertEqual(expected, actual)
 
 
 
