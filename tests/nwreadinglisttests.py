@@ -7,8 +7,7 @@ import sys
 import unittest
 from datetime import datetime, date
 from numpy import float64, int32
-from pandas import DataFrame
-from pandas import RangeIndex
+from pandas import DataFrame, RangeIndex, Index
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 from pathlib import Path
@@ -17,12 +16,12 @@ from unittest.mock import _Call, Mock, call, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import Formatter
+from nwreadinglist import Formatter, Converter
 from nwreadinglist import REPORTSTR, RLCN, DEFINITIONSTR, OPTION, RSMODE, _MessageCollection
 from nwreadinglist import RLReportManager, RLSummary, DefaultPathProvider, RSCell, RSHighlighter
 from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
 from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor
-from nwshared import Converter, FilePathManager, FileManager, Displayer, PlotManager
+from nwshared import FilePathManager, FileManager, Displayer, PlotManager
 
 # SUPPORT METHODS
 class SupportMethodProvider():
@@ -341,6 +340,61 @@ class FormatterTestCase(unittest.TestCase):
 
         # Assert
         self.assertEqual(expected, actual)
+class ConverterTestCase(unittest.TestCase):
+
+    @parameterized.expand([
+        [0, 0],
+        [12, 1],
+        [499, 1],
+        [500, 2],
+        [999, 2],
+        [1000, 3],        
+    ])
+    def test_convertwordcounttoA4sheets_shouldreturnexpectedint_wheninvoked(self, word_count : int, expected : int):
+        
+        # Arrange
+        # Act
+        actual : int = Converter().convert_word_count_to_A4_sheets(word_count = word_count)
+
+        # Assert
+        self.assertEqual(expected, actual)
+
+    def test_convertindextoblanks_shouldreturnexpectedindex_wheninvoked(self):
+
+        # Arrange
+        df: DataFrame = DataFrame({'A': [1, 2, 3]})
+        expected: list[str] = [''] * len(df)
+
+        # Act
+        actual_df: DataFrame = Converter().convert_index_to_blanks(df = df)
+
+        # Assert
+        self.assertEqual(list(actual_df.index), expected)
+    def test_convertindextoonebased_shouldreturnexpectedindex_wheninvoked(self):
+        
+        # Arrange
+        df: DataFrame = DataFrame({'A': [1, 2, 3]})
+        df.index = Index([0, 1, 2])
+        expected: list[int] = [1, 2, 3]
+
+        # Act
+        actual_df: DataFrame = Converter().convert_index_to_one_based(df = df)
+
+        # Assert
+        self.assertEqual(list(actual_df.index), expected)
+    def test_convertdatetodatetime_shouldreturnexpecteddate_wheninvoked(self):
+
+        # Arrange
+        dt : date = date(2023, 1, 1)
+        expected: datetime = datetime(2023, 1, 1)
+
+        # Act
+        actual : datetime = Converter().convert_date_to_datetime(dt)
+
+        # Assert
+        self.assertEqual(actual, expected)
+
+
 
 
 class MessageCollectionTestCase(unittest.TestCase):

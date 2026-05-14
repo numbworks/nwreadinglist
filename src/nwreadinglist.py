@@ -11,10 +11,10 @@ import os
 import pandas as pd
 import re
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum, auto
 from numpy import float64
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, Index
 from pathlib import Path
 from re import Match
 from sparklines import sparklines
@@ -22,7 +22,7 @@ from typing import Any, Callable, Literal, Optional, Tuple
 from weasyprint import CSS, HTML
 
 # LOCAL/NW MODULES
-from nwshared import Converter, FilePathManager, FileManager
+from nwshared import FilePathManager, FileManager
 from nwshared import LambdaProvider, Displayer, PlotManager
 
 # CONSTANTS
@@ -165,6 +165,45 @@ class Formatter():
             return f"{black_star*5}"            
         else:
             return str(rating)
+class Converter():
+
+    '''Collects all the logic related to converting tasks.'''
+
+    def convert_index_to_blanks(self, df : DataFrame) -> DataFrame:
+
+        '''Converts the index of the provided DataFrame to blanks.'''
+
+        blank_idx : list[str] = [''] * len(df)
+        df.index = Index(blank_idx)
+
+        return df
+    def convert_index_to_one_based(self, df : DataFrame) -> DataFrame:
+
+        '''Converts the index of the provided DataFrame from zero-based to one-based.'''
+
+        df.index += 1
+
+        return df
+    def convert_date_to_datetime(self, dt : date) -> datetime:
+
+        '''Converts provided date to datetime.'''
+
+        return datetime(year = dt.year, month = dt.month, day = dt.day)
+    def convert_word_count_to_A4_sheets(self, word_count : int) -> int:
+
+        '''
+            "[...], a typical page which has 1-inch margines and is typed with a 12-point font 
+            with standard spacing elements will be approximately 500 words when typed single spaced."
+        '''
+
+        if word_count == 0:
+            return 0
+
+        A4_sheets : int = int(word_count / 500)
+        A4_sheets += 1
+
+        return A4_sheets
+
 
 @dataclass(frozen=True)
 class RLSummary():
