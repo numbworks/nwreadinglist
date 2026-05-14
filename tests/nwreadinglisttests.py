@@ -17,10 +17,12 @@ from unittest.mock import _Call, Mock, call, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import REPORTSTR, RLCN, DEFINITIONSTR, OPTION, RSMODE, _MessageCollection, RLReportManager, RLSummary, DefaultPathProvider, RSCell, RSHighlighter
+from nwreadinglist import Formatter
+from nwreadinglist import REPORTSTR, RLCN, DEFINITIONSTR, OPTION, RSMODE, _MessageCollection
+from nwreadinglist import RLReportManager, RLSummary, DefaultPathProvider, RSCell, RSHighlighter
 from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
 from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor
-from nwshared import Converter, Formatter, FilePathManager, FileManager, Displayer, PlotManager
+from nwshared import Converter, FilePathManager, FileManager, Displayer, PlotManager
 
 # SUPPORT METHODS
 class SupportMethodProvider():
@@ -286,6 +288,61 @@ class ObjectMother():
         return setting_bag
 
 # TEST CLASSES
+class FormatterTestCase(unittest.TestCase):
+
+    def test_formattoiso8601_shouldreturnexpectedstring_whenincludetimeisfalse(self):
+        
+        # Arrange
+        dt : datetime = datetime(year = 2023, month = 8, day = 3)
+        expected : str = "2023-08-03"
+
+        # Act
+        actual : str = Formatter().format_to_iso_8601(dt = dt, include_time = False)
+
+        # Assert
+        self.assertEqual(expected, actual)
+    def test_formattoiso8601_shouldreturnexpectedstring_whenincludetimeistrue(self):
+        
+        # Arrange
+        dt : datetime = datetime(year = 2023, month = 8, day = 3, hour = 17, minute = 22, second = 15)
+        expected : str = "2023-08-03 17:22:15"
+
+        # Act
+        actual : str = Formatter().format_to_iso_8601(dt = dt, include_time = True)
+
+        # Assert
+        self.assertEqual(expected, actual)
+    def test_formatusdamount_shouldreturnexpectedstring_wheninvoked(self):
+        
+        # Arrange
+        amount : float64 = float64(748.7)
+        rounding_digits : int = 2
+        expected : str = "$748.70"
+
+        # Act
+        actual : str = Formatter().format_usd_amount(amount = amount, rounding_digits = rounding_digits)
+
+        # Assert
+        self.assertEqual(expected, actual)
+
+    @parameterized.expand([
+        [5, "★★★★★"],
+        [4, "★★★★☆"],
+        [3, "★★★☆☆"],
+        [2, "★★☆☆☆"],
+        [1, "★☆☆☆☆"],
+        [0, "0"]
+    ])
+    def test_formatrating_shouldreturnexpectedstring_wheninvoked(self, rating : int, expected : str):
+        
+        # Arrange
+        # Act
+        actual : str = Formatter().format_rating(rating = rating)
+
+        # Assert
+        self.assertEqual(expected, actual)
+
+
 class MessageCollectionTestCase(unittest.TestCase):
 
     def test_pleaseruninitializefirst_shouldreturnexpectedmessage_wheninvoked(self):

@@ -22,7 +22,7 @@ from typing import Any, Callable, Literal, Optional, Tuple
 from weasyprint import CSS, HTML
 
 # LOCAL/NW MODULES
-from nwshared import Formatter, Converter, FilePathManager, FileManager
+from nwshared import Converter, FilePathManager, FileManager
 from nwshared import LambdaProvider, Displayer, PlotManager
 
 # CONSTANTS
@@ -121,6 +121,51 @@ class _MessageCollection():
         return f"The provided mode is not supported: '{mode}'."
 
 # CLASSES
+class Formatter():
+
+    '''Collects all the logic related to formatting tasks.'''
+
+    def format_to_iso_8601(self, dt : datetime, include_time : bool = False) -> str:
+
+        '''
+            "2023-08-03"
+            "2023-08-03 17:22:15"
+        '''
+
+        if include_time == False:
+            return dt.strftime(format = "%Y-%m-%d")
+        else:
+            return dt.strftime(format = "%Y-%m-%d %H:%M:%S")
+    def format_usd_amount(self, amount : float64, rounding_digits : int) -> str:
+
+        '''
+            748.7 => 748.70 => "$748.70"
+        '''
+
+        rounded : float64 = amount.round(decimals = rounding_digits)
+        formatted : str = f"${rounded:.2f}"
+
+        return formatted
+    def format_rating(self, rating : int) -> str:
+
+        '''"★★★★★", "★★★★☆", ...'''
+
+        black_star : str = "★"
+        white_star : str = "☆"
+
+        if rating == 1:
+            return f"{black_star}{white_star*4}"
+        elif rating == 2:
+            return f"{black_star*2}{white_star*3}"
+        elif rating == 3:
+            return f"{black_star*3}{white_star*2}"
+        elif rating == 4:
+            return f"{black_star*4}{white_star*1}"
+        elif rating == 5:
+            return f"{black_star*5}"            
+        else:
+            return str(rating)
+
 @dataclass(frozen=True)
 class RLSummary():
 
