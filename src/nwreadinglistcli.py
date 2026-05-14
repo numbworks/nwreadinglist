@@ -21,7 +21,7 @@ class CLISTRING:
     COMMAND_ARGS : dict[str, Any] = { "dest": COMMAND_DEST, "required": COMMAND_REQUIRED }
 
     COMMAND_SAVE_NAME : Final[str] = "save"
-    COMMAND_SAVE_HELP : Final[str] = "Runs all the data analysis tasks against the reading list and save the outcome as PDF report."
+    COMMAND_SAVE_HELP : Final[str] = "Runs all the data analysis tasks against the reading list and saves the outcome as PDF report."
 
     OPTION_INPUTPATH_FLAGS : Final[list[str]] = ["--input_path"]
     OPTION_INPUTPATH_DEST : Final[str] = "input_path"
