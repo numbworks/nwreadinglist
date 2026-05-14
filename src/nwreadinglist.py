@@ -22,7 +22,7 @@ from typing import Any, Callable, Literal, Optional, Tuple
 from weasyprint import CSS, HTML
 
 # LOCAL/NW MODULES
-from nwshared import LambdaProvider, Displayer, PlotManager
+from nwshared import Displayer, PlotManager
 
 # CONSTANTS
 class RLCN(StrEnum):
@@ -317,6 +317,28 @@ class FileManager():
 
         with open(file_path, 'w', encoding = 'utf-8') as new_file:
             new_file.writelines(lines)
+class LambdaProvider():
+
+    '''Provides useful lambda functions.'''
+
+    def get_default_logging_function(self) -> Callable[[str], None]:
+
+        '''
+            An adapter around print().
+            Prints something like: "Some message"
+        '''
+
+        return lambda msg : print(msg)
+    def get_timestamped_logging_function(self, now_function : Callable[[], datetime] = lambda : datetime.now()) -> Callable[[str], None]:
+
+        '''
+            An adapter around print(). 
+            Prints something like: "[2023-08-03 17:22:15] Some message"
+        '''
+
+        dt_str : str = Formatter().format_to_iso_8601(dt = now_function(), include_time = True)
+
+        return lambda msg : print(f"[{dt_str}] {msg}")
 
 
 @dataclass(frozen=True)

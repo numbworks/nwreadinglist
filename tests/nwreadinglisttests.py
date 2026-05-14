@@ -5,18 +5,20 @@ import os
 import pandas as pd
 import sys
 import unittest
+from contextlib import redirect_stdout
 from datetime import datetime, date
+from io import StringIO
 from numpy import float64, int32
 from pandas import DataFrame, RangeIndex, Index
 from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 from pathlib import Path
-from typing import Any, Literal, Optional, Tuple, cast
+from typing import Any, Callable, Literal, Optional, Tuple, cast
 from unittest.mock import _Call, Mock, call, mock_open, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import Formatter, Converter, FilePathManager, FileManager
+from nwreadinglist import Formatter, Converter, FilePathManager, FileManager, LambdaProvider
 from nwreadinglist import REPORTSTR, RLCN, DEFINITIONSTR, OPTION, RSMODE, _MessageCollection
 from nwreadinglist import RLReportManager, RLSummary, DefaultPathProvider, RSCell, RSHighlighter
 from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
@@ -605,7 +607,46 @@ class FileManagerTestCase(unittest.TestCase):
             call().writelines(lines),
             call().__exit__(None, None, None)
         ])
+class LambdaProviderTestCase(unittest.TestCase):
 
+    @parameterized.expand([
+        ["Some message", "Some message"]      
+    ])
+    def test_getdefaultloggingfunction_shouldreturnexpectedmessage_wheninvoked(self, msg : str, expected : str):
+        
+        # Arrange
+        lambda_provider : LambdaProvider = LambdaProvider()
+        logging_function : Callable[[str], None] = lambda_provider.get_default_logging_function() 
+
+        # Act
+        # Assert                
+        with StringIO() as buf, redirect_stdout(buf):
+          
+            logging_function(msg)
+            actual : str = buf.getvalue().replace("\n", "")
+
+            self.assertEqual(expected, actual)
+
+    def test_gettimestampedloggingfunction_shouldreturnexpectedmessage_wheninvoked(self):
+        
+        # Arrange
+        dt : datetime = datetime(year = 2023, month = 8, day = 3, hour = 17, minute = 22, second = 15)
+        now_function : Callable[[], datetime] = lambda : dt
+
+        lambda_provider : LambdaProvider = LambdaProvider()
+        logging_function : Callable[[str], None] = lambda_provider.get_timestamped_logging_function(now_function = now_function) 
+
+        msg : str = "Some message"        
+        expected : str = "[2023-08-03 17:22:15] Some message"
+
+        # Act
+        # Assert                
+        with StringIO() as buf, redirect_stdout(buf):
+          
+            logging_function(msg)
+            actual : str = buf.getvalue().replace("\n", "")
+
+            self.assertEqual(expected, actual)
 
 
 
