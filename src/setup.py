@@ -23,7 +23,7 @@ if __name__ == "__main__":
             "tabulate>=0.9.0",
             "sparklines>=0.5.0",
             "weasyprint>=66.0",
-            "nwshared @ git+https://github.com/numbworks/nwshared.git@v1.8.1#egg=nwshared&subdirectory=src"
+            "ipython==7.23.1"
         ],
         python_requires = ">=3.12",
         license = "MIT",

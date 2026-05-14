@@ -10,7 +10,6 @@ RUN pip install tabulate==0.9.0
 RUN pip install matplotlib==3.9.2
 RUN pip install sparklines==0.5.0
 RUN pip install weasyprint==66.0
-RUN pip install 'git+https://github.com/numbworks/nwshared.git@v1.8.1#egg=nwshared&subdirectory=src'
 
 # JUPYTER NOTEBOOK
 RUN pip install ipykernel==6.29.5 ipython==7.23.1
