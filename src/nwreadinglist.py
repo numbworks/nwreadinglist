@@ -469,7 +469,7 @@ class PlotManager():
 
         plt : Any = self.__get_plt()
         if not plt:
-            return
+            return None
 
         buffer : BytesIO = BytesIO()
 
