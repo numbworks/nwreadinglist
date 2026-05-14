@@ -13,16 +13,18 @@ import re
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import StrEnum, auto
+from IPython.core.display import display
 from numpy import float64
 from pandas import DataFrame, Series, Index
+from pandas.io.formats.style import Styler
 from pathlib import Path
 from re import Match
 from sparklines import sparklines
-from typing import Any, Callable, Literal, Optional, Tuple
+from typing import Any, Callable, Literal, Optional, Tuple, Union
 from weasyprint import CSS, HTML
 
 # LOCAL/NW MODULES
-from nwshared import Displayer, PlotManager
+from nwshared import PlotManager
 
 # CONSTANTS
 class RLCN(StrEnum):
@@ -339,6 +341,74 @@ class LambdaProvider():
         dt_str : str = Formatter().format_to_iso_8601(dt = now_function(), include_time = True)
 
         return lambda msg : print(f"[{dt_str}] {msg}")
+class Displayer():
+
+    '''Adapter around IPython.core.display.display().'''
+
+    def __display(self, obj: Any) -> None:
+
+        '''Internal helper to safely call IPython display or do nothing.'''
+        
+        try:
+            from IPython.core.display import display
+            display(obj)
+        except ImportError:
+            pass
+    def __display_df(self, df : DataFrame, hide_index : bool = True, formatters : Optional[dict] = None) -> None:
+
+        '''Displays df in Jupyter Notebook according to provided arguments.'''
+
+        styler : Styler = df.style.format()
+
+        if formatters:
+            styler = df.style.format(formatters)
+
+        if hide_index:
+            styler.hide()
+
+        self.__display(styler)
+    def __display_styler(self, styler : Styler, hide_index : bool = True, formatters : Optional[dict] = None) -> None:
+
+        '''Displays styler in Jupyter Notebook according to provided arguments.'''
+
+        new_styler : Styler = copy.deepcopy(styler)
+
+        if formatters:
+            new_styler.format(formatters)
+
+        if hide_index:
+            new_styler.hide()
+
+        self.__display(new_styler)
+    
+    def display(self, obj : Union[DataFrame, Styler], hide_index : bool = True, formatters : Optional[dict] = None) -> None:
+
+        '''
+            Displays obj in Jupyter Notebook according to provided arguments.
+
+            Example for 'formatters':
+
+                formatters : dict = { "Price" : "{:.2f}" }
+        '''
+
+        if isinstance(obj, DataFrame):
+            self.__display_df(df = obj, hide_index = hide_index, formatters = formatters)
+
+        if isinstance(obj, Styler):
+            self.__display_styler(styler = obj, hide_index = hide_index, formatters = formatters)
+    def display_cascade(self, objs : list[Union[DataFrame, Styler]], hide_index : bool = True, formatters : Optional[dict] = None) -> None:
+
+        '''
+            Displays objects as a cascade in a Jupyter Notebook based on the provided arguments.
+
+            Example for 'formatters':
+
+                formatters : dict = { "Price" : "{:.2f}" }
+        '''
+
+        for obj in objs:
+            self.display(obj = obj, hide_index = hide_index, formatters = formatters)
+
 
 
 @dataclass(frozen=True)
