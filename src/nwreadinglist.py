@@ -5,6 +5,7 @@ Alias: nwread
 '''
 
 # GLOBAL MODULES
+import base64
 import copy
 import numpy as np
 import os
@@ -13,7 +14,7 @@ import re
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import StrEnum, auto
-from IPython.core.display import display
+from io import BytesIO
 from numpy import float64
 from pandas import DataFrame, Series, Index
 from pandas.io.formats.style import Styler
@@ -24,8 +25,6 @@ from typing import Any, Callable, Literal, Optional, Tuple, Union
 from weasyprint import CSS, HTML
 
 # LOCAL/NW MODULES
-from nwshared import PlotManager
-
 # CONSTANTS
 class RLCN(StrEnum):
     
@@ -107,6 +106,21 @@ class RSMODE(StrEnum):
 
     top_one_per_row = auto()
     top_three = auto()
+class PlotKind(StrEnum):
+
+    '''All the kinds of plot supported by df.plot().'''
+
+    LINE = "line"
+    BAR = "bar"
+    BARH = "barh"
+    HIST = "hist"
+    KDE = "kde"
+    DENSITY = "density"
+    AREA = "area"
+    PIE = "pie"
+    SCATTER = "scatter"
+    HEXBIN = "hexbin"
+    # BOX = "box"
 
 # STATIC CLASSES
 class _MessageCollection():
@@ -347,7 +361,7 @@ class Displayer():
 
     def __display(self, obj: Any) -> None:
 
-        '''Internal helper to safely call IPython display or do nothing.'''
+        '''Safely calls IPython display() or do nothing.'''
         
         try:
             from IPython.core.display import display
@@ -408,7 +422,132 @@ class Displayer():
 
         for obj in objs:
             self.display(obj = obj, hide_index = hide_index, formatters = formatters)
+class PlotManager():
+    
+    '''Collects all the logic related to the plot management.'''
 
+    def __get_plt(self):
+
+        '''Safely returns matplotlib.pyplot or does nothing.'''
+        
+        try:
+            from matplotlib import pyplot as plt
+            return plt
+        except ImportError:
+            return None
+
+    def show_plot(self, df : DataFrame, plot_kind : PlotKind, x_name : str, y_name : str, figsize : Tuple[int, int] = (5, 5)) -> None:
+
+        '''Shows a plot created with df.plot().'''
+
+        title = f"{y_name} by {x_name}"
+        df.plot(x = x_name, y = y_name, legend = True, kind = plot_kind.value, title = title, figsize = figsize)
+    def create_plot_function(self, df : DataFrame, plot_kind : PlotKind, x_name : str, y_name : str = "items", figsize : Tuple[int, int] = (5, 5)) -> Callable[[], None]:
+
+        '''
+            Returns a function that visualizes a plot.
+
+            Example:
+            >>> func = PlotManager().create_plot_function(df = df , x_name = "seller_alias")
+            >>> func()
+        '''
+
+        func : Callable[[], None] = lambda : self.show_plot(df = df, plot_kind = plot_kind, x_name = x_name, y_name = y_name, figsize = figsize)
+
+        return func    
+    def create_plot_as_base64(self, df : DataFrame, plot_kind : PlotKind, x_name : str, y_name : str = "items", figsize : Tuple[int, int] = (5, 5)) -> Optional[str]:
+
+        '''
+            Returns a plot as a base64 string or returns None.
+
+            Example:            
+            >>> plot_manager : PlotManager = PlotManager()
+            >>> image_string : str = plot_manager.create_plot_as_base64(df = df, x_name = "seller_alias")
+            >>> image_string = plot_manager.create_html_image_tag(image_string = image_string)
+            >>> HTML(image_string)
+        '''
+
+        plt : Any = self.__get_plt()
+        if not plt:
+            return
+
+        buffer : BytesIO = BytesIO()
+
+        title = f"{y_name} by {x_name}"
+        fig : Optional[Any] = df.plot(x = x_name, y = y_name, legend = True, kind = plot_kind.value, title = title, figsize = figsize).get_figure()
+        
+        image_string : Optional[str] = None
+
+        if fig:
+            fig.savefig(buffer, format = "png", bbox_inches = 'tight')
+            plt.close(fig)
+            image_string = base64.b64encode(buffer.getbuffer()).decode("ascii")
+            
+        return image_string
+   
+    def show_box_plot(self, df : DataFrame, x_name : str, figsize : Tuple[int, int] = (5, 5)) -> None:
+
+        '''Shows a box plot created with plt.boxplot() or does nothing.'''
+
+        plt : Any = self.__get_plt()
+        if not plt:
+            return None
+
+        plt.figure(figsize = figsize)
+        plt.boxplot(x = df[x_name], vert = False, tick_labels = [x_name])
+        plt.show()
+    def create_box_plot_function(self, df : DataFrame, x_name : str, figsize : Tuple[int, int] = (5, 5)) -> Callable[[], None]:
+
+        '''
+            Returns a function that visualizes a box plot.
+
+            Example:
+            >>> func = PlotManager().create_box_plot_function(df = df , x_name = "seller_alias")
+            >>> func()
+        '''
+
+        func : Callable[[], None] = lambda : self.show_box_plot(df = df, x_name = x_name, figsize = figsize)
+
+        return func
+    def create_box_plot_as_base64(self, df : DataFrame, x_name : str, figsize : Tuple[int, int] = (5, 5)) -> Optional[str]:
+
+        '''
+            Returns a box plot as a base64 string or returns None.
+
+            Example:            
+            >>> plot_manager : PlotManager = PlotManager()
+            >>> image_string : str = plot_manager.create_box_plot_as_base64(df = df, x_name = "seller_alias")
+            >>> image_string = plot_manager.create_html_image_tag(image_string = image_string)
+            >>> HTML(image_string)
+        '''
+
+        plt : Any = self.__get_plt()
+        if not plt:
+            return None
+
+        buffer : BytesIO = BytesIO()
+
+        plt.figure(figsize = figsize)
+        plt.boxplot(x = df[x_name], vert = False, tick_labels = [x_name])
+        plt.savefig(buffer, format = "png", bbox_inches = 'tight')
+        plt.close()
+
+        image_string : str = base64.b64encode(buffer.getbuffer()).decode("ascii")
+
+        return image_string
+
+    def create_html_image_tag(self, image_string : str) -> str:
+
+        '''Creates a <img /> HTML tag to display an image from the provided base64 string.'''
+
+        return f'<img src="data:image/png;base64,{image_string}" />'
+    def describe_dataframe(self, df : DataFrame, column_names : list[str]) -> DataFrame:
+        
+        '''Describes the provided dataframe according to the provided column names.'''
+
+        describe_df = df[column_names].describe().apply(lambda s: s.apply(lambda x: format(x, 'g')))
+
+        return describe_df
 
 
 @dataclass(frozen=True)

@@ -20,12 +20,11 @@ from unittest.mock import _Call, Mock, call, mock_open, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import Formatter, Converter, FilePathManager, FileManager, LambdaProvider, Displayer
+from nwreadinglist import Formatter, Converter, FilePathManager, FileManager, LambdaProvider, Displayer, PlotManager, PlotKind
 from nwreadinglist import REPORTSTR, RLCN, DEFINITIONSTR, OPTION, RSMODE, _MessageCollection
 from nwreadinglist import RLReportManager, RLSummary, DefaultPathProvider, RSCell, RSHighlighter
 from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
 from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor
-from nwshared import PlotManager
 
 # SUPPORT METHODS
 class SupportMethodProvider():
@@ -809,7 +808,133 @@ class DisplayerTestCase(unittest.TestCase):
 
             # Assert
             self.assertEqual(display.call_count, len(objs))
+class PlotManagerTestCase(unittest.TestCase):
 
+    @patch("pandas.DataFrame.plot")
+    def test_showplot_shouldbecalledwithprovidedarguments_wheninvoked(self, mock_plot) -> None:
+
+        # Arrange
+        df : DataFrame = DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+        plot_kind : PlotKind = PlotKind.BAR
+        x_name : str = "A"
+        y_name : str = "B"
+        figsize : Tuple[int, int] = (5, 5)
+
+        # Act
+        PlotManager().show_plot(df = df, plot_kind = plot_kind, x_name = x_name, y_name = y_name, figsize = figsize)
+
+        # Assert
+        mock_plot.assert_called_once_with(
+            x = x_name, 
+            y = y_name, 
+            legend = True, 
+            kind = plot_kind.value, 
+            title = f"{y_name} by {x_name}", 
+            figsize=figsize
+            )
+    def test_createplotfunction_shouldreturnacallableobjectthatrunsasexpected_wheninvoked(self) -> None:
+
+        # Arrange
+        df : DataFrame = DataFrame({"seller_alias": ["A", "B", "C"], "items": [10, 20, 30]})
+        plot_kind : PlotKind = PlotKind.BAR
+        x_name : str = "seller_alias"
+        y_name : str = "items"
+        figsize : Tuple[int, int] = (5, 5)
+
+        # Act
+        func : Callable[[], None] = PlotManager().create_plot_function(df = df, plot_kind = plot_kind, x_name = x_name, y_name = y_name, figsize = figsize)
+
+        # Assert
+        self.assertTrue(callable(func))
+        func() # Ensures that the function runs without error.
+    def test_createplotasbase64_shouldreturnexpectedstring_wheninvoked(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"seller_alias": ["A", "B", "C"], "items": [10, 20, 30]})
+        plot_kind : PlotKind = PlotKind.BAR
+        x_name : str = "seller_alias"
+        y_name : str = "items"
+        figsize : Tuple[int, int] = (5, 5)
+
+        # Act
+        actual : Optional[str] = PlotManager().create_plot_as_base64(df = df, plot_kind = plot_kind, x_name = x_name, y_name = y_name, figsize = figsize)
+        actual_str : str = cast(str, actual)
+
+        # Assert
+        self.assertTrue(actual_str.startswith("iVBORw0KGgo"))
+
+    @patch('matplotlib.pyplot.show')
+    @patch('matplotlib.pyplot.figure')
+    @patch('matplotlib.pyplot.boxplot')
+    def test_showboxplot_shouldbecalledwithprovidedarguments_wheninvoked(self, mock_boxplot, mock_figure, mock_show) -> None:
+
+        # Arrange
+        df : DataFrame = DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+        x_name : str = "A"
+        figsize : Tuple[int, int] = (5, 5)
+
+        # Act
+        PlotManager().show_box_plot(df = df, x_name = x_name)
+
+        # Assert
+        mock_figure.assert_called_once_with(figsize = figsize)
+        mock_boxplot.assert_called_once_with(x = df[x_name], vert = False, tick_labels = [x_name])
+        mock_show.assert_called_once()
+    def test_createboxplotfunction_shouldreturnacallableobjectthatrunsasexpected_wheninvoked(self) -> None:
+        
+        # Arrange
+        df : DataFrame = pd.DataFrame({"seller_alias": [1, 2, 3, 4, 5]})
+        x_name : str = "seller_alias"
+        figsize : Tuple[int, int] = (5, 5)
+
+        # Act
+        func : Callable[..., Any] = PlotManager().create_box_plot_function(df = df, x_name = x_name, figsize = figsize)
+
+        # Assert
+        self.assertTrue(callable(func))
+        func() # Ensures that the function runs without error.
+    def test_createboxplotasbase64_shouldreturnexpectedstring_wheninvoked(self) -> None:
+        
+        # Arrange
+        df : DataFrame = pd.DataFrame({"seller_alias": [1, 2, 3, 4, 5]})
+        x_name : str = "seller_alias"
+        figsize : Tuple[int, int] = (5, 5)
+
+        # Act
+        actual : Optional[str] = PlotManager().create_box_plot_as_base64(df = df, x_name = x_name, figsize = figsize)
+
+        # Assert
+        self.assertTrue(str(actual).startswith("iVBORw0KGgo"))
+
+    def test_createhtmlimagetag_shouldreturnexpectedstring_wheninvoked(self):
+        
+        # Arrange
+        image_string : str = "c29tZWltYWdlc3RyaW5n"
+        expected : str = f'<img src="data:image/png;base64,{image_string}" />'
+
+        # Act
+        actual : str = PlotManager().create_html_image_tag(image_string = image_string)
+        
+        # Assert
+        self.assertEqual(expected, actual)
+    def test_describedataframe_shouldreturnexpecteddataframe_wheninvoked(self) -> None:
+
+        # Arrange
+        df : DataFrame = pd.DataFrame({
+                    "A": [1, 2, 3, 4, 5],
+                    "B": [5, 4, 3, 2, 1]
+                })
+        column_names : list[str] = ["A", "B"]
+        expected_df : DataFrame = pd.DataFrame({
+            "A": ["5", "3", "1.58114", "1", "2", "3", "4", "5"],
+            "B": ["5", "3", "1.58114", "1", "2", "3", "4", "5"]
+        }, index=["count", "mean", "std", "min", "25%", "50%", "75%", "max"])
+        
+        # Act
+        actual_df : DataFrame = PlotManager().describe_dataframe(df = df, column_names = column_names)
+        
+        # Assert
+        assert_frame_equal(actual_df, expected_df)
 
 class MessageCollectionTestCase(unittest.TestCase):
 
