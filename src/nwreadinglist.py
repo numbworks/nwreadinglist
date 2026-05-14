@@ -22,7 +22,6 @@ from typing import Any, Callable, Literal, Optional, Tuple
 from weasyprint import CSS, HTML
 
 # LOCAL/NW MODULES
-from nwshared import FileManager
 from nwshared import LambdaProvider, Displayer, PlotManager
 
 # CONSTANTS
@@ -234,7 +233,90 @@ class FilePathManager():
             file_paths.append(file_path)
 
         return file_paths
+class FileManager():
+    
+    '''Collects all the logic related to the file management.'''
 
+    __file_path_manager : FilePathManager
+
+    def __init__(self, file_path_manager : FilePathManager) -> None:
+        
+        self.__file_path_manager = file_path_manager
+    def __create_file_paths(self, working_folder_path : str, extension : str) -> list[str]:
+
+        '''Creates file paths.'''
+
+        if not extension.startswith("."):
+            extension = f".{extension}"
+
+        file_paths : list[str] = []
+        for file_name in os.listdir(path = working_folder_path):
+            if file_name.endswith(extension):
+                file_path : str = self.__file_path_manager.create_file_path(folder_path = working_folder_path, file_name = file_name)   
+                file_paths.append(file_path)
+
+        return file_paths
+    def __convert_contents_to_lines(self, contents : list[str]) -> list[str]:
+
+        '''Converts contents to lines.'''
+
+        lines : list[str] = []
+        for i in range(len(contents)):
+            lines.append(contents[i])
+            lines.append('\n')
+
+        return lines
+
+    def remove_files(self, extensions : list[str], working_folder_path : str) -> None:
+
+        '''Delete all the files of the provided extensions from the provided folder.'''    
+
+        for file_name in os.listdir(path = working_folder_path):
+            for extension in extensions:
+                if file_name.endswith(extension):
+                    os.remove(os.path.join(working_folder_path, file_name))
+    def load_content(self, file_path : str) -> str:
+        
+        '''Reads the content of the provided text file and returns it as string.'''
+
+        content : str = ""
+        with open(file_path, 'r', encoding = 'utf-8') as file:
+            content = file.read()
+
+        return content
+    def load_contents(self, working_folder_path : str, extension : str) -> list[str]:
+
+        '''Reads the contents of all the text files in the provided folder and returns them as a collection of strings.'''
+
+        file_paths : list[str] = self.__create_file_paths(working_folder_path = working_folder_path, extension = extension)
+
+        contents : list[str] = []
+        for file_path in file_paths:
+            content : str = self.load_content(file_path = file_path)
+            contents.append(content)
+
+        return contents
+    def save_content(self, content : str, file_path : str) -> None:    
+
+        '''Writes the provided content to the provided file path.'''
+
+        with open(file_path, 'w', encoding = 'utf-8') as new_file:
+            new_file.write(content)
+    def save_contents(self, contents : list[str], file_paths : list[str]) -> None: 
+
+        '''Writes the provided contents to the provided file paths.'''
+
+        for i in range(len(contents)):
+            self.save_content(content = str(contents[i]), file_path = file_paths[i]) # without str() it returns 'bytes' (?)
+    def save_log(self, contents : list[str], working_folder_path : str, file_name : str) -> None:
+
+        '''Writes the provided collection of strings as newline-separated lines into the provided file.'''
+
+        file_path : str = self.__file_path_manager.create_file_path(folder_path = working_folder_path, file_name  = file_name)
+        lines : list[str] = self.__convert_contents_to_lines(contents = contents)
+
+        with open(file_path, 'w', encoding = 'utf-8') as new_file:
+            new_file.writelines(lines)
 
 
 @dataclass(frozen=True)

@@ -12,16 +12,16 @@ from pandas.testing import assert_frame_equal
 from parameterized import parameterized
 from pathlib import Path
 from typing import Any, Literal, Optional, Tuple, cast
-from unittest.mock import _Call, Mock, call, patch
+from unittest.mock import _Call, Mock, call, mock_open, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import Formatter, Converter, FilePathManager
+from nwreadinglist import Formatter, Converter, FilePathManager, FileManager
 from nwreadinglist import REPORTSTR, RLCN, DEFINITIONSTR, OPTION, RSMODE, _MessageCollection
 from nwreadinglist import RLReportManager, RLSummary, DefaultPathProvider, RSCell, RSHighlighter
 from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
 from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor
-from nwshared import FileManager, Displayer, PlotManager
+from nwshared import Displayer, PlotManager
 
 # SUPPORT METHODS
 class SupportMethodProvider():
@@ -430,6 +430,182 @@ class FilePathManagerTestCase(unittest.TestCase):
         
         # Assert
         self.assertEqual(expected, actual)
+class FileManagerTestCase(unittest.TestCase):
+
+    def test_removefiles_shouldremoveallfileswithprovidedextensions_whenfilesareinworkingfolder(self):
+        
+        # Arrange
+        file_names : list[str] = [
+            "0.html",
+            "1.html",
+            "0.json",
+            "dataframe.csv",
+            "log.txt"
+        ]
+        extensions : list[str] = ["html"]
+        working_folder_path : str = "C:/nwshared/"
+
+        # Act
+        file_manager : FileManager = FileManager(file_path_manager = FilePathManager())
+        with patch.object(os, 'listdir', return_value = file_names) as mocked_listdir:
+            with patch.object(os, 'remove', return_value = None) as mocked_remove:
+                file_manager.remove_files(extensions = extensions, working_folder_path = working_folder_path)
+
+        # Assert
+        self.assertEqual(2, mocked_remove.call_count)
+        mocked_remove.assert_has_calls([ 
+            call(os.path.join(working_folder_path, file_names[0])),
+            call(os.path.join(working_folder_path, file_names[1]))
+        ])
+    def test_removefiles_shoulddonothing_whenfilesarenotinworkingfolder(self):
+        
+        # Arrange
+        file_names : list[str] = [
+            "0.json",
+            "dataframe.csv",
+            "log.txt"
+        ]
+        extensions : list[str] = ["html"]
+        working_folder_path : str = "C:/nwshared/"
+
+        # Act
+        file_manager : FileManager = FileManager(file_path_manager = FilePathManager())
+        with patch.object(os, 'listdir', return_value = file_names) as mocked_listdir:
+            with patch.object(os, 'remove', return_value = None) as mocked_remove:
+                file_manager.remove_files(extensions = extensions, working_folder_path = working_folder_path)
+
+        # Assert
+        self.assertEqual(0, mocked_remove.call_count)
+    def test_loadcontent_shouldreadfilecontent_whenproperarguments(self):
+
+        # Arrange
+        file_path : str = "C:/0.html"
+        content : str = "Some content."
+
+        # Act
+        file_manager : FileManager = FileManager(file_path_manager = FilePathManager())        
+        with patch("builtins.open", mock_open(read_data = content)) as mocked_open:
+            actual : str = file_manager.load_content(file_path = file_path)
+
+        # Assert
+        mocked_open.assert_has_calls([ 
+            call(file_path, 'r', encoding='utf-8'),
+            call().__enter__(),
+            call().read(),
+            call().__exit__(None, None, None)
+        ])
+    def test_loadcontents_shouldreadfilecontents_whenproperarguments(self):
+        
+        # Arrange
+        file_names : list[str] = [
+            "0.html",
+            "1.html",
+            "0.json",
+            "dataframe.csv",
+            "log.txt"
+        ]
+        extension : str = "html"
+        working_folder_path : str = "C:/nwshared/"
+        content : str = "Some content."        
+
+        # Act
+        file_manager : FileManager = FileManager(file_path_manager = FilePathManager())
+        with patch.object(os, 'listdir', return_value = file_names) as mocked_listdir:
+            with patch("builtins.open", mock_open(read_data = content)) as mocked_open:
+                actual : list[str] = file_manager.load_contents(working_folder_path = working_folder_path, extension = extension)
+
+        # Assert
+        self.assertEqual(2, mocked_open.call_count)
+        mocked_open.assert_has_calls([ 
+            call(os.path.join(working_folder_path, file_names[0]), 'r', encoding='utf-8'),
+            call().__enter__(),
+            call().read(),
+            call().__exit__(None, None, None),            
+            call(os.path.join(working_folder_path, file_names[1]), 'r', encoding='utf-8'),
+            call().__enter__(),
+            call().read(),
+            call().__exit__(None, None, None)
+        ])
+    def test_savecontent_shouldwritecontenttofile_whenproperarguments(self):
+
+        # Arrange
+        file_path : str = "C:/0.html"
+        content : str = "Some content."
+
+        # Act
+        file_manager : FileManager = FileManager(file_path_manager = FilePathManager())        
+        with patch("builtins.open", mock_open()) as mocked_open:
+            file_manager.save_content(content = content, file_path = file_path)
+
+        # Assert
+        mocked_open.assert_has_calls([ 
+            call(file_path, 'w', encoding='utf-8'),
+            call().__enter__(),
+            call().write(content),
+            call().__exit__(None, None, None)
+        ])
+    def test_savecontents_shouldwritecontentstofiles_whenproperarguments(self):
+
+        # Arrange
+        file_paths : list[str] = [ 
+            "C:/0.html", 
+            "C:/1.html" 
+        ]
+        contents : list[str] = [ 
+            "Some content.", 
+            "Some content."
+        ]
+
+        # Act
+        file_manager : FileManager = FileManager(file_path_manager = FilePathManager())        
+        with patch("builtins.open", mock_open()) as mocked_open:
+            file_manager.save_contents(contents = contents, file_paths = file_paths)
+
+        # Assert
+        self.assertEqual(2, mocked_open.call_count)            
+        mocked_open.assert_has_calls([ 
+            call(file_paths[0], 'w', encoding='utf-8'),
+            call().__enter__(),
+            call().write(contents[0]),
+            call().__exit__(None, None, None),            
+            call(file_paths[1], 'w', encoding='utf-8'),
+            call().__enter__(),
+            call().write(contents[1]),
+            call().__exit__(None, None, None)
+        ])
+    def test_savelog_shouldwritecontentsasloglinestofile_whenproperarguments(self):
+
+        # Arrange
+        working_folder_path : str = "C:/nwshared/"
+        file_name : str = "log.txt"
+        contents : list[str] = [
+            "[2024-03-16 23:13:19] Analysis session started.",
+            "[2024-03-16 23:13:19] The dataframe has been successfully created.",
+            "[2024-03-16 23:13:19] Analysis session completed."
+        ]
+        file_path : str = "C:/nwshared/log.txt"
+        lines : list[str] = [
+            "[2024-03-16 23:13:19] Analysis session started.",
+            "\n",
+            "[2024-03-16 23:13:19] The dataframe has been successfully created.",
+            "\n",            
+            "[2024-03-16 23:13:19] Analysis session completed.",
+            "\n"            
+        ]
+
+        # Act
+        file_manager : FileManager = FileManager(file_path_manager = FilePathManager())        
+        with patch("builtins.open", mock_open()) as mocked_open:
+            file_manager.save_log(contents = contents, working_folder_path = working_folder_path, file_name = file_name)
+
+        # Assert
+        mocked_open.assert_has_calls([ 
+            call(file_path, 'w', encoding='utf-8'),
+            call().__enter__(),
+            call().writelines(lines),
+            call().__exit__(None, None, None)
+        ])
+
 
 
 
