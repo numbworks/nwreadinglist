@@ -548,8 +548,6 @@ class PlotManager():
         describe_df = df[column_names].describe().apply(lambda s: s.apply(lambda x: format(x, 'g')))
 
         return describe_df
-
-
 @dataclass(frozen=True)
 class RLSummary():
 

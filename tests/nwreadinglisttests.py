@@ -882,17 +882,34 @@ class PlotManagerTestCase(unittest.TestCase):
         mock_show.assert_called_once()
     def test_createboxplotfunction_shouldreturnacallableobjectthatrunsasexpected_wheninvoked(self) -> None:
         
+        '''
+            To prevent a plotting window from appearing during this test, I switch the matplotlib back-end 
+            to a non-interactive one ("Agg") before the plotting happens.
+
+            Calling func() ensures that the function runs without error.
+        '''
+
         # Arrange
         df : DataFrame = pd.DataFrame({"seller_alias": [1, 2, 3, 4, 5]})
         x_name : str = "seller_alias"
         figsize : Tuple[int, int] = (5, 5)
 
         # Act
+        try:
+            import matplotlib
+            matplotlib.use('Agg') 
+        except ImportError:
+            pass
+
         func : Callable[..., Any] = PlotManager().create_box_plot_function(df = df, x_name = x_name, figsize = figsize)
 
         # Assert
         self.assertTrue(callable(func))
-        func() # Ensures that the function runs without error.
+
+        try:
+            func() 
+        except Exception as e:
+            self.fail(f"func() raised {type(e).__name__} unexpectedly!")
     def test_createboxplotasbase64_shouldreturnexpectedstring_wheninvoked(self) -> None:
         
         # Arrange
@@ -935,7 +952,6 @@ class PlotManagerTestCase(unittest.TestCase):
         
         # Assert
         assert_frame_equal(actual_df, expected_df)
-
 class MessageCollectionTestCase(unittest.TestCase):
 
     def test_pleaseruninitializefirst_shouldreturnexpectedmessage_wheninvoked(self):
