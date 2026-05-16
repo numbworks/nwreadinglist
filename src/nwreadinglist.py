@@ -829,7 +829,7 @@ class RLDataFrameFactory():
         column_names.append(RLCN.KBSIZE)            # [19], int
         column_names.append(RLCN.UNDERLINES)        # [20], int
 
-        rl_df = rl_df[column_names]
+        rl_df = rl_df[column_names].copy()
         rl_df = rl_df.replace(to_replace = excel_null_value, value = np.nan)
     
         rl_df = rl_df.astype({column_names[0]: str})  
@@ -960,7 +960,7 @@ class RLDataFrameFactory():
         '''
 
         condition : Series = (rl_df[RLCN.READYEAR] == read_year)
-        filtered_df : DataFrame = rl_df.loc[condition]
+        filtered_df : DataFrame = rl_df.loc[condition].copy()
 
         by_books_df : DataFrame = filtered_df.groupby([RLCN.READMONTH])[RLCN.TITLE].size().sort_values(ascending = [False]).reset_index(name = RLCN.BOOKS)
         by_books_df = by_books_df.sort_values(by = RLCN.READMONTH).reset_index(drop = True)   
@@ -1373,8 +1373,8 @@ class RLDataFrameFactory():
 
         rls_by_year_df : DataFrame = rls_by_month_df.copy(deep = True)
 
-        rls_by_year_df.drop(labels = RLCN.MONTH, inplace = True, axis = 1)
-        rls_by_year_df.drop(labels = RLCN.TRENDSYMBOL, inplace = True, axis = 1)
+        rls_by_year_df = rls_by_year_df.drop(labels = RLCN.MONTH, axis = 1)
+        rls_by_year_df = rls_by_year_df.drop(labels = RLCN.TRENDSYMBOL, axis = 1)
 
         yeatrend : list = rls_by_year_df.columns.to_list()
         for year in yeatrend:
@@ -1385,7 +1385,7 @@ class RLDataFrameFactory():
             rls_by_year_df[cn_year_books] = rls_by_year_df[year].apply(lambda x : self.__df_helper.unbox_rs(rs = x)[0])
             rls_by_year_df[cn_year_pages] = rls_by_year_df[year].apply(lambda x : self.__df_helper.unbox_rs(rs = x)[1])
 
-            rls_by_year_df.drop(labels = year, inplace = True, axis = 1)
+            rls_by_year_df = rls_by_year_df.drop(labels = year, axis = 1)
 
         rls_by_year_df = rls_by_year_df.sum().to_frame().transpose()
 
@@ -1399,7 +1399,7 @@ class RLDataFrameFactory():
             rls_by_year_df.drop(labels = [cn_year_books, cn_year_pages], inplace = True, axis = 1)
 
         rls_by_year_df = self.__add_trend_to_rls_by_year(rls_by_year_df = rls_by_year_df, yeatrend = yeatrend)
-        rls_by_year_df.rename(columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)), inplace = True)
+        rls_by_year_df = rls_by_year_df.rename(columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)))
 
         return rls_by_year_df
     def __create_rls_by_street_price_df(self, rl_df : DataFrame, read_years : list, rounding_digits : int) -> DataFrame:
@@ -1436,15 +1436,15 @@ class RLDataFrameFactory():
 
         condition : Series = (rls_by_street_price_df[RLCN.READYEAR].isin(read_years))
         rls_by_street_price_df = rls_by_street_price_df.loc[condition]
-        rls_by_street_price_df = rls_by_street_price_df[[RLCN.READYEAR, RLCN.STREETPRICE]]
+        rls_by_street_price_df = rls_by_street_price_df[[RLCN.READYEAR, RLCN.STREETPRICE]].copy()
 
         rls_by_street_price_df = rls_by_street_price_df.groupby([RLCN.READYEAR])[RLCN.STREETPRICE].sum().sort_values(ascending = [False]).reset_index(name = RLCN.STREETPRICE)
         rls_by_street_price_df = rls_by_street_price_df.sort_values(by = RLCN.READYEAR, ascending = [True])
         rls_by_street_price_df = rls_by_street_price_df.reset_index(drop = True)
 
         rls_by_street_price_df = rls_by_street_price_df.set_index(RLCN.READYEAR).transpose()
-        rls_by_street_price_df.reset_index(drop = True, inplace = True)
-        rls_by_street_price_df.rename_axis(None, axis = 1, inplace = True)
+        rls_by_street_price_df =  rls_by_street_price_df.reset_index(drop = True)
+        rls_by_street_price_df = rls_by_street_price_df.rename_axis(None, axis = 1)
         rls_by_street_price_df.columns = rls_by_street_price_df.columns.astype(str)
         
         new_column_names : list = [str(x) for x in read_years]
@@ -1457,7 +1457,7 @@ class RLDataFrameFactory():
 
         if rls_by_street_price_df.shape[1] > 1:
             rls_by_street_price_df = self.__add_trend_to_rls_by_street_price(rls_by_street_price_df = rls_by_street_price_df, yeatrend = read_years)
-            rls_by_street_price_df.rename(columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)), inplace = True)
+            rls_by_street_price_df = rls_by_street_price_df.rename(columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)))
 
         for column_name in new_column_names:
             if column_name in rls_by_street_price_df.columns:
@@ -1517,7 +1517,7 @@ class RLDataFrameFactory():
             right_on = RLCN.PUBLISHER)
         rls_by_publisher_df = self.__add_a4sheets_column(df = rls_by_publisher_df)
         
-        rls_by_publisher_df = rls_by_publisher_df[[RLCN.PUBLISHER, RLCN.BOOKS, RLCN.A4SHEETS]]
+        rls_by_publisher_df = rls_by_publisher_df[[RLCN.PUBLISHER, RLCN.BOOKS, RLCN.A4SHEETS]].copy()
         rls_by_publisher_df[RLCN.ABPERC] = round(((rls_by_publisher_df[RLCN.A4SHEETS] / rls_by_publisher_df[RLCN.BOOKS]) * 100), rounding_digits)
 
         return rls_by_publisher_df
@@ -1629,7 +1629,7 @@ class RLDataFrameFactory():
             RLCN.ISWORTH
         ]
 
-        rls_by_publisher_df = rls_by_publisher_df[reordered_cns]
+        rls_by_publisher_df = rls_by_publisher_df[reordered_cns].copy()
         
         return rls_by_publisher_df  
     def __create_rls_by_publisher_footer(self, publisher_min_books : int, publisher_min_ab_perc : float, publisher_min_avgrating : float) -> str:
@@ -1655,7 +1655,7 @@ class RLDataFrameFactory():
         filtered_df : DataFrame = rls_by_publisher_df.copy(deep = True)
 
         condition : Series = (filtered_df[RLCN.ISWORTH] == criteria)
-        filtered_df = filtered_df.loc[condition]
+        filtered_df = filtered_df.loc[condition].copy()
         
         filtered_df.reset_index(drop = True, inplace = True)
 
@@ -1711,7 +1711,7 @@ class RLDataFrameFactory():
         """
 
         rl_rating_five_df : DataFrame = rl_enriched_df.copy(deep = True)
-        rl_rating_five_df = rl_rating_five_df[rl_rating_five_df[RLCN.RATING] == 5]
+        rl_rating_five_df = rl_rating_five_df[rl_rating_five_df[RLCN.RATING] == 5].copy()
 
         cns : list[str] = [
             RLCN.TITLE,
@@ -1722,7 +1722,7 @@ class RLDataFrameFactory():
             RLCN.A4SHEETS,
             RLCN.RATING
         ]
-        rl_rating_five_df = rl_rating_five_df[cns]
+        rl_rating_five_df = rl_rating_five_df[cns].copy()
 
         if number_as_stars:
             rl_rating_five_df[RLCN.RATING] = rl_rating_five_df[RLCN.RATING].apply(
@@ -1965,7 +1965,7 @@ class RLDataFrameFactory():
         rls_by_publisher_df = self.__create_rls_by_publisher_step_8(rls_by_publisher_df)
 
         if n:
-            rls_by_publisher_df = rls_by_publisher_df.head(n = n)
+            rls_by_publisher_df = rls_by_publisher_df.head(n = n).copy()
 
         if criteria:
             rls_by_publisher_df = self.__filter_by_is_worth(rls_by_publisher_df = rls_by_publisher_df, criteria = criteria)
@@ -2039,7 +2039,7 @@ class RLDataFrameFactory():
             remove_if_zero = remove_if_zero)
         
         rld_by_kbsize_df = self.__converter.convert_index_to_one_based(df = rld_by_kbsize_df)
-        rld_by_kbsize_df = rld_by_kbsize_df.head(n = n)
+        rld_by_kbsize_df = rld_by_kbsize_df.head(n = n).copy()
 
         return rld_by_kbsize_df
     def create_definitions_df(self) -> DataFrame:
@@ -2455,7 +2455,7 @@ class RLReportManager():
             RLCN.A4SHEETS,
             RLCN.UNDERLINES,
             RLCN.RATING
-        ]]
+        ]].copy()
         
         rl_reportified_df[RLCN.RATING] = rl_reportified_df[RLCN.RATING].apply(lambda x : self.__formatter.format_rating(rating = x))
 
