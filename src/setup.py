@@ -23,7 +23,8 @@ if __name__ == "__main__":
             "tabulate>=0.9.0",
             "sparklines>=0.5.0",
             "weasyprint>=66.0",
-            "ipython==7.23.1"
+            "ipython==7.23.1",
+            "jinja2==3.1.6"
         ],
         python_requires = ">=3.12",
         license = "MIT",
