@@ -36,10 +36,6 @@ This project includes portions of the `asciibannermanager` project, which is doc
 
 - [docs-asciibannermanager.md](SeeAlso-asciibannermanager/docs-asciibannermanager.md)
 
-## Known Issues: nwshared
-
-If `nwshared` creates some issues for you, please refer to [its documentation on Github](https://github.com/numbworks/nwshared/blob/master/docs/docs-nwshared.md).
-
 ## Known Issues: "ImportError: cannot import name 'display' from 'IPython.core.display'"
 
 Starting `v4.3.0`, the devcontainer's Dockerfile forces `ipkernel` to use a specific version of its `ipython` dependency:
