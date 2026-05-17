@@ -14,10 +14,10 @@ if __name__ == "__main__":
         url = PROJECT_URL,
         py_modules = [ LIBRARY_NAME, CLI_NAME, "setupinfo" ],
         install_requires = [ 
-            "numpy>=2.1.2",
+            "numpy>=1.26.4",
             "pyarrow>=17.0.0",
             "openpyxl>=3.1.5",
-            "pandas>=2.2.3",
+            "pandas>=2.1.4",
             "requests>=2.32.3",
             "matplotlib>=3.9.2",        
             "tabulate>=0.9.0",
