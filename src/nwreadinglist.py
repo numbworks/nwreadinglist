@@ -1,30 +1,29 @@
 '''
-A collection of components to handle "Reading List.xlsx".
+A library that can run several automated data analysis tasks on a reading list and save the results as a PDF report.
 
-Alias: nwrl
+Alias: nwread
 '''
 
 # GLOBAL MODULES
+import base64
 import copy
 import numpy as np
 import os
 import pandas as pd
 import re
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum, auto
+from io import BytesIO
 from numpy import float64
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, Index
+from pandas.io.formats.style import Styler
 from pathlib import Path
 from re import Match
 from sparklines import sparklines
-from typing import Any, Callable, Literal, Optional, Tuple
-from weasyprint import CSS, HTML
+from typing import Any, Callable, Literal, Optional, Tuple, Union
 
 # LOCAL/NW MODULES
-from nwshared import Formatter, Converter, FilePathManager, FileManager
-from nwshared import LambdaProvider, Displayer, PlotManager
-
 # CONSTANTS
 class RLCN(StrEnum):
     
@@ -106,6 +105,21 @@ class RSMODE(StrEnum):
 
     top_one_per_row = auto()
     top_three = auto()
+class PlotKind(StrEnum):
+
+    '''All the kinds of plot supported by df.plot().'''
+
+    LINE = "line"
+    BAR = "bar"
+    BARH = "barh"
+    HIST = "hist"
+    KDE = "kde"
+    DENSITY = "density"
+    AREA = "area"
+    PIE = "pie"
+    SCATTER = "scatter"
+    HEXBIN = "hexbin"
+    # BOX = "box"
 
 # STATIC CLASSES
 class _MessageCollection():
@@ -120,7 +134,419 @@ class _MessageCollection():
     def provided_mode_not_supported(mode : RSMODE):
         return f"The provided mode is not supported: '{mode}'."
 
-# DTOs
+# CLASSES
+class Formatter():
+
+    '''Collects all the logic related to formatting tasks.'''
+
+    def format_to_iso_8601(self, dt : datetime, include_time : bool = False) -> str:
+
+        '''
+            "2023-08-03"
+            "2023-08-03 17:22:15"
+        '''
+
+        if include_time == False:
+            return dt.strftime(format = "%Y-%m-%d")
+        else:
+            return dt.strftime(format = "%Y-%m-%d %H:%M:%S")
+    def format_usd_amount(self, amount : float64, rounding_digits : int) -> str:
+
+        '''
+            748.7 => 748.70 => "$748.70"
+        '''
+
+        rounded : float64 = amount.round(decimals = rounding_digits)
+        formatted : str = f"${rounded:.2f}"
+
+        return formatted
+    def format_rating(self, rating : int) -> str:
+
+        '''"★★★★★", "★★★★☆", ...'''
+
+        black_star : str = "★"
+        white_star : str = "☆"
+
+        if rating == 1:
+            return f"{black_star}{white_star*4}"
+        elif rating == 2:
+            return f"{black_star*2}{white_star*3}"
+        elif rating == 3:
+            return f"{black_star*3}{white_star*2}"
+        elif rating == 4:
+            return f"{black_star*4}{white_star*1}"
+        elif rating == 5:
+            return f"{black_star*5}"            
+        else:
+            return str(rating)
+class Converter():
+
+    '''Collects all the logic related to converting tasks.'''
+
+    def convert_index_to_blanks(self, df : DataFrame) -> DataFrame:
+
+        '''Converts the index of the provided DataFrame to blanks.'''
+
+        blank_idx : list[str] = [''] * len(df)
+        df.index = Index(blank_idx)
+
+        return df
+    def convert_index_to_one_based(self, df : DataFrame) -> DataFrame:
+
+        '''Converts the index of the provided DataFrame from zero-based to one-based.'''
+
+        df.index += 1
+
+        return df
+    def convert_date_to_datetime(self, dt : date) -> datetime:
+
+        '''Converts provided date to datetime.'''
+
+        return datetime(year = dt.year, month = dt.month, day = dt.day)
+    def convert_word_count_to_A4_sheets(self, word_count : int) -> int:
+
+        '''
+            "[...], a typical page which has 1-inch margines and is typed with a 12-point font 
+            with standard spacing elements will be approximately 500 words when typed single spaced."
+        '''
+
+        if word_count == 0:
+            return 0
+
+        A4_sheets : int = int(word_count / 500)
+        A4_sheets += 1
+
+        return A4_sheets
+class FilePathManager():
+    
+    '''Collects all the logic related to the file path management.'''
+
+    def create_file_path(self, folder_path : str, file_name : str) -> str:
+
+        '''Creates a file path.'''
+
+        return os.path.join(folder_path, file_name) 
+    def create_numbered_file_path(self, folder_path : str, number : int, extension : str) -> str:
+
+        r'''Creates a numbered file path. Example: ("C:\\", 1, "html") => "C:\\1.html"'''
+
+        file_name : str = f"{number}.{extension}"
+        file_path : str = self.create_file_path(folder_path = folder_path, file_name = file_name)    
+
+        return file_path
+    def create_numbered_file_paths(self, folder_path : str, range_start : int, range_end : int, extension : str) -> list[str]:
+
+        '''
+            Creates a collection of numbered file paths.
+
+            If range_start = 1 and range_end = 3, only two items will be created (range_end is excluded).
+        '''
+
+        file_paths : list[str] = []
+        for i in range(range_start, range_end):
+            file_path : str = self.create_numbered_file_path(folder_path = folder_path, number = i, extension = extension)
+            file_paths.append(file_path)
+
+        return file_paths
+class FileManager():
+    
+    '''Collects all the logic related to the file management.'''
+
+    __file_path_manager : FilePathManager
+
+    def __init__(self, file_path_manager : FilePathManager) -> None:
+        
+        self.__file_path_manager = file_path_manager
+    def __create_file_paths(self, working_folder_path : str, extension : str) -> list[str]:
+
+        '''Creates file paths.'''
+
+        if not extension.startswith("."):
+            extension = f".{extension}"
+
+        file_paths : list[str] = []
+        for file_name in os.listdir(path = working_folder_path):
+            if file_name.endswith(extension):
+                file_path : str = self.__file_path_manager.create_file_path(folder_path = working_folder_path, file_name = file_name)   
+                file_paths.append(file_path)
+
+        return file_paths
+    def __convert_contents_to_lines(self, contents : list[str]) -> list[str]:
+
+        '''Converts contents to lines.'''
+
+        lines : list[str] = []
+        for i in range(len(contents)):
+            lines.append(contents[i])
+            lines.append('\n')
+
+        return lines
+
+    def remove_files(self, extensions : list[str], working_folder_path : str) -> None:
+
+        '''Delete all the files of the provided extensions from the provided folder.'''    
+
+        for file_name in os.listdir(path = working_folder_path):
+            for extension in extensions:
+                if file_name.endswith(extension):
+                    os.remove(os.path.join(working_folder_path, file_name))
+    def load_content(self, file_path : str) -> str:
+        
+        '''Reads the content of the provided text file and returns it as string.'''
+
+        content : str = ""
+        with open(file_path, 'r', encoding = 'utf-8') as file:
+            content = file.read()
+
+        return content
+    def load_contents(self, working_folder_path : str, extension : str) -> list[str]:
+
+        '''Reads the contents of all the text files in the provided folder and returns them as a collection of strings.'''
+
+        file_paths : list[str] = self.__create_file_paths(working_folder_path = working_folder_path, extension = extension)
+
+        contents : list[str] = []
+        for file_path in file_paths:
+            content : str = self.load_content(file_path = file_path)
+            contents.append(content)
+
+        return contents
+    def save_content(self, content : str, file_path : str) -> None:    
+
+        '''Writes the provided content to the provided file path.'''
+
+        with open(file_path, 'w', encoding = 'utf-8') as new_file:
+            new_file.write(content)
+    def save_contents(self, contents : list[str], file_paths : list[str]) -> None: 
+
+        '''Writes the provided contents to the provided file paths.'''
+
+        for i in range(len(contents)):
+            self.save_content(content = str(contents[i]), file_path = file_paths[i]) # without str() it returns 'bytes' (?)
+    def save_log(self, contents : list[str], working_folder_path : str, file_name : str) -> None:
+
+        '''Writes the provided collection of strings as newline-separated lines into the provided file.'''
+
+        file_path : str = self.__file_path_manager.create_file_path(folder_path = working_folder_path, file_name  = file_name)
+        lines : list[str] = self.__convert_contents_to_lines(contents = contents)
+
+        with open(file_path, 'w', encoding = 'utf-8') as new_file:
+            new_file.writelines(lines)
+class LambdaProvider():
+
+    '''Provides useful lambda functions.'''
+
+    def get_default_logging_function(self) -> Callable[[str], None]:
+
+        '''
+            An adapter around print().
+            Prints something like: "Some message"
+        '''
+
+        return lambda msg : print(msg)
+    def get_timestamped_logging_function(self, now_function : Callable[[], datetime] = lambda : datetime.now()) -> Callable[[str], None]:
+
+        '''
+            An adapter around print(). 
+            Prints something like: "[2023-08-03 17:22:15] Some message"
+        '''
+
+        dt_str : str = Formatter().format_to_iso_8601(dt = now_function(), include_time = True)
+
+        return lambda msg : print(f"[{dt_str}] {msg}")
+class Displayer():
+
+    '''Adapter around IPython.core.display.display().'''
+
+    def __display(self, obj: Any) -> None:
+
+        '''Safely calls IPython display() or do nothing.'''
+        
+        try:
+            from IPython.core.display import display
+            display(obj)
+        except ImportError:
+            pass
+    def __display_df(self, df : DataFrame, hide_index : bool = True, formatters : Optional[dict] = None) -> None:
+
+        '''Displays df in Jupyter Notebook according to provided arguments.'''
+
+        styler : Styler = df.style.format()
+
+        if formatters:
+            styler = df.style.format(formatters)
+
+        if hide_index:
+            styler.hide()
+
+        self.__display(styler)
+    def __display_styler(self, styler : Styler, hide_index : bool = True, formatters : Optional[dict] = None) -> None:
+
+        '''Displays styler in Jupyter Notebook according to provided arguments.'''
+
+        new_styler : Styler = copy.deepcopy(styler)
+
+        if formatters:
+            new_styler.format(formatters)
+
+        if hide_index:
+            new_styler.hide()
+
+        self.__display(new_styler)
+    
+    def display(self, obj : Union[DataFrame, Styler], hide_index : bool = True, formatters : Optional[dict] = None) -> None:
+
+        '''
+            Displays obj in Jupyter Notebook according to provided arguments.
+
+            Example for 'formatters':
+
+                formatters : dict = { "Price" : "{:.2f}" }
+        '''
+
+        if isinstance(obj, DataFrame):
+            self.__display_df(df = obj, hide_index = hide_index, formatters = formatters)
+
+        if isinstance(obj, Styler):
+            self.__display_styler(styler = obj, hide_index = hide_index, formatters = formatters)
+    def display_cascade(self, objs : list[Union[DataFrame, Styler]], hide_index : bool = True, formatters : Optional[dict] = None) -> None:
+
+        '''
+            Displays objects as a cascade in a Jupyter Notebook based on the provided arguments.
+
+            Example for 'formatters':
+
+                formatters : dict = { "Price" : "{:.2f}" }
+        '''
+
+        for obj in objs:
+            self.display(obj = obj, hide_index = hide_index, formatters = formatters)
+class PlotManager():
+    
+    '''Collects all the logic related to the plot management.'''
+
+    def __get_plt(self):
+
+        '''Safely returns matplotlib.pyplot or does nothing.'''
+        
+        try:
+            from matplotlib import pyplot as plt
+            return plt
+        except ImportError:
+            return None
+
+    def show_plot(self, df : DataFrame, plot_kind : PlotKind, x_name : str, y_name : str, figsize : Tuple[int, int] = (5, 5)) -> None:
+
+        '''Shows a plot created with df.plot().'''
+
+        title = f"{y_name} by {x_name}"
+        df.plot(x = x_name, y = y_name, legend = True, kind = plot_kind.value, title = title, figsize = figsize)
+    def create_plot_function(self, df : DataFrame, plot_kind : PlotKind, x_name : str, y_name : str = "items", figsize : Tuple[int, int] = (5, 5)) -> Callable[[], None]:
+
+        '''
+            Returns a function that visualizes a plot.
+
+            Example:
+            >>> func = PlotManager().create_plot_function(df = df , x_name = "seller_alias")
+            >>> func()
+        '''
+
+        func : Callable[[], None] = lambda : self.show_plot(df = df, plot_kind = plot_kind, x_name = x_name, y_name = y_name, figsize = figsize)
+
+        return func    
+    def create_plot_as_base64(self, df : DataFrame, plot_kind : PlotKind, x_name : str, y_name : str = "items", figsize : Tuple[int, int] = (5, 5)) -> Optional[str]:
+
+        '''
+            Returns a plot as a base64 string or returns None.
+
+            Example:            
+            >>> plot_manager : PlotManager = PlotManager()
+            >>> image_string : str = plot_manager.create_plot_as_base64(df = df, x_name = "seller_alias")
+            >>> image_string = plot_manager.create_html_image_tag(image_string = image_string)
+            >>> HTML(image_string)
+        '''
+
+        plt : Any = self.__get_plt()
+        if not plt:
+            return None
+
+        buffer : BytesIO = BytesIO()
+
+        title = f"{y_name} by {x_name}"
+        fig : Optional[Any] = df.plot(x = x_name, y = y_name, legend = True, kind = plot_kind.value, title = title, figsize = figsize).get_figure()
+        
+        image_string : Optional[str] = None
+
+        if fig:
+            fig.savefig(buffer, format = "png", bbox_inches = 'tight')
+            plt.close(fig)
+            image_string = base64.b64encode(buffer.getbuffer()).decode("ascii")
+            
+        return image_string
+   
+    def show_box_plot(self, df : DataFrame, x_name : str, figsize : Tuple[int, int] = (5, 5)) -> None:
+
+        '''Shows a box plot created with plt.boxplot() or does nothing.'''
+
+        plt : Any = self.__get_plt()
+        if not plt:
+            return None
+
+        plt.figure(figsize = figsize)
+        plt.boxplot(x = df[x_name], vert = False, tick_labels = [x_name])
+        plt.show()
+    def create_box_plot_function(self, df : DataFrame, x_name : str, figsize : Tuple[int, int] = (5, 5)) -> Callable[[], None]:
+
+        '''
+            Returns a function that visualizes a box plot.
+
+            Example:
+            >>> func = PlotManager().create_box_plot_function(df = df , x_name = "seller_alias")
+            >>> func()
+        '''
+
+        func : Callable[[], None] = lambda : self.show_box_plot(df = df, x_name = x_name, figsize = figsize)
+
+        return func
+    def create_box_plot_as_base64(self, df : DataFrame, x_name : str, figsize : Tuple[int, int] = (5, 5)) -> Optional[str]:
+
+        '''
+            Returns a box plot as a base64 string or returns None.
+
+            Example:            
+            >>> plot_manager : PlotManager = PlotManager()
+            >>> image_string : str = plot_manager.create_box_plot_as_base64(df = df, x_name = "seller_alias")
+            >>> image_string = plot_manager.create_html_image_tag(image_string = image_string)
+            >>> HTML(image_string)
+        '''
+
+        plt : Any = self.__get_plt()
+        if not plt:
+            return None
+
+        buffer : BytesIO = BytesIO()
+
+        plt.figure(figsize = figsize)
+        plt.boxplot(x = df[x_name], vert = False, tick_labels = [x_name])
+        plt.savefig(buffer, format = "png", bbox_inches = 'tight')
+        plt.close()
+
+        image_string : str = base64.b64encode(buffer.getbuffer()).decode("ascii")
+
+        return image_string
+
+    def create_html_image_tag(self, image_string : str) -> str:
+
+        '''Creates a <img /> HTML tag to display an image from the provided base64 string.'''
+
+        return f'<img src="data:image/png;base64,{image_string}" />'
+    def describe_dataframe(self, df : DataFrame, column_names : list[str]) -> DataFrame:
+        
+        '''Describes the provided dataframe according to the provided column names.'''
+
+        describe_df = df[column_names].describe().apply(lambda s: s.apply(lambda x: format(x, 'g')))
+
+        return describe_df
 @dataclass(frozen=True)
 class RLSummary():
 
@@ -140,8 +566,6 @@ class RLSummary():
     rls_by_underlines_df : DataFrame
     rld_by_kbsize_df : DataFrame
     definitions_df : DataFrame
-
-# CLASSES
 class DefaultPathProvider():
 
     '''Responsible for proviving the default path to the dataset.'''
@@ -164,7 +588,7 @@ class YearProvider():
 
         '''Returns a list of years.'''
 
-        years : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
+        years : list[int] = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026]
 
         return years
 @dataclass(frozen=True)
@@ -405,7 +829,7 @@ class RLDataFrameFactory():
         column_names.append(RLCN.KBSIZE)            # [19], int
         column_names.append(RLCN.UNDERLINES)        # [20], int
 
-        rl_df = rl_df[column_names]
+        rl_df = rl_df[column_names].copy()
         rl_df = rl_df.replace(to_replace = excel_null_value, value = np.nan)
     
         rl_df = rl_df.astype({column_names[0]: str})  
@@ -536,7 +960,7 @@ class RLDataFrameFactory():
         '''
 
         condition : Series = (rl_df[RLCN.READYEAR] == read_year)
-        filtered_df : DataFrame = rl_df.loc[condition]
+        filtered_df : DataFrame = rl_df.loc[condition].copy()
 
         by_books_df : DataFrame = filtered_df.groupby([RLCN.READMONTH])[RLCN.TITLE].size().sort_values(ascending = [False]).reset_index(name = RLCN.BOOKS)
         by_books_df = by_books_df.sort_values(by = RLCN.READMONTH).reset_index(drop = True)   
@@ -949,8 +1373,8 @@ class RLDataFrameFactory():
 
         rls_by_year_df : DataFrame = rls_by_month_df.copy(deep = True)
 
-        rls_by_year_df.drop(labels = RLCN.MONTH, inplace = True, axis = 1)
-        rls_by_year_df.drop(labels = RLCN.TRENDSYMBOL, inplace = True, axis = 1)
+        rls_by_year_df = rls_by_year_df.drop(labels = RLCN.MONTH, axis = 1)
+        rls_by_year_df = rls_by_year_df.drop(labels = RLCN.TRENDSYMBOL, axis = 1)
 
         yeatrend : list = rls_by_year_df.columns.to_list()
         for year in yeatrend:
@@ -961,7 +1385,7 @@ class RLDataFrameFactory():
             rls_by_year_df[cn_year_books] = rls_by_year_df[year].apply(lambda x : self.__df_helper.unbox_rs(rs = x)[0])
             rls_by_year_df[cn_year_pages] = rls_by_year_df[year].apply(lambda x : self.__df_helper.unbox_rs(rs = x)[1])
 
-            rls_by_year_df.drop(labels = year, inplace = True, axis = 1)
+            rls_by_year_df = rls_by_year_df.drop(labels = year, axis = 1)
 
         rls_by_year_df = rls_by_year_df.sum().to_frame().transpose()
 
@@ -975,7 +1399,7 @@ class RLDataFrameFactory():
             rls_by_year_df.drop(labels = [cn_year_books, cn_year_pages], inplace = True, axis = 1)
 
         rls_by_year_df = self.__add_trend_to_rls_by_year(rls_by_year_df = rls_by_year_df, yeatrend = yeatrend)
-        rls_by_year_df.rename(columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)), inplace = True)
+        rls_by_year_df = rls_by_year_df.rename(columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)))
 
         return rls_by_year_df
     def __create_rls_by_street_price_df(self, rl_df : DataFrame, read_years : list, rounding_digits : int) -> DataFrame:
@@ -1012,15 +1436,15 @@ class RLDataFrameFactory():
 
         condition : Series = (rls_by_street_price_df[RLCN.READYEAR].isin(read_years))
         rls_by_street_price_df = rls_by_street_price_df.loc[condition]
-        rls_by_street_price_df = rls_by_street_price_df[[RLCN.READYEAR, RLCN.STREETPRICE]]
+        rls_by_street_price_df = rls_by_street_price_df[[RLCN.READYEAR, RLCN.STREETPRICE]].copy()
 
         rls_by_street_price_df = rls_by_street_price_df.groupby([RLCN.READYEAR])[RLCN.STREETPRICE].sum().sort_values(ascending = [False]).reset_index(name = RLCN.STREETPRICE)
         rls_by_street_price_df = rls_by_street_price_df.sort_values(by = RLCN.READYEAR, ascending = [True])
         rls_by_street_price_df = rls_by_street_price_df.reset_index(drop = True)
 
         rls_by_street_price_df = rls_by_street_price_df.set_index(RLCN.READYEAR).transpose()
-        rls_by_street_price_df.reset_index(drop = True, inplace = True)
-        rls_by_street_price_df.rename_axis(None, axis = 1, inplace = True)
+        rls_by_street_price_df =  rls_by_street_price_df.reset_index(drop = True)
+        rls_by_street_price_df = rls_by_street_price_df.rename_axis(None, axis = 1)
         rls_by_street_price_df.columns = rls_by_street_price_df.columns.astype(str)
         
         new_column_names : list = [str(x) for x in read_years]
@@ -1033,7 +1457,7 @@ class RLDataFrameFactory():
 
         if rls_by_street_price_df.shape[1] > 1:
             rls_by_street_price_df = self.__add_trend_to_rls_by_street_price(rls_by_street_price_df = rls_by_street_price_df, yeatrend = read_years)
-            rls_by_street_price_df.rename(columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)), inplace = True)
+            rls_by_street_price_df = rls_by_street_price_df.rename(columns = (lambda x : self.__df_helper.try_consolidate_trend_column_name(column_name = x)))
 
         for column_name in new_column_names:
             if column_name in rls_by_street_price_df.columns:
@@ -1093,7 +1517,7 @@ class RLDataFrameFactory():
             right_on = RLCN.PUBLISHER)
         rls_by_publisher_df = self.__add_a4sheets_column(df = rls_by_publisher_df)
         
-        rls_by_publisher_df = rls_by_publisher_df[[RLCN.PUBLISHER, RLCN.BOOKS, RLCN.A4SHEETS]]
+        rls_by_publisher_df = rls_by_publisher_df[[RLCN.PUBLISHER, RLCN.BOOKS, RLCN.A4SHEETS]].copy()
         rls_by_publisher_df[RLCN.ABPERC] = round(((rls_by_publisher_df[RLCN.A4SHEETS] / rls_by_publisher_df[RLCN.BOOKS]) * 100), rounding_digits)
 
         return rls_by_publisher_df
@@ -1205,7 +1629,7 @@ class RLDataFrameFactory():
             RLCN.ISWORTH
         ]
 
-        rls_by_publisher_df = rls_by_publisher_df[reordered_cns]
+        rls_by_publisher_df = rls_by_publisher_df[reordered_cns].copy()
         
         return rls_by_publisher_df  
     def __create_rls_by_publisher_footer(self, publisher_min_books : int, publisher_min_ab_perc : float, publisher_min_avgrating : float) -> str:
@@ -1231,7 +1655,7 @@ class RLDataFrameFactory():
         filtered_df : DataFrame = rls_by_publisher_df.copy(deep = True)
 
         condition : Series = (filtered_df[RLCN.ISWORTH] == criteria)
-        filtered_df = filtered_df.loc[condition]
+        filtered_df = filtered_df.loc[condition].copy()
         
         filtered_df.reset_index(drop = True, inplace = True)
 
@@ -1287,7 +1711,7 @@ class RLDataFrameFactory():
         """
 
         rl_rating_five_df : DataFrame = rl_enriched_df.copy(deep = True)
-        rl_rating_five_df = rl_rating_five_df[rl_rating_five_df[RLCN.RATING] == 5]
+        rl_rating_five_df = rl_rating_five_df[rl_rating_five_df[RLCN.RATING] == 5].copy()
 
         cns : list[str] = [
             RLCN.TITLE,
@@ -1298,7 +1722,7 @@ class RLDataFrameFactory():
             RLCN.A4SHEETS,
             RLCN.RATING
         ]
-        rl_rating_five_df = rl_rating_five_df[cns]
+        rl_rating_five_df = rl_rating_five_df[cns].copy()
 
         if number_as_stars:
             rl_rating_five_df[RLCN.RATING] = rl_rating_five_df[RLCN.RATING].apply(
@@ -1541,7 +1965,7 @@ class RLDataFrameFactory():
         rls_by_publisher_df = self.__create_rls_by_publisher_step_8(rls_by_publisher_df)
 
         if n:
-            rls_by_publisher_df = rls_by_publisher_df.head(n = n)
+            rls_by_publisher_df = rls_by_publisher_df.head(n = n).copy()
 
         if criteria:
             rls_by_publisher_df = self.__filter_by_is_worth(rls_by_publisher_df = rls_by_publisher_df, criteria = criteria)
@@ -1615,7 +2039,7 @@ class RLDataFrameFactory():
             remove_if_zero = remove_if_zero)
         
         rld_by_kbsize_df = self.__converter.convert_index_to_one_based(df = rld_by_kbsize_df)
-        rld_by_kbsize_df = rld_by_kbsize_df.head(n = n)
+        rld_by_kbsize_df = rld_by_kbsize_df.head(n = n).copy()
 
         return rld_by_kbsize_df
     def create_definitions_df(self) -> DataFrame:
@@ -2031,7 +2455,7 @@ class RLReportManager():
             RLCN.A4SHEETS,
             RLCN.UNDERLINES,
             RLCN.RATING
-        ]]
+        ]].copy()
         
         rl_reportified_df[RLCN.RATING] = rl_reportified_df[RLCN.RATING].apply(lambda x : self.__formatter.format_rating(rating = x))
 
@@ -2159,13 +2583,6 @@ class RLReportManager():
         """
         
         return full_html
-    def __create_stylesheet(self):
-
-        '''Creates a CSS stylesheet.'''
-
-        stylesheet : CSS = CSS(string = "@page { size: A3 landscape; margin: 20mm; }")
-        
-        return stylesheet
     
     def save_as_report(
         self, 
@@ -2189,7 +2606,9 @@ class RLReportManager():
             html_path.write_text(data = full_html, encoding = "utf-8")
         
         if save_pdf:
-            HTML(string = full_html).write_pdf(target = str(pdf_path), stylesheets = [self.__create_stylesheet()])
+            from weasyprint import CSS, HTML
+            stylesheet : CSS = CSS(string = "@page { size: A3 landscape; margin: 20mm; }")
+            HTML(string = full_html).write_pdf(target = str(pdf_path), stylesheets = [stylesheet])
 @dataclass(frozen=True)
 class ComponentBag():
 

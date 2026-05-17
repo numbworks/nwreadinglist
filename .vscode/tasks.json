@@ -1,0 +1,41 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "nwreadinglist: all-concise",
+            "type": "shell",
+            "command": "cd ${workspaceFolder}/scripts/nwmakefiles && make -f makefile-nwreadinglist all-concise",
+            "problemMatcher": []
+        },
+        {
+            "label": "nwreadinglistcli: all-concise",
+            "type": "shell",
+            "command": "cd ${workspaceFolder}/scripts/nwmakefiles && make -f makefile-nwreadinglistcli all-concise",
+            "problemMatcher": []
+        },
+        {
+            "label": "nwreadinglist: coverage-verbose",
+            "type": "shell",
+            "command": "cd ${workspaceFolder}/scripts/nwmakefiles && make -f makefile-nwreadinglist coverage-verbose",
+            "problemMatcher": []
+        },
+        {
+            "label": "nwreadinglistcli: coverage-verbose",
+            "type": "shell",
+            "command": "cd ${workspaceFolder}/scripts/nwmakefiles && make -f makefile-nwreadinglistcli coverage-verbose",
+            "problemMatcher": []
+        },
+        {
+            "label": "nwreadinglist: update-codecoverage",
+            "type": "shell",
+            "command": "cd ${workspaceFolder}/scripts/nwmakefiles && make -f makefile-nwreadinglist update-codecoverage",
+            "problemMatcher": []
+        },
+        {
+            "label": "nwreadinglistcli: update-codecoverage",
+            "type": "shell",
+            "command": "cd ${workspaceFolder}/scripts/nwmakefiles && make -f makefile-nwreadinglistcli update-codecoverage",
+            "problemMatcher": []
+        }
+    ]
+}

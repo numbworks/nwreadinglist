@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "Debug: nwreadinglistcli",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/nwreadinglistcli.py",
+            "console": "integratedTerminal",
+            "args": [
+                "save", 
+                "--input_path", 
+                "/workspaces/nwreadinglist/data/Reading List.xlsx", 
+                "--nrows", 
+                "371",
+                "--folder_path",
+                "/home/nwreadinglist/"
+            ],
+            "justMyCode": true
+        }
+    ]
+}
