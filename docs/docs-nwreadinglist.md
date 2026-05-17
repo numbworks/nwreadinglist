@@ -24,17 +24,23 @@ To get started with this project as a developer, please give a look to the follo
 
 - [docs-developmentguide-python.md](SeeAlso-developmentguide/docs-developmentguide-python.md)
 
-## See Also: `nwmakefiles`
-
-This project includes portions of the `nwmakefiles` project, which is documented here:
-
-- [docs-nwmakefiles.md](SeeAlso-nwmakefiles/docs-nwmakefiles.md)
-
 ## See Also: `asciibannermanager`
 
 This project includes portions of the `asciibannermanager` project, which is documented here:
 
 - [docs-asciibannermanager.md](SeeAlso-asciibannermanager/docs-asciibannermanager.md)
+
+## See Also: `nwbuilders`
+
+This project includes portions of the `nwbuilders` project, which is documented here:
+
+- [docs-nwbuilders-python.md](SeeAlso-nwbuilders/docs-nwbuilders-python.md)
+
+## See Also: `nwmakefiles`
+
+This project includes portions of the `nwmakefiles` project, which is documented here:
+
+- [docs-nwmakefiles.md](SeeAlso-nwmakefiles/docs-nwmakefiles.md)
 
 ## Known Issues: "ImportError: cannot import name 'display' from 'IPython.core.display'"
 
