@@ -6,7 +6,7 @@ Contact: numbworks@gmail.com
 | Date | Author | Description |
 |---|---|---|
 | 2026-05-12 | numbworks | Created. |
-| 2026-05-12 | numbworks | Last update (6.0.0). |
+| 2026-07-04 | numbworks | Last update (6.0.1). |
 
 ## Introduction
 

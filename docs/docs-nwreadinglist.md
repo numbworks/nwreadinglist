@@ -54,6 +54,12 @@ This project includes portions of the `nwmakefiles` project, which is documented
 
 - [docs-nwmakefiles.md](SeeAlso-nwmakefiles/docs-nwmakefiles.md)
 
+## See Also: `userguide`
+
+To get started with this project as a user, please give a look to the following document:
+
+- [docs-userguide-python.md](SeeAlso-userguide/docs-userguide-python.md)
+
 ## Markdown Toolset
 
 Suggested toolset to view and edit this Markdown file:
