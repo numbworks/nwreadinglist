@@ -49,7 +49,7 @@ root@e584fefc57f0:/# nwread --input_path "/data/Reading List.xlsx" --nrow 371
 
 command: 'save'
 input_path: '/data/Reading List.xlsx'
-nrows: '371'
+nrows: '389'
 folder_path: 'None'
 
 The PDF report has been successfully saved.
