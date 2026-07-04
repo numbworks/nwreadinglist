@@ -35,7 +35,7 @@ Shows help and usage information.
 ```text
 nwread \
 	--input_path "/data/Reading List.xlsx" \
-	--nrow 371 
+	--nrow 389
 ```
 
 **Run it against a reading list with custom `folder_path`:**
@@ -43,7 +43,7 @@ nwread \
 ```text
 nwread \
 	--input_path "/data/Reading List.xlsx" \
-	--nrow 371 \
+	--nrow 389 \
 	--folder_path "/home/nwreadinglist/"
 ```
 
