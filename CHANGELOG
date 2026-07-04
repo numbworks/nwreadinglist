@@ -2,8 +2,9 @@ v6.0.1
 - Application:
 	- Feature: added support for mini banner.
 - Maintenance:
-	- Added: docs-frameworkfreeze-python.md, docs-knownissues-python.md, docs-userguide-python.md.
-	- Updated: docs-asciibannermanager.md, docs-developerguide-python.md.
+	- Devcontainer: moved Python cache folders (pycache, mypy_cache) to a Docker volume.
+	- SeeAlso: added docs-frameworkfreeze-python.md, docs-knownissues-python.md, docs-userguide-python.md.
+	- SeeAlso: updated docs-asciibannermanager.md, docs-developerguide-python.md.
 - Documentation:
 	- Feature: updated to v6.0.1.
 
