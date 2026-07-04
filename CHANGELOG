@@ -1,6 +1,11 @@
 v6.0.1
 - Application:
 	- Feature: added support for mini banner.
+- Maintenance:
+	- Added: docs-frameworkfreeze-python.md, docs-knownissues-python.md, docs-userguide-python.md.
+	- Updated: docs-asciibannermanager.md, docs-developerguide-python.md.
+- Documentation:
+	- Feature: updated to v6.0.1.
 
 v6.0.0 - BREAKING CHANGES
 - Application:
