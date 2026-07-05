@@ -13,7 +13,7 @@
                 "--input_path", 
                 "/workspaces/nwreadinglist/data/Reading List.xlsx", 
                 "--nrows", 
-                "371",
+                "389",
                 "--folder_path",
                 "/home/nwreadinglist/"
             ],

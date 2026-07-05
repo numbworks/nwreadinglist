@@ -2,14 +2,14 @@
 
 # --- CONFIGURATION ---
 PROJECT_NAME="nwreadinglist"
-PROJECT_VERSION="6.0.0"
+PROJECT_VERSION="6.0.1"
 PROJECT_ALIAS="nwread"
 CLI_NAME="nwreadinglistcli"
 
 COMPANY_NAME="numbworks"
 COPYRIGHT="numbworks"
 TRADEMARK="numbworks"
-FILE_DESCRIPTION="A library that can run several automated data analysis tasks on a reading list and save the results as a PDF report."
+FILE_DESCRIPTION="A CLI application that can run several automated data analysis tasks on a reading list and save the results as a PDF report."
 
 DOCKER_FILE="nwreadinglistcli-dockerfile"
 BASE_IMAGE="python:3.12.5-bookworm"

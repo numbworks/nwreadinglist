@@ -6,7 +6,7 @@ Contact: numbworks@gmail.com
 | Date | Author | Description |
 |---|---|---|
 | 2026-05-12 | numbworks | Created. |
-| 2026-05-12 | numbworks | Last update (6.0.0). |
+| 2026-07-04 | numbworks | Last update (6.0.1). |
 
 ## Introduction
 
@@ -49,7 +49,7 @@ root@e584fefc57f0:/# nwread --input_path "/data/Reading List.xlsx" --nrow 371
 
 command: 'save'
 input_path: '/data/Reading List.xlsx'
-nrows: '371'
+nrows: '389'
 folder_path: 'None'
 
 The PDF report has been successfully saved.
