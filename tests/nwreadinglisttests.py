@@ -21,7 +21,7 @@ from unittest.mock import _Call, Mock, call, mock_open, patch
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
 from nwreadinglist import Formatter, Converter, FilePathManager, FileManager, LambdaProvider, Displayer, PlotManager, PlotKind
-from nwreadinglist import REPORTSTR, RLCN, DEFINITIONSTR, OPTION, RSMODE, _MessageCollection
+from nwreadinglist import REPORTSTR, RLCN, DEFINITIONSTR, OPTION, HIGHLIGHTERMODE, _MessageCollection
 from nwreadinglist import RLReportManager, RLSummary, DefaultPathProvider, RSCell, RSHighlighter
 from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
 from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor
@@ -1625,10 +1625,10 @@ class RSHighlighterTestCase(unittest.TestCase):
         self.assertEqual(actual[1].rs, "63 (18578)")
 
     @parameterized.expand([
-        (RSMODE.top_one_per_row, 1),
-        (RSMODE.top_three, 3)
+        (HIGHLIGHTERMODE.top_one_per_row, 1),
+        (HIGHLIGHTERMODE.top_three, 3)
     ])
-    def test_extractn_shouldreturnexpected_whenvalid(self, mode: RSMODE, expected: int) -> None:
+    def test_extractn_shouldreturnexpected_whenvalid(self, mode: HIGHLIGHTERMODE, expected: int) -> None:
         
         # Arrange
         # Act
@@ -1640,7 +1640,7 @@ class RSHighlighterTestCase(unittest.TestCase):
     def test_extractn_shouldraiseexception_wheninvalid(self) -> None:
         
         # Arrange
-        mode : RSMODE = cast(RSMODE, "Invalid")
+        mode : HIGHLIGHTERMODE = cast(HIGHLIGHTERMODE, "Invalid")
 
         # Act & Assert
         with self.assertRaises(Exception):
@@ -1665,7 +1665,7 @@ class RSHighlighterTestCase(unittest.TestCase):
         
         # Arrange
         df : DataFrame = DataFrame({"2015": ["0 (0)", "2 (275)"], "↕": ["↑", "↑"], "2016": ["63 (18578)", "13 (5157)"]})
-        mode : RSMODE = RSMODE.top_one_per_row
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
         column_names : list[str] = ["2015", "2016"]
 
         # Act
@@ -1679,7 +1679,7 @@ class RSHighlighterTestCase(unittest.TestCase):
         
         # Arrange
         df : DataFrame = DataFrame({"2015": ["0 (0)", "2 (275)"], "↕": ["↑", "↑"], "2016": ["63 (18578)", "13 (5157)"]})
-        mode : RSMODE = RSMODE.top_three
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_three
         column_names : list[str] = ["2015", "2016"]
 
         # Act
@@ -1694,7 +1694,7 @@ class RSHighlighterTestCase(unittest.TestCase):
 
         # Arrange
         df : DataFrame = DataFrame({"2015": ["0 (0)", "2 (275)"], "↕": ["↑", "↑"], "2016": ["63 (18578)", "13 (5157)"]})
-        mode : RSMODE = cast(RSMODE, "Invalid")
+        mode : HIGHLIGHTERMODE = cast(HIGHLIGHTERMODE, "Invalid")
         column_names : list[str] = ["2015", "2016"]
 
         expected : str = _MessageCollection.provided_mode_not_supported(mode)
@@ -1725,7 +1725,7 @@ class RSHighlighterTestCase(unittest.TestCase):
     def test_highlightdataframe_shouldhighlightexpectedcells_whencolumnnamesareprovided(self) -> None:
 
         # Arrange
-        mode : RSMODE = RSMODE.top_one_per_row
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
         column_names : list[str] = ["2015", "2016", "2017"]
 
         expected : DataFrame = self.df_without_duplicates.copy(deep = True)
@@ -1740,7 +1740,7 @@ class RSHighlighterTestCase(unittest.TestCase):
     def test_highlightdataframe_shouldhighlightexpectedcells_whencolumnnamesarenotprovided(self) -> None:
 
         # Arrange
-        mode : RSMODE = RSMODE.top_one_per_row
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
         column_names : list[str] = []
 
         expected : DataFrame = self.df_without_duplicates.copy(deep = True)
@@ -1767,7 +1767,7 @@ class RSHighlighterTestCase(unittest.TestCase):
         # Assert
         highlighted_df.assert_called_once_with(
             df = rls_by_month_df,
-            mode = RSMODE.top_three
+            mode = HIGHLIGHTERMODE.top_three
         )
     def test_highlightttsbyyear_shouldperformexpectedcalls_wheninvoked(self) -> None:
 
@@ -1783,7 +1783,7 @@ class RSHighlighterTestCase(unittest.TestCase):
         # Assert
         highlighted_df.assert_called_once_with(
             df = rls_by_year_df,
-            mode = RSMODE.top_three
+            mode = HIGHLIGHTERMODE.top_three
         )
 class ComponentBagTestCase(unittest.TestCase):
     

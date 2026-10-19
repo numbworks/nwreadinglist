@@ -99,9 +99,9 @@ class REPORTSTR(StrEnum):
     RLSBYRATING = "By Rating"
     RLSBYUNDERLINES = "By Underlines"
     DEFINITIONS = "Definitions"
-class RSMODE(StrEnum):
+class HIGHLIGHTERMODE(StrEnum):
 
-    '''Represents a collection of modes for RSHighlighter.'''
+    '''Represents a collection of modes for *Highlighter.'''
 
     top_one_per_row = auto()
     top_three = auto()
@@ -131,7 +131,7 @@ class _MessageCollection():
         return "Please run the 'initialize' method first."
 
     @staticmethod
-    def provided_mode_not_supported(mode : RSMODE):
+    def provided_mode_not_supported(mode : HIGHLIGHTERMODE):
         return f"The provided mode is not supported: '{mode}'."
 
 # CLASSES
@@ -638,6 +638,9 @@ class SettingBag():
     rls_by_publisher_criteria : Optional[Literal["Yes", "No"]] = field(default = None)
     rls_by_rating_number_as_stars : bool = field(default = True)
     rls_by_topic_trend_sparklines_maximum : bool = field(default = False)
+
+
+
 class RLDataFrameHelper():
 
     '''Collects helper functions for RLDataFrameFactory.'''
@@ -2126,13 +2129,13 @@ class RSHighlighter():
                 self.__append_new_rs_cell(rs_cells, coordinate_pair, cell_content)
 
         return rs_cells
-    def __extract_n(self, mode : RSMODE) -> int:
+    def __extract_n(self, mode : HIGHLIGHTERMODE) -> int:
 
         '''Extracts n from mode.'''
 
-        if mode == RSMODE.top_three:
+        if mode == HIGHLIGHTERMODE.top_three:
             return 3
-        elif mode == RSMODE.top_one_per_row:
+        elif mode == HIGHLIGHTERMODE.top_one_per_row:
             return 1
         else:
             raise Exception(_MessageCollection.provided_mode_not_supported(mode))
@@ -2144,7 +2147,7 @@ class RSHighlighter():
         top_n : list[RSCell] = sorted_cells[:n]
 
         return top_n
-    def __calculate_rs_cells(self, df : DataFrame, mode : RSMODE, column_names : list[str]) -> list[RSCell]:
+    def __calculate_rs_cells(self, df : DataFrame, mode : HIGHLIGHTERMODE, column_names : list[str]) -> list[RSCell]:
 
         '''Returns a list of RSCell objects according to df and mode.'''
 
@@ -2154,14 +2157,14 @@ class RSHighlighter():
         n : int = self.__extract_n(mode = mode)
         current : list[RSCell] = []
 
-        if mode == RSMODE.top_one_per_row:
+        if mode == HIGHLIGHTERMODE.top_one_per_row:
             for row_idx in range(last_row_idx):
 
                 current = self.__extract_row(df = df, row_idx = row_idx, column_names = column_names)
                 current = self.__extract_top_n_rs_cells(rs_cells = current, n = n)
                 rs_cells.extend(current)
                 
-        elif mode == RSMODE.top_three:
+        elif mode == HIGHLIGHTERMODE.top_three:
             for row_idx in range(last_row_idx):
                 
                 current = self.__extract_row(df = df, row_idx = row_idx, column_names = column_names)
@@ -2190,7 +2193,7 @@ class RSHighlighter():
                 tagged_df.iloc[row, col] = f"{left_h}{str(df.iloc[row, col])}{right_h}"
             
         return tagged_df
-    def __highlight_dataframe(self, df : DataFrame, mode : RSMODE, column_names : list[str] = []) -> DataFrame:
+    def __highlight_dataframe(self, df : DataFrame, mode : HIGHLIGHTERMODE, column_names : list[str] = []) -> DataFrame:
 
         '''
             Expects a df containing reading stasuses into cells - i.e. "0 (0)", "2 (275)".
@@ -2220,7 +2223,7 @@ class RSHighlighter():
         
         '''Returns the provided dataframe with adequate highlights.'''
 
-        mode : RSMODE = RSMODE.top_three
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_three
 
         highlighted_df : DataFrame = self.__highlight_dataframe(
             df = rls_by_month_df,
@@ -2232,7 +2235,7 @@ class RSHighlighter():
         
         '''Returns the provided dataframe with adequate highlights.'''
 
-        mode : RSMODE = RSMODE.top_three
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_three
 
         highlighted_df : DataFrame = self.__highlight_dataframe(
             df = rls_by_year_df,
