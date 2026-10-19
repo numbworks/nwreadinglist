@@ -6,7 +6,7 @@ Contact: numbworks@gmail.com
 | Date | Author | Description |
 |---|---|---|
 | 2023-08-10 | numbworks | Created. |
-| 2026-07-04 | numbworks | Last update (6.0.1). |
+| 2026-10-19 | numbworks | Last update (6.1.0). |
 
 ## Introduction
 
@@ -23,6 +23,12 @@ A partial class diagram showing the core architecture of the application:
 This project includes portions of the `asciibannermanager` project, which is documented here:
 
 - [docs-asciibannermanager.md](SeeAlso-asciibannermanager/docs-asciibannermanager.md)
+
+## See Also: `contributionguide`
+
+If you would like to contribute to this project, please take a look at the following document first:
+
+- [docs-contributionguide-python.md](SeeAlso-contributionguide/docs-contributionguide-python.md)
 
 ## See Also: `developerguide`
 
