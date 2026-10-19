@@ -20,7 +20,7 @@ from unittest.mock import _Call, Mock, call, mock_open, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import _MessageCollectionMomentumManager, Formatter, Converter, FilePathManager, FileManager, LambdaProvider, Displayer, MomentumManager, PlotManager, PlotKind
+from nwreadinglist import _MessageCollectionMomentumManager, Formatter, Converter, FilePathManager, FileManager, IntCell, IntHighlighter, LambdaProvider, Displayer, MomentumManager, PlotManager, PlotKind
 from nwreadinglist import REPORTSTR, RLCN, DEFINITIONSTR, OPTION, HIGHLIGHTERMODE, _MessageCollection
 from nwreadinglist import RLReportManager, RLSummary, DefaultPathProvider, RSCell, RSHighlighter
 from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
@@ -1935,6 +1935,215 @@ class RSHighlighterTestCase(unittest.TestCase):
             df = rls_by_year_df,
             mode = HIGHLIGHTERMODE.top_three
         )
+class IntCellTestCase(unittest.TestCase):
+
+    def test_init_shouldinitializeobjectwithexpectedproperties_whenvalidarguments(self) -> None:
+
+        # Arrange
+        coordinate_pair : Tuple[int, int] = (5, 10)
+        raw_value : str = "1050"
+        numeric_value : int = 1050
+
+        # Act
+        int_cell: IntCell = IntCell(
+            coordinate_pair = coordinate_pair,
+            raw_value = raw_value,
+            numeric_value = numeric_value
+        )
+
+        # Assert
+        self.assertEqual(int_cell.coordinate_pair, coordinate_pair)
+        self.assertEqual(int_cell.raw_value, raw_value)
+        self.assertEqual(int_cell.numeric_value, numeric_value)
+class IntHighlighterTestCase(unittest.TestCase):
+
+    def setUp(self) -> None:
+
+        data : dict[str, list] = {
+            "Month": ["1", "2"],
+            "Count": ["42", "150"],
+            "↕": ["↑", "↑"],
+            "Score": ["10", "5"],
+            "↕_duplicate_1": ["↑", "↑"],
+            "Total": ["1050", "2000"]
+        }
+        columns_01 : list[str] = ["Month", "Count", "↕", "Score", "↕", "Total"]
+        self.df_with_duplicates : DataFrame = DataFrame(data, columns = columns_01)
+
+        columns_02 : list[str] = ["Month", "Count", "↕", "Score", "↕_duplicate_1", "Total"]
+        self.df_without_duplicates : DataFrame = DataFrame(data, columns = columns_02)
+
+    def test_init_shouldinitializeobjectwithexpectedproperties_wheninvoked(self) -> None:
+        
+        # Arrange
+        # Act
+        actual : IntHighlighter = IntHighlighter()
+
+        # Assert
+        self.assertIsInstance(actual, IntHighlighter)
+
+    @parameterized.expand([
+        ("42", True),
+        ("1050", True),
+        ("0", True),
+        ("2.09", False),
+        ("invalid", False),
+        ("-5", False)
+    ])
+    def test_isint_shouldreturnexpectedresult_wheninvoked(self, cell_content : str, expected : bool) -> None:
+        
+        # Arrange
+        # Act
+        actual : bool = IntHighlighter()._IntHighlighter__is_int(cell_content = cell_content)  # type: ignore
+
+        # Assert
+        self.assertEqual(actual, expected)
+
+    @parameterized.expand([
+        ("42", 42),
+        ("1050", 1050)
+    ])
+    def test_unboxint_shouldreturnexpectedint_wheninvoked(self, cell_content : str, expected : int) -> None:
+        
+        # Arrange
+        # Act
+        actual : int = IntHighlighter()._IntHighlighter__unbox_int(cell_content = cell_content)  # type: ignore
+
+        # Assert
+        self.assertEqual(actual, expected)
+
+    def test_appendnewintcell_shouldappendprovidedcell_wheninvoked(self) -> None:
+
+        # Arrange
+        int_cells : list[IntCell] = []
+        coordinate_pair : Tuple[int, int] = (5, 10)
+        raw_value : str = "1050"
+        numeric_value : int = 1050
+
+        # Act
+        IntHighlighter()._IntHighlighter__append_new_int_cell(int_cells, coordinate_pair, raw_value)  # type: ignore
+
+        # Assert
+        self.assertEqual(len(int_cells), 1)
+        self.assertEqual(int_cells[0].coordinate_pair, coordinate_pair)
+        self.assertEqual(int_cells[0].raw_value, raw_value)
+        self.assertEqual(int_cells[0].numeric_value, numeric_value)
+    def test_extractrow_shouldreturnintcells_whenrowhasvalidints(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"Count": ["42"], "↕": ["↑"], "Total": ["1050"]})
+        column_names : list[str] = ["Count", "Total"]
+
+        # Act
+        actual : list[IntCell] = IntHighlighter()._IntHighlighter__extract_row(df = df, row_idx = 0, column_names = column_names)  # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].raw_value, "42")
+        self.assertEqual(actual[1].raw_value, "1050")  
+    def test_extracttopnintcells_shouldreturntopncells_wheninvoked(self) -> None:
+        
+        # Arrange
+        int_cells : list[IntCell] = [
+            IntCell(coordinate_pair = (0, 0), raw_value = "42", numeric_value = 42),
+            IntCell(coordinate_pair = (0, 1), raw_value = "150", numeric_value = 150),
+            IntCell(coordinate_pair = (0, 2), raw_value = "1050", numeric_value = 1050)
+        ]
+
+        # Act
+        actual : list[IntCell] = IntHighlighter()._IntHighlighter__extract_top_n_int_cells(int_cells = int_cells, n = 2)  # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].raw_value, "1050")
+        self.assertEqual(actual[1].raw_value, "150")
+    def test_calculateintcells_shouldreturnexpectedcells_whentoponeperrow(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"Count": ["42", "150"], "↕": ["↑", "↑"], "Total": ["1050", "2000"]})
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
+        column_names : list[str] = ["Count", "Total"]
+
+        # Act
+        actual : list[IntCell] = IntHighlighter()._IntHighlighter__calculate_int_cells(df = df, mode = mode, column_names = column_names)  # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].raw_value, "1050")
+        self.assertEqual(actual[1].raw_value, "2000")
+    def test_calculateintcells_shouldreturnexpectedcells_whentopthree(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"Count": ["42", "150"], "Total": ["1050", "2000"]})
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_three
+        column_names : list[str] = ["Count", "Total"]
+
+        # Act
+        actual : list[IntCell] = IntHighlighter()._IntHighlighter__calculate_int_cells(df=df, mode=mode, column_names=column_names)  # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 3)
+        self.assertEqual(actual[0].raw_value, "2000")
+        self.assertEqual(actual[1].raw_value, "1050")
+        self.assertEqual(actual[2].raw_value, "150")
+    def test_calculateintcells_shouldraiseexception_whenmodenotsupported(self) -> None:
+        
+        # Arrange
+        df: DataFrame = DataFrame({"Count": ["42"]})
+        
+        # Act, Assert
+        with self.assertRaises(Exception):
+            IntHighlighter()._IntHighlighter__calculate_int_cells(df = df, mode = "unsupported_mode", column_names = ["Count"])  # type: ignore
+    def test_addtags_shouldsurroundintcellswithtokens_wheninvoked(self) -> None:
+        
+        # Arrange
+        int_cells : list[IntCell] = [
+            IntCell(coordinate_pair = (0, 1), raw_value = "42", numeric_value = 42),
+            IntCell(coordinate_pair = (1, 3), raw_value = "5", numeric_value = 5)
+        ]
+        tags : Tuple[str, str] = ("[[ ", " ]]")
+        expected : DataFrame = self.df_without_duplicates.copy(deep=True)
+        expected.iloc[0, 1] = "[[ 42 ]]"
+        expected.iloc[1, 3] = "[[ 5 ]]"
+
+        # Act
+        actual : DataFrame = IntHighlighter()._IntHighlighter__add_tags(self.df_without_duplicates, int_cells, tags)  # type: ignore
+
+        # Assert
+        self.assertTrue(expected.equals(actual))
+    def test_extractn_shouldraiseexception_whenmodenotsupported(self) -> None:
+        
+        # Arrange
+        # Act
+        # Assert
+        with self.assertRaises(Exception):
+            IntHighlighter()._IntHighlighter__extract_n(mode = "unsupported_mode")  # type: ignore
+
+    def test_highlightdataframe_shouldhighlightexpectedcells_whencolumnnamesareprovided(self) -> None:
+        
+        # Arrange
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
+        column_names : list[str] = ["Count", "Score", "Total"]
+
+        expected : DataFrame = self.df_without_duplicates.copy(deep=True)
+        expected.iloc[0, 5] = "<mark style='background-color: pink'>1050</mark>"
+        expected.iloc[1, 5] = "<mark style='background-color: pink'>2000</mark>"
+
+        # Act
+        actual : DataFrame = IntHighlighter().highlight(self.df_without_duplicates, mode, column_names)
+
+        # Assert
+        assert_frame_equal(expected, actual)
+    def test_highlightdataframe_shoulduseallcolumns_whencolumnnamesareempty(self) -> None:
+        
+        # Arrange
+        mode: HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
+
+        # Act
+        actual: DataFrame = IntHighlighter().highlight(self.df_without_duplicates, mode, [])
+
+        # Assert
+        self.assertIsNotNone(actual)
 class ComponentBagTestCase(unittest.TestCase):
     
     def test_componentbag_shouldinitializeasexpected_wheninvoked(self):
