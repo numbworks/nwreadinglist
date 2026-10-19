@@ -272,6 +272,7 @@ class ObjectMother():
             options_rl_rating_five = [OPTION.display],            
             options_rl_most_underlines = [OPTION.display],
             options_rls_by_month = [OPTION.display],
+            options_rls_by_month_mom = [OPTION.display],
             options_rls_by_year = [OPTION.display],
             options_rls_by_range = [OPTION.display],
             options_rls_by_topic = [OPTION.display],
@@ -1047,6 +1048,7 @@ class SettingBagTestCase(unittest.TestCase):
         options_rl_rating_five : list[Literal[OPTION.display]] = [OPTION.display]                                   # type: ignore[valid-type]
         options_rl_most_underlines : list[Literal[OPTION.display]] = [OPTION.display]                               # type: ignore[valid-type]
         options_rls_by_month : list[Literal[OPTION.display]] = [OPTION.display]                                     # type: ignore[valid-type]
+        options_rls_by_month_mom : list[Literal[OPTION.display]] = [OPTION.display]                                 # type: ignore[valid-type]
         options_rls_by_year : list[Literal[OPTION.display]] = [OPTION.display]                                      # type: ignore[valid-type]
         options_rls_by_range : list[Literal[OPTION.display]] = [OPTION.display]                                     # type: ignore[valid-type]
         options_rls_by_topic : list[Literal[OPTION.display]] = [OPTION.display]                                     # type: ignore[valid-type]
@@ -1090,6 +1092,7 @@ class SettingBagTestCase(unittest.TestCase):
             options_rl_rating_five = options_rl_rating_five,
             options_rl_most_underlines = options_rl_most_underlines,
             options_rls_by_month = options_rls_by_month,
+            options_rls_by_month_mom = options_rls_by_month_mom,
             options_rls_by_year = options_rls_by_year,
             options_rls_by_range = options_rls_by_range,
             options_rls_by_topic = options_rls_by_topic,
@@ -1133,6 +1136,7 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.options_rl_rating_five, options_rl_rating_five)
         self.assertEqual(setting_bag.options_rl_most_underlines, options_rl_most_underlines)
         self.assertEqual(setting_bag.options_rls_by_month, options_rls_by_month)
+        self.assertEqual(setting_bag.options_rls_by_month_mom, options_rls_by_month_mom)
         self.assertEqual(setting_bag.options_rls_by_year, options_rls_by_year)        
         self.assertEqual(setting_bag.options_rls_by_range, options_rls_by_range)
         self.assertEqual(setting_bag.options_rls_by_topic, options_rls_by_topic)

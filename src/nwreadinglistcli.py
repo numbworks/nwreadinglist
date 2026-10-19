@@ -441,6 +441,7 @@ class CLIManager():
             options_rl_rating_five = [OPTION.display],
             options_rl_most_underlines = [OPTION.display],
             options_rls_by_month = [OPTION.display],
+            options_rls_by_month_mom = [OPTION.display],
             options_rls_by_year = [OPTION.display],
             options_rls_by_range = [OPTION.display],
             options_rls_by_topic = [OPTION.display],

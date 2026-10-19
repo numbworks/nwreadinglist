@@ -609,6 +609,7 @@ class SettingBag():
     options_rl_rating_five : list[Literal[OPTION.display]]
     options_rl_most_underlines : list[Literal[OPTION.display]]
     options_rls_by_month : list[Literal[OPTION.display]]
+    options_rls_by_month_mom : list[Literal[OPTION.display]]
     options_rls_by_year : list[Literal[OPTION.display]]
     options_rls_by_range : list[Literal[OPTION.display]]
     options_rls_by_topic : list[Literal[OPTION.display]]
