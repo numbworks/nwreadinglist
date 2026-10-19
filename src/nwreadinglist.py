@@ -635,6 +635,7 @@ class SettingBag():
     rounding_digits : int = field(default = 2)
     now : datetime = field(default = datetime.now())
     enable_rs_highlighting : bool = field(default = True)
+    enable_int_highlighting : bool = field(default = True)
     report_last_update : datetime = field(default = datetime.now())
     rl_most_underlines_formatters : dict = field(default_factory = lambda : { RLCN.AVGUNDERLINES : "{:.2f}", RLCN.UPERC : "{:.2f}" })
     rld_by_kbsize_n : int = field(default = 10)
@@ -2529,11 +2530,17 @@ class RLAdapter():
 
     __df_factory : RLDataFrameFactory
     __rs_highlighter : RSHighlighter
+    __int_highlighter : IntHighlighter
 
-    def __init__(self, df_factory : RLDataFrameFactory, rs_highlighter : RSHighlighter) -> None:
+    def __init__(
+            self, 
+            df_factory : RLDataFrameFactory, 
+            rs_highlighter : RSHighlighter,
+            int_highlighter : IntHighlighter) -> None:
         
         self.__df_factory = df_factory
         self.__rs_highlighter = rs_highlighter
+        self.__int_highlighter = int_highlighter
 
     def create_rl_df(self, setting_bag : SettingBag) -> DataFrame:
 
@@ -2682,6 +2689,23 @@ class RLAdapter():
                 self.__rs_highlighter.highlight_rls_by_month(rls_by_month_df = rls_by_month_tpl[0]),
                 self.__rs_highlighter.highlight_rls_by_month(rls_by_month_df = rls_by_month_tpl[1]))
             rls_by_year_df = self.__rs_highlighter.highlight_rls_by_year(rls_by_year_df = rls_by_year_df)
+
+        if setting_bag.enable_int_highlighting:
+            rls_by_month_mom_df = self.__int_highlighter.highlight(df = rls_by_month_mom_df)
+
+            rls_by_topic_df = self.__int_highlighter.highlight(df = rls_by_topic_df, column_names = [RLCN.BOOKS])
+            rls_by_topic_df = self.__int_highlighter.highlight(df = rls_by_topic_df, column_names = [RLCN.PAGES])
+            rls_by_topic_df = self.__int_highlighter.highlight(df = rls_by_topic_df, column_names = [RLCN.A4SHEETS])
+            
+            rls_by_publisher_tpl = (
+                self.__int_highlighter.highlight(df = rls_by_publisher_tpl[0], column_names = [RLCN.BOOKS]),
+                rls_by_publisher_tpl[1])
+            rls_by_publisher_tpl = (
+                self.__int_highlighter.highlight(df = rls_by_publisher_tpl[0], column_names = [RLCN.A4SHEETS]),
+                rls_by_publisher_tpl[1])
+            
+            rl_most_underlines_df = self.__int_highlighter.highlight(df = rl_most_underlines_df, column_names = [RLCN.A4SHEETS])
+            rl_most_underlines_df = self.__int_highlighter.highlight(df = rl_most_underlines_df, column_names = [RLCN.UNDERLINES])
 
         rl_summary : RLSummary = RLSummary(
             rl_df = rl_df,
@@ -2912,7 +2936,9 @@ class ComponentBag():
             formatter = Formatter(),
             df_helper = RLDataFrameHelper(),
             momentum_manager = MomentumManager()),
-        rs_highlighter = RSHighlighter(df_helper = RLDataFrameHelper())))
+        rs_highlighter = RSHighlighter(
+            df_helper = RLDataFrameHelper()),
+        int_highlighter = IntHighlighter()))
 class ReadingListProcessor():
 
     '''Collects all the logic related to the processing of "Reading List.xlsx".'''
