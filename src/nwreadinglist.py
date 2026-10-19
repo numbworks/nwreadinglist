@@ -91,6 +91,7 @@ class REPORTSTR(StrEnum):
     RLRATINGFIVE = "Rating Five"
     RLMOSTUNDERLINES = "Most Underlines"
     RLSBYMONTH = "By Month"
+    RLSBYMONTHMOM = "By Month (Momentum)"
     RLSBYYEAR = "By Year"
     RLSBYRANGE = "By Range"
     RLSBYTOPIC = "By Topic"
