@@ -58,8 +58,8 @@ class RLCN(StrEnum):
     TOTALSPEND = "TotalSpend"
     LASTUPDATE = "LastUpdate"
     MONTH = "Month"
-    TREND = "Trend"
-    TRENDSYMBOL = "↕"
+    TREND = "↕"
+    TRENDNAME = "Trend"
     UNDERLINES = "Underlines"
     AVGUNDERLINES = "AvgUnderlines"
     UPERC = "U%"
@@ -687,7 +687,7 @@ class MomentumManager():
 
         for i in range(len(row)):
             idx : Any = row.index[i]
-            if str(idx).startswith(RLCN.TRENDSYMBOL):
+            if str(idx).startswith(RLCN.TREND):
 
                 value : Optional[Any] = row.iloc[i]
 
@@ -877,8 +877,8 @@ class RLDataFrameHelper():
             "↕1"    => "↕"
         '''
 
-        if column_name.startswith(RLCN.TRENDSYMBOL):
-            return RLCN.TRENDSYMBOL
+        if column_name.startswith(RLCN.TREND):
+            return RLCN.TREND
         
         return column_name
     def format_year_books_column_name(self, year_cn : str) -> str:
@@ -1181,7 +1181,7 @@ class RLDataFrameFactory():
 
         if add_trend == True:
 
-            cn_trend : str = f"{RLCN.TRENDSYMBOL}{i}"
+            cn_trend : str = f"{RLCN.TREND}{i}"
             cn_trend_1 : str = str(read_years[i-1])   # for ex. "2016"
             cn_trend_2 : str = str(read_years[i])     # for ex. "2017"
             
@@ -1239,7 +1239,7 @@ class RLDataFrameFactory():
 
             if i != (len(yeatrend) - 1):
 
-                cn_trend : str = f"{RLCN.TRENDSYMBOL}{i}"
+                cn_trend : str = f"{RLCN.TREND}{i}"
                 cn_trend_1 : str = str(yeatrend[i])       # 2016 => "2016"
                 cn_trend_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
                 
@@ -1270,7 +1270,7 @@ class RLDataFrameFactory():
 
             if i != (len(yeatrend) - 1):
 
-                cn_trend : str = f"{RLCN.TRENDSYMBOL}{i}"
+                cn_trend : str = f"{RLCN.TREND}{i}"
                 cn_value_1 : str = str(yeatrend[i])       # 2016 => "2016"
                 cn_value_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
                 
@@ -1510,7 +1510,7 @@ class RLDataFrameFactory():
         rls_by_year_df : DataFrame = rls_by_month_df.copy(deep = True)
 
         rls_by_year_df = rls_by_year_df.drop(labels = RLCN.MONTH, axis = 1)
-        rls_by_year_df = rls_by_year_df.drop(labels = RLCN.TRENDSYMBOL, axis = 1)
+        rls_by_year_df = rls_by_year_df.drop(labels = RLCN.TREND, axis = 1)
 
         yeatrend : list = rls_by_year_df.columns.to_list()
         for year in yeatrend:
@@ -2080,9 +2080,9 @@ class RLDataFrameFactory():
 
         if sparklines_maximum:
             maximum : int = by_topic_read_year_df[RLCN.BOOKS].max()
-            return self.__add_sparklines(df = pivoted_df, cn_values = RLCN.BOOKS, cn_sparklines = RLCN.TREND, maximum = maximum)
+            return self.__add_sparklines(df = pivoted_df, cn_values = RLCN.BOOKS, cn_sparklines = RLCN.TRENDNAME, maximum = maximum)
         else: 
-            return self.__add_sparklines(df = pivoted_df, cn_values = RLCN.BOOKS, cn_sparklines = RLCN.TREND)
+            return self.__add_sparklines(df = pivoted_df, cn_values = RLCN.BOOKS, cn_sparklines = RLCN.TRENDNAME)
     def create_rls_by_publisher_tpl(
             self, 
             rl_df : DataFrame, 
@@ -2200,7 +2200,7 @@ class RLDataFrameFactory():
             RLCN.UNDERLINES: "Underlines are sentences that express a fundamental concept that can be understood as-is.",
             RLCN.UPERC: f"For a given book, {RLCN.UPERC} is calculated as the number of {RLCN.UNDERLINES} in that book compared with the average number of {RLCN.UNDERLINES} across the entire reading list. The higher the {RLCN.UPERC}, the better the book.",
             DEFINITIONSTR.READINGSTATUS: f"A {DEFINITIONSTR.READINGSTATUS} is a string that reports, at a specified time grain, the number of books read and the corresponding total pages.",
-            f"{RLCN.TREND} ({RLCN.TRENDSYMBOL})": "A trend is a gamification metric that indicates whether a measure (e.g., total books read) has increased or decreased over time."
+            f"{RLCN.TRENDNAME} ({RLCN.TREND})": "A trend is a gamification metric that indicates whether a measure (e.g., total books read) has increased or decreased over time."
         }
         
         definitions_df : DataFrame = DataFrame(

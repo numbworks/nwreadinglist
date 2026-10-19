@@ -181,14 +181,14 @@ class ObjectMother():
         rls_by_month_df : DataFrame = DataFrame({
             RLCN.MONTH: np.array([str(i) for i in range(1, 13)], dtype=np.int64),
             "2023": np.array(["0 (0)"] * 12, dtype=object),
-            RLCN.TRENDSYMBOL: np.array(["=", "↑", "=", "=", "=", "=", "=", "=", "=", "=", "=", "="], dtype=object),
+            RLCN.TREND: np.array(["=", "↑", "=", "=", "=", "=", "=", "=", "=", "=", "=", "="], dtype=object),
             "2024": np.array(["0 (0)", "14 (5573)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", 
                             "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)"], dtype=object)
         }, index=pd.Index(range(12), dtype="int64"))
 
         rls_by_month_upd_df : DataFrame = DataFrame({
             "2023": np.array(["0 (0)"] * 12, dtype=object),
-            RLCN.TRENDSYMBOL: np.array(["=", "↑", "", "", "", "", "", "", "", "", "", ""], dtype=object),
+            RLCN.TREND: np.array(["=", "↑", "", "", "", "", "", "", "", "", "", ""], dtype=object),
             "2024": np.array(["0 (0)", "14 (5573)", "", "", "", "", "", "", "", "", "", ""], dtype=object)
         }, index=pd.Index(range(12), dtype="int64"))
 
@@ -198,7 +198,7 @@ class ObjectMother():
 
         return DataFrame({
             "2023": np.array(["0 (0)", "$0.00"], dtype = object),
-            RLCN.TRENDSYMBOL: np.array(["↑", "↑"], dtype = object),
+            RLCN.TREND: np.array(["↑", "↑"], dtype = object),
             "2024": np.array(["14 (5573)", "$587.57"], dtype = object)
         }, index=pd.Index([0, 1], dtype="int64")) 
     @staticmethod
@@ -239,7 +239,7 @@ class ObjectMother():
         return pd.DataFrame({
             RLCN.TOPIC: np.array(["Development Tools", "Python", "Software Engineering"], dtype=object),
             RLCN.BOOKS: pd.Series([[0, 0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 12], [0, 0, 0, 0, 0, 0, 0, 0, 1]]).to_numpy(),
-            RLCN.TREND: np.array(["▁▁▁▁▁▁▁▁▂", "▁▁▁▁▁▁▁▁█", "▁▁▁▁▁▁▁▁▂"], dtype=object),
+            RLCN.TRENDNAME: np.array(["▁▁▁▁▁▁▁▁▂", "▁▁▁▁▁▁▁▁█", "▁▁▁▁▁▁▁▁▂"], dtype=object),
         }, index=pd.RangeIndex(start=0, stop=3, step=1))
     @staticmethod
     def get_definitions_df() -> DataFrame:
@@ -255,7 +255,7 @@ class ObjectMother():
             RLCN.UNDERLINES: "Underlines are sentences that express a fundamental concept that can be understood as-is.",
             RLCN.UPERC: f"For a given book, {RLCN.UPERC} is calculated as the number of {RLCN.UNDERLINES} in that book compared with the average number of {RLCN.UNDERLINES} across the entire reading list. The higher the {RLCN.UPERC}, the better the book.",
             DEFINITIONSTR.READINGSTATUS: f"A {DEFINITIONSTR.READINGSTATUS} is a string that reports, at a specified time grain, the number of books read and the corresponding total pages.",
-            f"{RLCN.TREND} ({RLCN.TRENDSYMBOL})": "A trend is a gamification metric that indicates whether a measure (e.g., total books read) has increased or decreased over time."
+            f"{RLCN.TRENDNAME} ({RLCN.TREND})": "A trend is a gamification metric that indicates whether a measure (e.g., total books read) has increased or decreased over time."
         }
         
         definitions_df : DataFrame = DataFrame(
@@ -1199,8 +1199,8 @@ class MomentumManagerTestCase(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     @parameterized.expand([
-        (pd.Series(["↑", np.nan], index=[f"{RLCN.TRENDSYMBOL}1", f"{RLCN.TRENDSYMBOL}2"]), "↑E"),
-        (pd.Series(["↑", "↓", "="], index=[f"{RLCN.TRENDSYMBOL}1", f"{RLCN.TRENDSYMBOL}2", f"{RLCN.TRENDSYMBOL}3"]), "↑↓=")
+        (pd.Series(["↑", np.nan], index=[f"{RLCN.TREND}1", f"{RLCN.TREND}2"]), "↑E"),
+        (pd.Series(["↑", "↓", "="], index=[f"{RLCN.TREND}1", f"{RLCN.TREND}2", f"{RLCN.TREND}3"]), "↑↓=")
     ])
     def test_createtrendsequence_shouldreturnexpectedsequence_whenvalidrow(self, row : Series, expected : str) -> None:
 
@@ -1239,7 +1239,7 @@ class MomentumManagerTestCase(unittest.TestCase):
         # Arrange
         data : dict = {
             "2024": ["45h 45m"] * 12,
-            RLCN.TRENDSYMBOL: ["↑", "↓", "↓", "↑", "↑", "↑", "↑", "↑", "↑", "↓", "↑", "↓"],
+            RLCN.TREND: ["↑", "↓", "↓", "↑", "↑", "↑", "↑", "↑", "↑", "↓", "↑", "↓"],
             "2025": ["79h 00m"] * 12,
         }
         by_month_df : DataFrame = DataFrame(data, index = range(12))
