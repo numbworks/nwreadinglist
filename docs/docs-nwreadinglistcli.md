@@ -29,7 +29,6 @@ Contact: numbworks@gmail.com
 
 Run it against a reading list:
 
-
 ```sh
 root@e584fefc57f0:/# alias nwread="python src/nwreadinglistcli.py"
 root@e584fefc57f0:/# nwread --input_path "/data/Reading List.xlsx" --nrow 371 
