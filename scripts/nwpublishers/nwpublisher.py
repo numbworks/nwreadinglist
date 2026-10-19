@@ -387,7 +387,7 @@ def main():
 
         enable_testpypi, enable_pypi = parse_arguments()
 
-        project_name : str = "nwtimetracking"
+        project_name : str = "nwreadinglist"
         setting_collection : SettingCollection = SettingCollectionFactory().create(project_name = project_name)
 
         create_staging(setting_collection = setting_collection)
