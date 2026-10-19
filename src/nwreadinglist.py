@@ -564,6 +564,7 @@ class RLSummary():
     rl_rating_five_df : DataFrame
     rl_most_underlines_df : DataFrame
     rls_by_month_tpl : Tuple[DataFrame, DataFrame]
+    rls_by_month_mom_df : DataFrame
     rls_by_year_df : DataFrame
     rls_by_range_df : DataFrame
     rls_by_topic_df : DataFrame
@@ -2523,6 +2524,7 @@ class RLAdapter():
         rl_rating_five_df : DataFrame = self.create_rl_rating_five_df(rl_enriched_df = rl_enriched_df, setting_bag = setting_bag)
         rl_most_underlines_df : DataFrame = self.create_rl_most_underlines_df(rl_enriched_df = rl_enriched_df, setting_bag = setting_bag)
         rls_by_month_tpl : Tuple[DataFrame, DataFrame] = self.create_rls_by_month_tpl(rl_df = rl_df, setting_bag = setting_bag)
+        rls_by_month_mom_df : DataFrame = self.__df_factory.create_rls_by_month_mom_df(rls_by_month_df = rls_by_month_tpl[1])
         rls_by_year_df : DataFrame = self.create_rls_by_year_df(rls_by_month_tpl = rls_by_month_tpl, rl_df = rl_df, setting_bag = setting_bag)
         rls_by_range_df : DataFrame = self.create_rls_by_range_df(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_topic_df : DataFrame = self.__df_factory.create_rls_by_topic_df(rl_df = rl_df)
@@ -2545,6 +2547,7 @@ class RLAdapter():
             rl_rating_five_df = rl_rating_five_df,
             rl_most_underlines_df = rl_most_underlines_df,
             rls_by_month_tpl = rls_by_month_tpl,
+            rls_by_month_mom_df = rls_by_month_mom_df,
             rls_by_year_df = rls_by_year_df,
             rls_by_range_df = rls_by_range_df,
             rls_by_topic_df = rls_by_topic_df,
