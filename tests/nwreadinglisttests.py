@@ -1199,8 +1199,8 @@ class MomentumManagerTestCase(unittest.TestCase):
         self.assertEqual(expected, actual)
 
     @parameterized.expand([
-        (pd.Series(["↑", np.nan], index=[f"{RLCN.TREND}1", f"{RLCN.TREND}2"]), "↑E"),
-        (pd.Series(["↑", "↓", "="], index=[f"{RLCN.TREND}1", f"{RLCN.TREND}2", f"{RLCN.TREND}3"]), "↑↓=")
+        (pd.Series(["↑", np.nan], index=[f"{RLCN.TRENDSYMBOL}1", f"{RLCN.TRENDSYMBOL}2"]), "↑E"),
+        (pd.Series(["↑", "↓", "="], index=[f"{RLCN.TRENDSYMBOL}1", f"{RLCN.TRENDSYMBOL}2", f"{RLCN.TRENDSYMBOL}3"]), "↑↓=")
     ])
     def test_createtrendsequence_shouldreturnexpectedsequence_whenvalidrow(self, row : Series, expected : str) -> None:
 
@@ -1239,7 +1239,7 @@ class MomentumManagerTestCase(unittest.TestCase):
         # Arrange
         data : dict = {
             "2024": ["45h 45m"] * 12,
-            RLCN.TREND: ["↑", "↓", "↓", "↑", "↑", "↑", "↑", "↑", "↑", "↓", "↑", "↓"],
+            RLCN.TRENDSYMBOL: ["↑", "↓", "↓", "↑", "↑", "↑", "↑", "↑", "↑", "↓", "↑", "↓"],
             "2025": ["79h 00m"] * 12,
         }
         by_month_df : DataFrame = DataFrame(data, index = range(12))
@@ -2729,6 +2729,32 @@ class ReadingListProcessorTestCase(unittest.TestCase):
 
         # Assert
         displayer.display.assert_called_once_with(obj = rls_by_month_df)
+    def test_processrlsbymonthmom_shoulddisplay_whenoptionisdisplay(self) -> None:
+
+        # Arrange
+        rls_by_month_mom_df : DataFrame = Mock()
+
+        rl_summary : Mock = Mock()
+        rl_summary.rls_by_month_mom_df = rls_by_month_mom_df
+
+        displayer : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.rl_adapter = rl_adapter
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rls_by_month_mom = [OPTION.display]
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rls_by_month_mom()
+
+        # Assert
+        displayer.display.assert_called_once_with(obj = rls_by_month_mom_df)
     def test_processrlsbyyear_shoulddisplay_whenoptionisdisplay(self) -> None:
 
         # Arrange
@@ -3123,6 +3149,7 @@ class ReadingListProcessorTestCase(unittest.TestCase):
         ["process_rl_rating_five"],
         ["process_rl_most_underlines"],
         ["process_rls_by_month"],
+        ["process_rls_by_month_mom"],
         ["process_rls_by_year"],        
         ["process_rls_by_range"],
         ["process_rls_by_topic"],
