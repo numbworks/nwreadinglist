@@ -2453,39 +2453,41 @@ class RLReportManagerTestCase(unittest.TestCase):
         formatters : Optional[dict] = None
 
         expected_call_00 : _Call = call(self.rl_summary.rls_by_month_tpl[1], REPORTSTR.RLSBYMONTH, formatters)
-        expected_call_01 : _Call = call(self.rl_summary.rls_by_year_df, REPORTSTR.RLSBYYEAR, formatters)
-        expected_call_02 : _Call = call(self.rl_summary.rls_by_range_df, REPORTSTR.RLSBYRANGE, formatters)
-        expected_call_03 : _Call = call(self.rl_summary.rls_by_topic_df, REPORTSTR.RLSBYTOPIC, formatters)
-        expected_call_04 : _Call = call(self.rl_summary.rls_by_topic_trend_df, REPORTSTR.RLSBYTOPICTREND, formatters)
-        expected_call_05 : _Call = call(self.rl_summary.rls_by_publisher_tpl[0], REPORTSTR.RLSBYPUBLISHER, formatters, self.rl_summary.rls_by_publisher_tpl[1])
-        expected_call_06 : _Call = call(self.rl_summary.rls_by_rating_df, REPORTSTR.RLSBYRATING, formatters)
-        expected_call_07 : _Call = call(self.rl_summary.rl_rating_five_df, REPORTSTR.RLRATINGFIVE, formatters)
-        expected_call_08 : _Call = call(self.rl_summary.rls_by_underlines_df, REPORTSTR.RLSBYUNDERLINES, formatters)
-        expected_call_09 : _Call = call(self.rl_summary.rl_most_underlines_df, REPORTSTR.RLMOSTUNDERLINES, formatters)
-        expected_call_10 : _Call = call(self.rl_summary.definitions_df, REPORTSTR.DEFINITIONS, formatters)
+        expected_call_01 : _Call = call(self.rl_summary.rls_by_month_mom_df, REPORTSTR.RLSBYMONTHMOM, formatters)
+        expected_call_02 : _Call = call(self.rl_summary.rls_by_year_df, REPORTSTR.RLSBYYEAR, formatters)
+        expected_call_03 : _Call = call(self.rl_summary.rls_by_range_df, REPORTSTR.RLSBYRANGE, formatters)
+        expected_call_04 : _Call = call(self.rl_summary.rls_by_topic_df, REPORTSTR.RLSBYTOPIC, formatters)
+        expected_call_05 : _Call = call(self.rl_summary.rls_by_topic_trend_df, REPORTSTR.RLSBYTOPICTREND, formatters)
+        expected_call_06 : _Call = call(self.rl_summary.rls_by_publisher_tpl[0], REPORTSTR.RLSBYPUBLISHER, formatters, self.rl_summary.rls_by_publisher_tpl[1])
+        expected_call_07 : _Call = call(self.rl_summary.rls_by_rating_df, REPORTSTR.RLSBYRATING, formatters)
+        expected_call_08 : _Call = call(self.rl_summary.rl_rating_five_df, REPORTSTR.RLRATINGFIVE, formatters)
+        expected_call_09 : _Call = call(self.rl_summary.rls_by_underlines_df, REPORTSTR.RLSBYUNDERLINES, formatters)
+        expected_call_10 : _Call = call(self.rl_summary.rl_most_underlines_df, REPORTSTR.RLMOSTUNDERLINES, formatters)
+        expected_call_11 : _Call = call(self.rl_summary.definitions_df, REPORTSTR.DEFINITIONS, formatters)
 
-        with patch.object(self.report_manager, "_RLReportManager__create_html", return_value = "<div></div>") as mocked_create_html:
-            with patch.object(self.report_manager, "_RLReportManager__reportify_rl", return_value = empty_df) as mocked_reportify_rl:
+        with patch.object(self.report_manager, "_RLReportManager__create_html", return_value = "<div></div>") as create_html:
+            with patch.object(self.report_manager, "_RLReportManager__reportify_rl", return_value = empty_df) as reportify_rl:
 
-                expected_call_11 : _Call = call(self.report_manager._RLReportManager__reportify_rl(self.rl_summary.rl_enriched_df), REPORTSTR.RL, formatters)   # type: ignore
-                expected_calls : int = 12
+                expected_call_12 : _Call = call(self.report_manager._RLReportManager__reportify_rl(self.rl_summary.rl_enriched_df), REPORTSTR.RL, formatters)   # type: ignore
+                expected_calls : int = 13
 
                 # Act
                 actual : list[str] = self.report_manager._RLReportManager__create_html_sections(rl_summary = self.rl_summary, formatters = formatters)  # type: ignore
 
                 # Assert
-                self.assertEqual(expected_call_00, mocked_create_html.call_args_list[0])
-                self.assertEqual(expected_call_01, mocked_create_html.call_args_list[1])
-                self.assertEqual(expected_call_02, mocked_create_html.call_args_list[2])
-                self.assertEqual(expected_call_03, mocked_create_html.call_args_list[3])
-                self.assertEqual(expected_call_04, mocked_create_html.call_args_list[4])
-                self.assertEqual(expected_call_05, mocked_create_html.call_args_list[5])
-                self.assertEqual(expected_call_06, mocked_create_html.call_args_list[6])
-                self.assertEqual(expected_call_07, mocked_create_html.call_args_list[7])
-                self.assertEqual(expected_call_08, mocked_create_html.call_args_list[8])
-                self.assertEqual(expected_call_09, mocked_create_html.call_args_list[9])
-                self.assertEqual(expected_call_10, mocked_create_html.call_args_list[10])
-                self.assertEqual(expected_call_11, mocked_create_html.call_args_list[11])
+                self.assertEqual(expected_call_00, create_html.call_args_list[0])
+                self.assertEqual(expected_call_01, create_html.call_args_list[1])
+                self.assertEqual(expected_call_02, create_html.call_args_list[2])
+                self.assertEqual(expected_call_03, create_html.call_args_list[3])
+                self.assertEqual(expected_call_04, create_html.call_args_list[4])
+                self.assertEqual(expected_call_05, create_html.call_args_list[5])
+                self.assertEqual(expected_call_06, create_html.call_args_list[6])
+                self.assertEqual(expected_call_07, create_html.call_args_list[7])
+                self.assertEqual(expected_call_08, create_html.call_args_list[8])
+                self.assertEqual(expected_call_09, create_html.call_args_list[9])
+                self.assertEqual(expected_call_10, create_html.call_args_list[10])
+                self.assertEqual(expected_call_11, create_html.call_args_list[11])
+                self.assertEqual(expected_call_12, create_html.call_args_list[12])
                 self.assertEqual(len(actual), expected_calls)
     def test_createhtmltemplate_shouldcontainexpectedhtmlexcerpts_wheninvoked(self) -> None:
 

@@ -2670,6 +2670,7 @@ class RLReportManager():
         html_sections: list[str] = []
         
         html_sections.append(self.__create_html(rl_summary.rls_by_month_tpl[1], REPORTSTR.RLSBYMONTH, formatters))
+        html_sections.append(self.__create_html(rl_summary.rls_by_month_mom_df, REPORTSTR.RLSBYMONTHMOM, formatters))
         html_sections.append(self.__create_html(rl_summary.rls_by_year_df, REPORTSTR.RLSBYYEAR, formatters))
         html_sections.append(self.__create_html(rl_summary.rls_by_range_df, REPORTSTR.RLSBYRANGE, formatters))
         html_sections.append(self.__create_html(rl_summary.rls_by_topic_df, REPORTSTR.RLSBYTOPIC, formatters))
