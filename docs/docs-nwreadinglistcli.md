@@ -6,7 +6,7 @@ Contact: numbworks@gmail.com
 | Date | Author | Description |
 |---|---|---|
 | 2026-05-12 | numbworks | Created. |
-| 2026-07-04 | numbworks | Last update (6.0.1). |
+| 2026-10-19 | numbworks | Last update (6.1.0). |
 
 ## Introduction
 
@@ -45,7 +45,7 @@ root@e584fefc57f0:/# nwread --input_path "/data/Reading List.xlsx" --nrow 371
  ##:. ###: ##: ##: ##: ##::. ##:: ##::::::: ##.... ##: ##:::: ##:
  ##::. ##:. ###. ###:: ##:::. ##: ########: ##:::: ##: ########::
 ..::::..:::...::...:::..:::::..::........::..:::::..::........:::
-**********************************************Version: 6.0.0*****
+**********************************************Version: 6.1.0*****
 
 command: 'save'
 input_path: '/data/Reading List.xlsx'
