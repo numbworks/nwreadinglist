@@ -20,7 +20,8 @@ from unittest.mock import _Call, Mock, call, mock_open, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import _MessageCollectionMomentumManager, Formatter, Converter, FilePathManager, FileManager, IntCell, IntHighlighter, LambdaProvider, Displayer, MomentumManager, PlotManager, PlotKind
+from nwreadinglist import _MessageCollectionMomentumManager, FloatCell, FloatHighlighter, Formatter, Converter, FilePathManager
+from nwreadinglist import FileManager, IntCell, IntHighlighter, LambdaProvider, Displayer, MomentumManager, PlotManager, PlotKind
 from nwreadinglist import REPORTSTR, RLCN, DEFINITIONSTR, OPTION, HIGHLIGHTERMODE, _MessageCollection
 from nwreadinglist import RLReportManager, RLSummary, DefaultPathProvider, RSCell, RSHighlighter
 from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
@@ -2092,7 +2093,7 @@ class IntHighlighterTestCase(unittest.TestCase):
     def test_calculateintcells_shouldraiseexception_whenmodenotsupported(self) -> None:
         
         # Arrange
-        df: DataFrame = DataFrame({"Count": ["42"]})
+        df : DataFrame = DataFrame({"Count": ["42"]})
         
         # Act, Assert
         with self.assertRaises(Exception):
@@ -2122,7 +2123,7 @@ class IntHighlighterTestCase(unittest.TestCase):
         with self.assertRaises(Exception):
             IntHighlighter()._IntHighlighter__extract_n(mode = "unsupported_mode")  # type: ignore
 
-    def test_highlightdataframe_shouldhighlightexpectedcells_whencolumnnamesareprovided(self) -> None:
+    def test_highlight_shouldhighlightexpectedcells_whencolumnnamesareprovided(self) -> None:
         
         # Arrange
         mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
@@ -2137,13 +2138,224 @@ class IntHighlighterTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected, actual)
-    def test_highlightdataframe_shoulduseallcolumns_whencolumnnamesareempty(self) -> None:
+    def test_highlight_shoulduseallcolumns_whencolumnnamesareempty(self) -> None:
         
         # Arrange
         mode: HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
 
         # Act
         actual: DataFrame = IntHighlighter().highlight(self.df_without_duplicates, mode, [])
+
+        # Assert
+        self.assertIsNotNone(actual)
+class FloatCellTestCase(unittest.TestCase):
+
+    def test_init_shouldinitializeobjectwithexpectedproperties_whenvalidarguments(self) -> None:
+
+        # Arrange
+        coordinate_pair : Tuple[int, int] = (5, 10)
+        raw_value : str = "$2153.25"
+        numeric_value : float = 2153.25
+
+        # Act
+        float_cell : FloatCell = FloatCell(
+            coordinate_pair = coordinate_pair,
+            raw_value = raw_value,
+            numeric_value = numeric_value
+        )
+
+        # Assert
+        self.assertEqual(float_cell.coordinate_pair, coordinate_pair)
+        self.assertEqual(float_cell.raw_value, raw_value)
+        self.assertEqual(float_cell.numeric_value, numeric_value)
+class FloatHighlighterTestCase(unittest.TestCase):
+
+    def setUp(self) -> None:
+
+        data : dict[str, list] = {
+            "Month": ["1", "2"],
+            "AvgRating": ["2.09", "2.63"],
+            "↕": ["↑", "↑"],
+            "AB%": ["69.09%", "66.67%"],
+            "↕_duplicate_1": ["↑", "↑"],
+            "Amount": ["$2153.25", "$1586.70"]
+        }
+        columns_01 : list[str] = ["Month", "AvgRating", "↕", "AB%", "↕", "Amount"]
+        self.df_with_duplicates : DataFrame = DataFrame(data, columns = columns_01)
+
+        columns_02 : list[str] = ["Month", "AvgRating", "↕", "AB%", "↕_duplicate_1", "Amount"]
+        self.df_without_duplicates : DataFrame = DataFrame(data, columns = columns_02)
+
+    def test_init_shouldinitializeobjectwithexpectedproperties_wheninvoked(self) -> None:
+
+        # Arrange
+        # Act
+        actual : FloatHighlighter = FloatHighlighter()
+
+        # Assert
+        self.assertIsInstance(actual, FloatHighlighter)
+
+    @parameterized.expand([
+        ("2.09", True),
+        ("69.09%", True),
+        ("$2153.25", True),
+        ("invalid", False),
+        ("2.0", True),
+        ("$", False),
+        ("%", False)
+    ])
+    def test_isfloat_shouldreturnexpectedresult_wheninvoked(self, cell_content: str, expected: bool) -> None:
+        
+        # Arrange
+        # Act
+        actual : bool = FloatHighlighter()._FloatHighlighter__is_float(cell_content = cell_content)    # type: ignore
+
+        # Assert
+        self.assertEqual(actual, expected)
+
+    @parameterized.expand([
+        ("2.09", 2.09),
+        ("69.09%", 69.09),
+        ("$2153.25", 2153.25)
+    ])
+    def test_unboxfloat_shouldreturnexpectedfloat_wheninvoked(self, cell_content: str, expected: float) -> None:
+        
+        # Arrange
+        # Act
+        actual : float = FloatHighlighter()._FloatHighlighter__unbox_float(cell_content = cell_content)    # type: ignore
+
+        # Assert
+        self.assertEqual(actual, expected)
+
+    def test_appendnewfloatcell_shouldappendprovidedcell_wheninvoked(self) -> None:
+        
+        # Arrange
+        float_cells : list[FloatCell] = []
+        coordinate_pair : Tuple[int, int] = (5, 10)
+        raw_value : str = "$2153.25"
+        numeric_value : float = 2153.25
+
+        # Act
+        FloatHighlighter()._FloatHighlighter__append_new_float_cell(float_cells, coordinate_pair, raw_value) # type: ignore
+
+        # Assert
+        self.assertEqual(len(float_cells), 1)
+        self.assertEqual(float_cells[0].coordinate_pair, coordinate_pair)
+        self.assertEqual(float_cells[0].raw_value, raw_value)
+        self.assertEqual(float_cells[0].numeric_value, numeric_value)
+    def test_extractrow_shouldreturnfloatcells_whenrowhasvalidfloats(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"AvgRating": ["2.09"], "↕": ["↑"], "Amount": ["$2153.25"]})
+        column_names : list[str] = ["AvgRating", "Amount"]
+
+        # Act
+        actual : list[FloatCell] = FloatHighlighter()._FloatHighlighter__extract_row(df = df, row_idx = 0, column_names = column_names)   # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].raw_value, "2.09")
+        self.assertEqual(actual[1].raw_value, "$2153.25")
+    def test_extracttopnfloatcells_shouldreturntopncells_wheninvoked(self) -> None:
+
+        # Arrange
+        float_cells : list[FloatCell] = [
+            FloatCell(coordinate_pair = (0, 0), raw_value = "2.09", numeric_value = 2.09),
+            FloatCell(coordinate_pair = (0, 1), raw_value = "2.63", numeric_value = 2.63),
+            FloatCell(coordinate_pair = (0, 2), raw_value = "$2153.25", numeric_value = 2153.25)
+        ]
+
+        # Act
+        actual : list[FloatCell] = FloatHighlighter()._FloatHighlighter__extract_top_n_float_cells(float_cells = float_cells, n = 2)   # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].raw_value, "$2153.25")
+        self.assertEqual(actual[1].raw_value, "2.63")
+    def test_calculatefloatcells_shouldreturnexpectedcells_whentoponeperrow(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"AvgRating": ["2.09", "2.63"], "↕": ["↑", "↑"], "Amount": ["$2153.25", "$1586.70"]})
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
+        column_names : list[str] = ["AvgRating", "Amount"]
+
+        # Act
+        actual : list[FloatCell] = FloatHighlighter()._FloatHighlighter__calculate_float_cells(df = df, mode = mode, column_names = column_names)   # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].raw_value, "$2153.25")
+        self.assertEqual(actual[1].raw_value, "$1586.70")
+    def test_calculatefloatcells_shouldreturnexpectedcells_whentopthree(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"AvgRating": ["2.09", "2.63"], "Amount": ["$2153.25", "$1586.70"]})
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_three
+        column_names : list[str] = ["AvgRating", "Amount"]
+
+        # Act
+        actual : list[FloatCell] = FloatHighlighter()._FloatHighlighter__calculate_float_cells(df = df, mode = mode, column_names = column_names)   # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 3)
+        self.assertEqual(actual[0].raw_value, "$2153.25")
+        self.assertEqual(actual[1].raw_value, "$1586.70")
+        self.assertEqual(actual[2].raw_value, "2.63")
+    def test_calculatefloatcells_shouldraiseexception_whenmodenotsupported(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"AvgRating": ["2.09"]})
+        
+        # Act, Assert
+        with self.assertRaises(Exception):
+            FloatHighlighter()._FloatHighlighter__calculate_float_cells(df = df, mode = "unsupported_mode", column_names = ["AvgRating"])  # type: ignore
+    def test_addtags_shouldsurroundfloatcellswithtokens_wheninvoked(self) -> None:
+
+        # Arrange
+        float_cells : list[FloatCell] = [
+            FloatCell(coordinate_pair = (0, 1), raw_value = "2.09", numeric_value = 2.09),
+            FloatCell(coordinate_pair = (1, 3), raw_value = "66.67%", numeric_value = 66.67)
+        ]
+        tags : Tuple[str, str] = ("[[ ", " ]]")
+        expected : DataFrame = self.df_without_duplicates.copy(deep = True)
+        expected.iloc[0, 1] = "[[ 2.09 ]]"
+        expected.iloc[1, 3] = "[[ 66.67% ]]"
+
+        # Act
+        actual : DataFrame = FloatHighlighter()._FloatHighlighter__add_tags(self.df_without_duplicates, float_cells, tags)   # type: ignore
+
+        # Assert
+        self.assertTrue(expected.equals(actual))
+    def test_extractn_shouldraiseexception_whenmodenotsupported(self) -> None:
+        
+        # Arrange
+        # Act
+        # Assert
+        with self.assertRaises(Exception):
+            FloatHighlighter()._FloatHighlighter__extract_n(mode = "unsupported_mode")  # type: ignore
+
+    def test_highlight_shouldhighlightexpectedcells_whencolumnnamesareprovided(self) -> None:
+
+        # Arrange
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
+        column_names : list[str] = ["AvgRating", "AB%", "Amount"]
+
+        expected : DataFrame = self.df_without_duplicates.copy(deep = True)
+        expected.iloc[0, 5] = "<mark style='background-color: pink'>$2153.25</mark>"
+        expected.iloc[1, 5] = "<mark style='background-color: pink'>$1586.70</mark>"
+
+        # Act
+        actual : DataFrame = FloatHighlighter().highlight(self.df_without_duplicates, mode, column_names)
+
+        # Assert
+        assert_frame_equal(expected, actual)
+    def test_highlight_shoulduseallcolumns_whencolumnnamesareempty(self) -> None:
+        
+        # Arrange
+        mode: HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
+
+        # Act
+        actual: DataFrame = FloatHighlighter().highlight(self.df_without_duplicates, mode, [])
 
         # Assert
         self.assertIsNotNone(actual)

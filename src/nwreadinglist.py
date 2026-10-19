@@ -2524,6 +2524,149 @@ class IntHighlighter():
         highlighted_df = self.__add_tags(df = highlighted_df, int_cells = int_cells, tags = tags)
 
         return highlighted_df
+
+@dataclass(frozen = True)
+class FloatCell():
+    
+    '''Collects all the information related to a DataFrame cell that are required by FloatHighlighter.'''
+
+    coordinate_pair : Tuple[int, int]
+    raw_value : str
+    numeric_value : float
+class FloatHighlighter():
+
+    '''Encapsulates all the logic related to highlighting cells in dataframes containing floats, percentages, and currency amounts.'''
+
+    def __is_float(self, cell_content : str) -> bool:
+
+        '''Returns True if content matches decimal, percentage, or currency formats (e.g., 2.09, 69.09, $2153.25).'''
+
+        pattern : str = r"^\$?\d+\.\d+\%?$"
+        match : Optional[Match[str]] = re.fullmatch(pattern = pattern, string = cell_content)
+
+        return match is not None
+    def __unbox_float(self, cell_content : str) -> float:
+
+        '''Extracts the numerical float value from the cell content by removing currency symbols and percentage signs.'''
+
+        cleaned : str = cell_content.replace("$", "").replace("%", "")
+        return float(cleaned)
+    def __append_new_float_cell(self, float_cells : list[FloatCell], coordinate_pair : Tuple[int, int], cell_content : str) -> None:
+
+        '''Creates and appends a new FloatCell object to float_cells.'''
+
+        numeric_value : float = self.__unbox_float(cell_content = cell_content)
+
+        float_cell : FloatCell = FloatCell(
+            coordinate_pair = coordinate_pair,
+            raw_value = cell_content,
+            numeric_value = numeric_value,
+        )
+        
+        float_cells.append(float_cell)
+    def __extract_row(self, df : DataFrame, row_idx : int, column_names : list[str]) -> list[FloatCell]:
+
+        '''Returns a collection of FloatCell objects for provided arguments.'''
+
+        float_cells : list[FloatCell] = []
+        col_indices : list = [df.columns.get_loc(column_name) for column_name in column_names if column_name in df.columns]
+
+        for col_idx in col_indices:
+
+            coordinate_pair : Tuple[int, int] = (row_idx, col_idx)
+            cell_content : str = str(df.iloc[row_idx, col_idx])
+
+            if self.__is_float(cell_content = cell_content):
+                self.__append_new_float_cell(float_cells, coordinate_pair, cell_content)
+
+        return float_cells
+    def __extract_n(self, mode : HIGHLIGHTERMODE) -> int:
+
+        '''Extracts n from mode.'''
+
+        if mode == HIGHLIGHTERMODE.top_three:
+            return 3
+        elif mode == HIGHLIGHTERMODE.top_one_per_row:
+            return 1
+        else:
+            raise Exception(_MessageCollection.provided_mode_not_supported(mode))
+    def __extract_top_n_float_cells(self, float_cells : list[FloatCell], n : int) -> list[FloatCell]:
+
+        '''Extracts the n objects in float_cells with the highest numeric values.'''
+
+        sorted_cells : list[FloatCell] = sorted(float_cells, key = lambda cell : cell.numeric_value, reverse = True)
+        top_n : list[FloatCell] = sorted_cells[:n]
+
+        return top_n
+    def __calculate_float_cells(self, df : DataFrame, mode : HIGHLIGHTERMODE, column_names : list[str]) -> list[FloatCell]:
+
+        '''Returns a list of FloatCell objects according to df and mode.'''
+
+        float_cells : list[FloatCell] = []
+
+        last_row_idx : int = len(df)
+        n : int = self.__extract_n(mode = mode)
+        current : list[FloatCell] = []
+
+        if mode == HIGHLIGHTERMODE.top_one_per_row:
+            for row_idx in range(last_row_idx):
+                current = self.__extract_row(df = df, row_idx = row_idx, column_names = column_names)
+                current = self.__extract_top_n_float_cells(float_cells = current, n = n)
+                float_cells.extend(current)
+                
+        elif mode == HIGHLIGHTERMODE.top_three:
+            for row_idx in range(last_row_idx):
+                current = self.__extract_row(df = df, row_idx = row_idx, column_names = column_names)
+                float_cells.extend(current)
+
+            float_cells = self.__extract_top_n_float_cells(float_cells = float_cells, n = n)
+
+        else:
+            raise Exception(_MessageCollection.provided_mode_not_supported(mode))
+
+        return float_cells
+    def __add_tags(self, df : DataFrame, float_cells : list[FloatCell], tags : Tuple[str, str]) -> DataFrame:
+
+        '''Adds two HTML tags around the content of the cells listed in float_cells.'''
+
+        tagged_df : DataFrame = df.copy(deep = True)
+
+        left_h : str = tags[0]
+        right_h : str = tags[1]
+
+        for float_cell in float_cells:
+
+            row, col = float_cell.coordinate_pair
+
+            if row < len(df) and col < len(df.columns):
+                tagged_df.iloc[row, col] = f"{left_h}{str(df.iloc[row, col])}{right_h}"
+            
+        return tagged_df
+
+    def highlight(self, df : DataFrame, mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_three, column_names : list[str] = []) -> DataFrame:
+
+        '''
+            Expects a df containing float, percentage, or currency cell formats - i.e. 2.09, 69.09, $2153.25.
+            Returns a df with highlighted cells as per arguments.
+        '''
+
+        highlighted_df : DataFrame = df.copy(deep = True)
+        highlighted_df.columns = highlighted_df.columns.map(str)
+
+        if len(column_names) == 0:
+            column_names = highlighted_df.columns.to_list()
+
+        float_cells : list[FloatCell] = self.__calculate_float_cells(
+            df = highlighted_df, 
+            mode = mode,
+            column_names = column_names
+        )
+
+        tags : Tuple[str, str] = (f"<mark style='background-color: pink'>", "</mark>")
+        highlighted_df = self.__add_tags(df = highlighted_df, float_cells = float_cells, tags = tags)
+
+        return highlighted_df
+
 class RLAdapter():
 
     '''Adapts SettingBag properties for use in RL*Factory methods.'''
