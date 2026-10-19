@@ -21,7 +21,7 @@ from pandas.io.formats.style import Styler
 from pathlib import Path
 from re import Match
 from sparklines import sparklines
-from typing import Any, Callable, Literal, Optional, Tuple, Union
+from typing import Any, Callable, Literal, Optional, Tuple, Union, cast
 
 # LOCAL/NW MODULES
 # CONSTANTS
@@ -133,6 +133,13 @@ class _MessageCollection():
     @staticmethod
     def provided_mode_not_supported(mode : HIGHLIGHTERMODE):
         return f"The provided mode is not supported: '{mode}'."
+class _MessageCollectionMomentumManager():
+
+    '''Collects all the messages used for logging and for the exceptions.'''
+
+    @staticmethod
+    def provided_by_month_df_doesnt_contain_expected_index() -> str:
+        return "The provided DataFrame doesn't contain the expected 0-11 index."
 
 # CLASSES
 class Formatter():
@@ -638,9 +645,129 @@ class SettingBag():
     rls_by_publisher_criteria : Optional[Literal["Yes", "No"]] = field(default = None)
     rls_by_rating_number_as_stars : bool = field(default = True)
     rls_by_topic_trend_sparklines_maximum : bool = field(default = False)
+class MomentumManager():
 
+    '''Collects all the logic related to the momentum, which represents the longest consecutive run of ups or downs.'''
 
+    def __convert_to_month(self, row_index : int) -> str:
 
+        '''
+            0 -> "January"
+            ...
+            11 -> "December"
+        '''
+
+        months : list[str] = [
+            "January", 
+            "February", 
+            "March", 
+            "April", 
+            "May", 
+            "June",
+			"July", 
+            "August", 
+            "September", 
+            "October", 
+            "November", 
+            "December"
+		]
+
+        return months[row_index]
+    def __create_trend_sequence(self, row : Series) -> str:
+
+        '''
+            ["↑", NaN]      -> "↑E"
+            ["↑", "↓", "="] -> "↑↓="
+        '''
+
+        trend_values : list[str] = []
+
+        for i in range(len(row)):
+            idx : Any = row.index[i]
+            if str(idx).startswith(RLCN.TREND):
+
+                value : Optional[Any] = row.iloc[i]
+
+                if pd.isna(value) or value == "" or value is None or (isinstance(value, str) and value.strip() == ""):
+                    trend_values.append("E")
+                else:
+                    trend_values.append(str(value).strip())
+
+        return "".join(trend_values)
+    def __calculate_momentum(self, sequence : str) -> int:
+
+        '''
+            "==========" -> "" -> 0
+            "↑"  -> 1
+            "↓"  -> -1
+            "↑E" -> "↑"  -> 1
+            "↓E" -> "↓"  -> -1
+            "↑↑↑↑↑↑↑↑↑↑" -> 10
+            "↓↓↓↓↓↓↓↓↓↓" -> -10
+            "↑↑↑↑↑↑↑↑↑=" -> "↑↑↑↑↑↑↑↑↑" -> 9
+            "↑↑↑↑↑↑↑↑↑↓" -> 9
+            "↑↑↑↓↓↑↓↓↑↑" -> 3
+
+            If multiple streaks with equal value, only the most recent counts:
+			
+            "↑↓↑↓↓↑↑↓↑↑" -> [-2, 2, 2] -> 2 ()
+            "↑↑↓↓↑↓↓" -> [2, -2, -2] -> -2
+            ...
+        '''
+
+        matches : list[Any] = re.findall(r'(↑+|↓+)', sequence)
+        if not matches:
+            return 0
+
+        streaks : list[int] = []
+        for m in matches:
+            if m.startswith("↑"):
+                streaks.append(len(m))
+            else:
+                streaks.append(-len(m))
+
+        max_abs : int = max(abs(streak) for streak in streaks)
+        candidates : list[int] = [streak for streak in streaks if abs(streak) == max_abs]
+
+        return candidates[-1]
+
+    def create_by_month_mom_df(self, by_month_df : DataFrame) -> DataFrame:
+
+        '''
+            Calculates momentum for the provided DataFrame. 
+
+            | Month     | Sequence | Momentum |
+            |-----------|----------|----------|
+            | January   | ↑↑       | 2        |
+            | February  | ↓↓       | -2       |
+            ...
+        '''
+
+        if len(by_month_df) != 12 or not (list(by_month_df.index) == list(range(12))):
+            raise ValueError(_MessageCollectionMomentumManager.provided_by_month_df_doesnt_contain_expected_index())
+
+        months : list[str] = []
+        sequences : list[str] = []
+        momentums : list[int] = []
+
+        for idx, row in by_month_df.iterrows():
+
+            month : str = self.__convert_to_month(row_index = int(cast(Any, idx)))
+            months.append(month)
+
+            sequence : str = self.__create_trend_sequence(row = row)
+            sequences.append(sequence)
+
+            momentum : int = self.__calculate_momentum(sequence = sequence)
+            momentums.append(momentum)
+
+        by_month_mom_df : DataFrame = DataFrame({
+            "Month": months,
+            "Sequence": sequences,
+            "Momentum": momentums
+        })
+
+        return by_month_mom_df
 class RLDataFrameHelper():
 
     '''Collects helper functions for RLDataFrameFactory.'''
@@ -793,17 +920,20 @@ class RLDataFrameFactory():
     __converter : Converter
     __formatter : Formatter
     __df_helper : RLDataFrameHelper
+    __momentum_manager : MomentumManager
 
     def __init__(
             self,
             converter : Converter,
             formatter : Formatter,
-            df_helper : RLDataFrameHelper
+            df_helper : RLDataFrameHelper, 
+            momentum_manager : MomentumManager
         ) -> None:
         
         self.__converter = converter
         self.__formatter = formatter
         self.__df_helper = df_helper
+        self.__momentum_manager = momentum_manager
 
     def __enforce_dataframe_definition_for_rl_df(self, rl_df : DataFrame, excel_null_value : str) -> DataFrame:
 
@@ -1814,6 +1944,13 @@ class RLDataFrameFactory():
         rls_by_month_upd_df.drop(columns = [RLCN.MONTH], inplace = True)
 
         return (rls_by_month_df, rls_by_month_upd_df)    
+    def create_rls_by_month_mom_df(self, rls_by_month_df : DataFrame) -> DataFrame:
+
+        '''Calculates momentum for the provided DataFrame.'''
+
+        rls_by_month_mom_df : DataFrame = self.__momentum_manager.create_by_month_mom_df(by_month_df = rls_by_month_df)
+
+        return rls_by_month_mom_df
     def create_rls_by_year_df(self, rls_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame, read_years : list[int], rounding_digits : int) -> DataFrame:
 
         '''
@@ -2627,7 +2764,8 @@ class ComponentBag():
         df_factory = RLDataFrameFactory(
             converter = Converter(),
             formatter = Formatter(),
-            df_helper = RLDataFrameHelper()),
+            df_helper = RLDataFrameHelper(),
+            momentum_manager = MomentumManager()),
         rs_highlighter = RSHighlighter(df_helper = RLDataFrameHelper())))
 class ReadingListProcessor():
 

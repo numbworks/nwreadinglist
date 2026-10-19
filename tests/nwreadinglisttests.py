@@ -10,7 +10,7 @@ from contextlib import redirect_stdout
 from datetime import datetime, date
 from io import StringIO
 from numpy import float64, int32
-from pandas import DataFrame, RangeIndex, Index
+from pandas import DataFrame, RangeIndex, Index, Series
 from pandas.testing import assert_frame_equal
 from pandas.io.formats.style import Styler
 from parameterized import parameterized
@@ -20,7 +20,7 @@ from unittest.mock import _Call, Mock, call, mock_open, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import Formatter, Converter, FilePathManager, FileManager, LambdaProvider, Displayer, PlotManager, PlotKind
+from nwreadinglist import _MessageCollectionMomentumManager, Formatter, Converter, FilePathManager, FileManager, LambdaProvider, Displayer, MomentumManager, PlotManager, PlotKind
 from nwreadinglist import REPORTSTR, RLCN, DEFINITIONSTR, OPTION, HIGHLIGHTERMODE, _MessageCollection
 from nwreadinglist import RLReportManager, RLSummary, DefaultPathProvider, RSCell, RSHighlighter
 from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
@@ -1167,6 +1167,127 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.rls_by_publisher_criteria, rls_by_publisher_criteria)
         self.assertEqual(setting_bag.rls_by_rating_number_as_stars, rls_by_rating_number_as_stars)
         self.assertEqual(setting_bag.rls_by_topic_trend_sparklines_maximum, rls_by_topic_bt_sparklines_maximum)
+class MomentumManagerTestCase(unittest.TestCase):
+
+    @parameterized.expand([
+        (0, "January"), 
+        (1, "February"), 
+        (2, "March"), 
+        (3, "April"), 
+        (4, "May"), 
+        (5, "June"), 
+        (6, "July"), 
+        (7, "August"), 
+        (8, "September"), 
+        (9, "October"), 
+        (10, "November"), 
+        (11, "December")
+    ])
+    def test_converttomonth_shouldreturnexpectedmonth_whenvalidrowindex(self, row_index : int, expected : str) -> None:
+
+        # Arrange
+        # Act
+        actual: str = MomentumManager()._MomentumManager__convert_to_month(row_index = row_index)  # type: ignore
+
+        # Assert
+        self.assertEqual(expected, actual)
+
+    @parameterized.expand([
+        (pd.Series(["↑", np.nan], index=[f"{RLCN.TREND}1", f"{RLCN.TREND}2"]), "↑E"),
+        (pd.Series(["↑", "↓", "="], index=[f"{RLCN.TREND}1", f"{RLCN.TREND}2", f"{RLCN.TREND}3"]), "↑↓=")
+    ])
+    def test_createtrendsequence_shouldreturnexpectedsequence_whenvalidrow(self, row : Series, expected : str) -> None:
+
+        # Arrange
+        # Act
+        actual: str = MomentumManager()._MomentumManager__create_trend_sequence(row = row)  # type: ignore
+
+        # Assert
+        self.assertEqual(expected, actual)
+
+    @parameterized.expand([
+        ("==========", 0),
+        ("↑", 1),
+        ("↓", -1),
+        ("↑E", 1),
+        ("↓E", -1),
+        ("↑↑↑↑↑↑↑↑↑↑", 10),
+        ("↓↓↓↓↓↓↓↓↓↓", -10),
+        ("↑↑↑↑↑↑↑↑↑=", 9),
+        ("↑↑↑↑↑↑↑↑↑↓", 9),
+        ("↑↑↑↓↓↑↓↓↑↑", 3),
+        ("↑↓↑↓↓↑↑↓↑↑", 2),
+        ("↑↑↓↓↑↓↓", -2)
+    ])
+    def test_calculatemomentum_shouldreturnexpectedmomentum_whenvalidsequence(self, sequence : str, expected : int) -> None:
+
+        # Arrange
+        # Act
+        actual: int = MomentumManager()._MomentumManager__calculate_momentum(sequence = sequence)  # type: ignore
+
+        # Assert
+        self.assertEqual(expected, actual)
+
+    def test_createbymonthmomdf_shouldreturnexpecteddataframe_whenvaliddf(self) -> None:
+
+        # Arrange
+        data : dict = {
+            "2024": ["45h 45m"] * 12,
+            RLCN.TREND: ["↑", "↓", "↓", "↑", "↑", "↑", "↑", "↑", "↑", "↓", "↑", "↓"],
+            "2025": ["79h 00m"] * 12,
+        }
+        by_month_df : DataFrame = DataFrame(data, index = range(12))
+
+        expected_months: list[str] = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ]
+        expected_sequences: list[str] = [
+            "↑",
+            "↓",
+            "↓",
+            "↑",
+            "↑",
+            "↑",
+            "↑",
+            "↑",
+            "↑",
+            "↓",
+            "↑",
+            "↓",
+        ]
+        expected_momentums: list[int] = [1, -1, -1, 1, 1, 1, 1, 1, 1, -1, 1, -1]
+
+        # Act
+        actual: DataFrame = MomentumManager().create_by_month_mom_df(by_month_df = by_month_df)
+
+        # Assert
+        self.assertEqual(expected_months, actual["Month"].tolist())
+        self.assertEqual(expected_sequences, actual["Sequence"].tolist())
+        self.assertEqual(expected_momentums, actual["Momentum"].tolist())
+    def test_createbymonthmomdf_shouldraisevalueerror_wheninvalidindexorlength(self) -> None:
+
+        # Arrange
+        by_month_df : DataFrame = DataFrame({"2024": ["45h 45m"]}, index=[1])
+
+        # Act, Assert
+        with self.assertRaises(ValueError) as context:
+            
+            MomentumManager().create_by_month_mom_df(by_month_df = by_month_df)
+
+            self.assertEqual(
+                str(context.exception), 
+                _MessageCollectionMomentumManager.provided_by_month_df_doesnt_contain_expected_index())
 class RLDataFrameHelperTestCase(unittest.TestCase):
 
     @parameterized.expand([
@@ -1327,7 +1448,8 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         self.df_factory : RLDataFrameFactory = RLDataFrameFactory(
                 converter = Converter(),
                 formatter = Formatter(),
-                df_helper = RLDataFrameHelper()
+                df_helper = RLDataFrameHelper(),
+                momentum_manager = MomentumManager()
             )
         
         self.excel_path : str = "Reading List.xlsx"
@@ -1403,6 +1525,28 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         # Assert
         assert_frame_equal(expected_1, actual_1)    
         assert_frame_equal(expected_2, actual_2)   
+    def test_createttsbymonthmomdf_shouldperformexpectedcall_wheninvoked(self) -> None:
+
+        # Arrange
+        rls_by_month_df : DataFrame = DataFrame()
+        expected_df : DataFrame = DataFrame()
+
+        momentum_manager : Mock = Mock(spec = MomentumManager)
+        momentum_manager.create_by_month_mom_df = Mock(return_value = expected_df)
+
+        df_factory : RLDataFrameFactory = RLDataFrameFactory(
+                converter = Converter(),
+                formatter = Formatter(),
+                df_helper = RLDataFrameHelper(),
+                momentum_manager = momentum_manager
+        )
+
+        # Act
+        actual : DataFrame = df_factory.create_rls_by_month_mom_df(rls_by_month_df = rls_by_month_df)
+
+        # Assert
+        momentum_manager.create_by_month_mom_df.assert_called_once_with(by_month_df = rls_by_month_df)
+        assert_frame_equal(expected_df, actual)
     def test_createrlsbyyeardf_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
