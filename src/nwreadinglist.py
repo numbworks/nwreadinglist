@@ -21,7 +21,7 @@ from pandas.io.formats.style import Styler
 from pathlib import Path
 from re import Match
 from sparklines import sparklines
-from typing import Any, Callable, Literal, Optional, Tuple, Union
+from typing import Any, Callable, Literal, Optional, Tuple, Union, cast
 
 # LOCAL/NW MODULES
 # CONSTANTS
@@ -58,8 +58,8 @@ class RLCN(StrEnum):
     TOTALSPEND = "TotalSpend"
     LASTUPDATE = "LastUpdate"
     MONTH = "Month"
-    TREND = "Trend"
-    TRENDSYMBOL = "↕"
+    TREND = "↕"
+    TRENDNAME = "Trend"
     UNDERLINES = "Underlines"
     AVGUNDERLINES = "AvgUnderlines"
     UPERC = "U%"
@@ -91,6 +91,7 @@ class REPORTSTR(StrEnum):
     RLRATINGFIVE = "Rating Five"
     RLMOSTUNDERLINES = "Most Underlines"
     RLSBYMONTH = "By Month"
+    RLSBYMONTHMOM = "By Month (Momentum)"
     RLSBYYEAR = "By Year"
     RLSBYRANGE = "By Range"
     RLSBYTOPIC = "By Topic"
@@ -99,9 +100,9 @@ class REPORTSTR(StrEnum):
     RLSBYRATING = "By Rating"
     RLSBYUNDERLINES = "By Underlines"
     DEFINITIONS = "Definitions"
-class RSMODE(StrEnum):
+class HIGHLIGHTERMODE(StrEnum):
 
-    '''Represents a collection of modes for RSHighlighter.'''
+    '''Represents a collection of modes for *Highlighter.'''
 
     top_one_per_row = auto()
     top_three = auto()
@@ -131,8 +132,15 @@ class _MessageCollection():
         return "Please run the 'initialize' method first."
 
     @staticmethod
-    def provided_mode_not_supported(mode : RSMODE):
+    def provided_mode_not_supported(mode : HIGHLIGHTERMODE):
         return f"The provided mode is not supported: '{mode}'."
+class _MessageCollectionMomentumManager():
+
+    '''Collects all the messages used for logging and for the exceptions.'''
+
+    @staticmethod
+    def provided_by_month_df_doesnt_contain_expected_index() -> str:
+        return "The provided DataFrame doesn't contain the expected 0-11 index."
 
 # CLASSES
 class Formatter():
@@ -557,6 +565,7 @@ class RLSummary():
     rl_rating_five_df : DataFrame
     rl_most_underlines_df : DataFrame
     rls_by_month_tpl : Tuple[DataFrame, DataFrame]
+    rls_by_month_mom_df : DataFrame
     rls_by_year_df : DataFrame
     rls_by_range_df : DataFrame
     rls_by_topic_df : DataFrame
@@ -600,6 +609,7 @@ class SettingBag():
     options_rl_rating_five : list[Literal[OPTION.display]]
     options_rl_most_underlines : list[Literal[OPTION.display]]
     options_rls_by_month : list[Literal[OPTION.display]]
+    options_rls_by_month_mom : list[Literal[OPTION.display]]
     options_rls_by_year : list[Literal[OPTION.display]]
     options_rls_by_range : list[Literal[OPTION.display]]
     options_rls_by_topic : list[Literal[OPTION.display]]
@@ -625,6 +635,9 @@ class SettingBag():
     rounding_digits : int = field(default = 2)
     now : datetime = field(default = datetime.now())
     enable_rs_highlighting : bool = field(default = True)
+    enable_int_highlighting : bool = field(default = True)
+    enable_float_highlighting : bool = field(default = True)
+    enable_isworth_highlighting : bool = field(default = True)
     report_last_update : datetime = field(default = datetime.now())
     rl_most_underlines_formatters : dict = field(default_factory = lambda : { RLCN.AVGUNDERLINES : "{:.2f}", RLCN.UPERC : "{:.2f}" })
     rld_by_kbsize_n : int = field(default = 10)
@@ -638,6 +651,129 @@ class SettingBag():
     rls_by_publisher_criteria : Optional[Literal["Yes", "No"]] = field(default = None)
     rls_by_rating_number_as_stars : bool = field(default = True)
     rls_by_topic_trend_sparklines_maximum : bool = field(default = False)
+class MomentumManager():
+
+    '''Collects all the logic related to the momentum, which represents the longest consecutive run of ups or downs.'''
+
+    def __convert_to_month(self, row_index : int) -> str:
+
+        '''
+            0 -> "January"
+            ...
+            11 -> "December"
+        '''
+
+        months : list[str] = [
+            "January", 
+            "February", 
+            "March", 
+            "April", 
+            "May", 
+            "June",
+			"July", 
+            "August", 
+            "September", 
+            "October", 
+            "November", 
+            "December"
+		]
+
+        return months[row_index]
+    def __create_trend_sequence(self, row : Series) -> str:
+
+        '''
+            ["↑", NaN]      -> "↑E"
+            ["↑", "↓", "="] -> "↑↓="
+        '''
+
+        trend_values : list[str] = []
+
+        for i in range(len(row)):
+            idx : Any = row.index[i]
+            if str(idx).startswith(RLCN.TREND):
+
+                value : Optional[Any] = row.iloc[i]
+
+                if pd.isna(value) or value == "" or value is None or (isinstance(value, str) and value.strip() == ""):
+                    trend_values.append("E")
+                else:
+                    trend_values.append(str(value).strip())
+
+        return "".join(trend_values)
+    def __calculate_momentum(self, sequence : str) -> int:
+
+        '''
+            "==========" -> "" -> 0
+            "↑"  -> 1
+            "↓"  -> -1
+            "↑E" -> "↑"  -> 1
+            "↓E" -> "↓"  -> -1
+            "↑↑↑↑↑↑↑↑↑↑" -> 10
+            "↓↓↓↓↓↓↓↓↓↓" -> -10
+            "↑↑↑↑↑↑↑↑↑=" -> "↑↑↑↑↑↑↑↑↑" -> 9
+            "↑↑↑↑↑↑↑↑↑↓" -> 9
+            "↑↑↑↓↓↑↓↓↑↑" -> 3
+
+            If multiple streaks with equal value, only the most recent counts:
+			
+            "↑↓↑↓↓↑↑↓↑↑" -> [-2, 2, 2] -> 2 ()
+            "↑↑↓↓↑↓↓" -> [2, -2, -2] -> -2
+            ...
+        '''
+
+        matches : list[Any] = re.findall(r'(↑+|↓+)', sequence)
+        if not matches:
+            return 0
+
+        streaks : list[int] = []
+        for m in matches:
+            if m.startswith("↑"):
+                streaks.append(len(m))
+            else:
+                streaks.append(-len(m))
+
+        max_abs : int = max(abs(streak) for streak in streaks)
+        candidates : list[int] = [streak for streak in streaks if abs(streak) == max_abs]
+
+        return candidates[-1]
+
+    def create_by_month_mom_df(self, by_month_df : DataFrame) -> DataFrame:
+
+        '''
+            Calculates momentum for the provided DataFrame. 
+
+            | Month     | Sequence | Momentum |
+            |-----------|----------|----------|
+            | January   | ↑↑       | 2        |
+            | February  | ↓↓       | -2       |
+            ...
+        '''
+
+        if len(by_month_df) != 12 or not (list(by_month_df.index) == list(range(12))):
+            raise ValueError(_MessageCollectionMomentumManager.provided_by_month_df_doesnt_contain_expected_index())
+
+        months : list[str] = []
+        sequences : list[str] = []
+        momentums : list[int] = []
+
+        for idx, row in by_month_df.iterrows():
+
+            month : str = self.__convert_to_month(row_index = int(cast(Any, idx)))
+            months.append(month)
+
+            sequence : str = self.__create_trend_sequence(row = row)
+            sequences.append(sequence)
+
+            momentum : int = self.__calculate_momentum(sequence = sequence)
+            momentums.append(momentum)
+
+        by_month_mom_df : DataFrame = DataFrame({
+            "Month": months,
+            "Sequence": sequences,
+            "Momentum": momentums
+        })
+
+        return by_month_mom_df
 class RLDataFrameHelper():
 
     '''Collects helper functions for RLDataFrameFactory.'''
@@ -744,8 +880,8 @@ class RLDataFrameHelper():
             "↕1"    => "↕"
         '''
 
-        if column_name.startswith(RLCN.TRENDSYMBOL):
-            return RLCN.TRENDSYMBOL
+        if column_name.startswith(RLCN.TREND):
+            return RLCN.TREND
         
         return column_name
     def format_year_books_column_name(self, year_cn : str) -> str:
@@ -790,17 +926,20 @@ class RLDataFrameFactory():
     __converter : Converter
     __formatter : Formatter
     __df_helper : RLDataFrameHelper
+    __momentum_manager : MomentumManager
 
     def __init__(
             self,
             converter : Converter,
             formatter : Formatter,
-            df_helper : RLDataFrameHelper
+            df_helper : RLDataFrameHelper, 
+            momentum_manager : MomentumManager
         ) -> None:
         
         self.__converter = converter
         self.__formatter = formatter
         self.__df_helper = df_helper
+        self.__momentum_manager = momentum_manager
 
     def __enforce_dataframe_definition_for_rl_df(self, rl_df : DataFrame, excel_null_value : str) -> DataFrame:
 
@@ -1045,7 +1184,7 @@ class RLDataFrameFactory():
 
         if add_trend == True:
 
-            cn_trend : str = f"{RLCN.TRENDSYMBOL}{i}"
+            cn_trend : str = f"{RLCN.TREND}{i}"
             cn_trend_1 : str = str(read_years[i-1])   # for ex. "2016"
             cn_trend_2 : str = str(read_years[i])     # for ex. "2017"
             
@@ -1103,7 +1242,7 @@ class RLDataFrameFactory():
 
             if i != (len(yeatrend) - 1):
 
-                cn_trend : str = f"{RLCN.TRENDSYMBOL}{i}"
+                cn_trend : str = f"{RLCN.TREND}{i}"
                 cn_trend_1 : str = str(yeatrend[i])       # 2016 => "2016"
                 cn_trend_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
                 
@@ -1134,7 +1273,7 @@ class RLDataFrameFactory():
 
             if i != (len(yeatrend) - 1):
 
-                cn_trend : str = f"{RLCN.TRENDSYMBOL}{i}"
+                cn_trend : str = f"{RLCN.TREND}{i}"
                 cn_value_1 : str = str(yeatrend[i])       # 2016 => "2016"
                 cn_value_2 : str = str(yeatrend[i+1])     # 2017 => "2017"
                 
@@ -1280,7 +1419,7 @@ class RLDataFrameFactory():
                 ...
         '''
 
-        pivoted_df : DataFrame = pd.pivot_table(data = df, index = [cn_index], values = [cn_values], aggfunc = lambda x : list(x))
+        pivoted_df : DataFrame = pd.pivot_table(data = df, index = [cn_index], values = [cn_values], aggfunc = lambda x : list(x))  # type: ignore
         pivoted_df.sort_values(by = cn_index, inplace = True)
         pivoted_df.reset_index(inplace = True)
 
@@ -1374,7 +1513,7 @@ class RLDataFrameFactory():
         rls_by_year_df : DataFrame = rls_by_month_df.copy(deep = True)
 
         rls_by_year_df = rls_by_year_df.drop(labels = RLCN.MONTH, axis = 1)
-        rls_by_year_df = rls_by_year_df.drop(labels = RLCN.TRENDSYMBOL, axis = 1)
+        rls_by_year_df = rls_by_year_df.drop(labels = RLCN.TREND, axis = 1)
 
         yeatrend : list = rls_by_year_df.columns.to_list()
         for year in yeatrend:
@@ -1811,6 +1950,13 @@ class RLDataFrameFactory():
         rls_by_month_upd_df.drop(columns = [RLCN.MONTH], inplace = True)
 
         return (rls_by_month_df, rls_by_month_upd_df)    
+    def create_rls_by_month_mom_df(self, rls_by_month_df : DataFrame) -> DataFrame:
+
+        '''Calculates momentum for the provided DataFrame.'''
+
+        rls_by_month_mom_df : DataFrame = self.__momentum_manager.create_by_month_mom_df(by_month_df = rls_by_month_df)
+
+        return rls_by_month_mom_df
     def create_rls_by_year_df(self, rls_by_month_tpl : Tuple[DataFrame, DataFrame], rl_df : DataFrame, read_years : list[int], rounding_digits : int) -> DataFrame:
 
         '''
@@ -1937,9 +2083,9 @@ class RLDataFrameFactory():
 
         if sparklines_maximum:
             maximum : int = by_topic_read_year_df[RLCN.BOOKS].max()
-            return self.__add_sparklines(df = pivoted_df, cn_values = RLCN.BOOKS, cn_sparklines = RLCN.TREND, maximum = maximum)
+            return self.__add_sparklines(df = pivoted_df, cn_values = RLCN.BOOKS, cn_sparklines = RLCN.TRENDNAME, maximum = maximum)
         else: 
-            return self.__add_sparklines(df = pivoted_df, cn_values = RLCN.BOOKS, cn_sparklines = RLCN.TREND)
+            return self.__add_sparklines(df = pivoted_df, cn_values = RLCN.BOOKS, cn_sparklines = RLCN.TRENDNAME)
     def create_rls_by_publisher_tpl(
             self, 
             rl_df : DataFrame, 
@@ -2057,7 +2203,7 @@ class RLDataFrameFactory():
             RLCN.UNDERLINES: "Underlines are sentences that express a fundamental concept that can be understood as-is.",
             RLCN.UPERC: f"For a given book, {RLCN.UPERC} is calculated as the number of {RLCN.UNDERLINES} in that book compared with the average number of {RLCN.UNDERLINES} across the entire reading list. The higher the {RLCN.UPERC}, the better the book.",
             DEFINITIONSTR.READINGSTATUS: f"A {DEFINITIONSTR.READINGSTATUS} is a string that reports, at a specified time grain, the number of books read and the corresponding total pages.",
-            f"{RLCN.TREND} ({RLCN.TRENDSYMBOL})": "A trend is a gamification metric that indicates whether a measure (e.g., total books read) has increased or decreased over time."
+            f"{RLCN.TRENDNAME} ({RLCN.TREND})": "A trend is a gamification metric that indicates whether a measure (e.g., total books read) has increased or decreased over time."
         }
         
         definitions_df : DataFrame = DataFrame(
@@ -2126,13 +2272,13 @@ class RSHighlighter():
                 self.__append_new_rs_cell(rs_cells, coordinate_pair, cell_content)
 
         return rs_cells
-    def __extract_n(self, mode : RSMODE) -> int:
+    def __extract_n(self, mode : HIGHLIGHTERMODE) -> int:
 
         '''Extracts n from mode.'''
 
-        if mode == RSMODE.top_three:
+        if mode == HIGHLIGHTERMODE.top_three:
             return 3
-        elif mode == RSMODE.top_one_per_row:
+        elif mode == HIGHLIGHTERMODE.top_one_per_row:
             return 1
         else:
             raise Exception(_MessageCollection.provided_mode_not_supported(mode))
@@ -2144,7 +2290,7 @@ class RSHighlighter():
         top_n : list[RSCell] = sorted_cells[:n]
 
         return top_n
-    def __calculate_rs_cells(self, df : DataFrame, mode : RSMODE, column_names : list[str]) -> list[RSCell]:
+    def __calculate_rs_cells(self, df : DataFrame, mode : HIGHLIGHTERMODE, column_names : list[str]) -> list[RSCell]:
 
         '''Returns a list of RSCell objects according to df and mode.'''
 
@@ -2154,14 +2300,14 @@ class RSHighlighter():
         n : int = self.__extract_n(mode = mode)
         current : list[RSCell] = []
 
-        if mode == RSMODE.top_one_per_row:
+        if mode == HIGHLIGHTERMODE.top_one_per_row:
             for row_idx in range(last_row_idx):
 
                 current = self.__extract_row(df = df, row_idx = row_idx, column_names = column_names)
                 current = self.__extract_top_n_rs_cells(rs_cells = current, n = n)
                 rs_cells.extend(current)
                 
-        elif mode == RSMODE.top_three:
+        elif mode == HIGHLIGHTERMODE.top_three:
             for row_idx in range(last_row_idx):
                 
                 current = self.__extract_row(df = df, row_idx = row_idx, column_names = column_names)
@@ -2190,7 +2336,7 @@ class RSHighlighter():
                 tagged_df.iloc[row, col] = f"{left_h}{str(df.iloc[row, col])}{right_h}"
             
         return tagged_df
-    def __highlight_dataframe(self, df : DataFrame, mode : RSMODE, column_names : list[str] = []) -> DataFrame:
+    def __highlight_dataframe(self, df : DataFrame, mode : HIGHLIGHTERMODE, column_names : list[str] = []) -> DataFrame:
 
         '''
             Expects a df containing reading stasuses into cells - i.e. "0 (0)", "2 (275)".
@@ -2220,7 +2366,7 @@ class RSHighlighter():
         
         '''Returns the provided dataframe with adequate highlights.'''
 
-        mode : RSMODE = RSMODE.top_three
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_three
 
         highlighted_df : DataFrame = self.__highlight_dataframe(
             df = rls_by_month_df,
@@ -2232,7 +2378,7 @@ class RSHighlighter():
         
         '''Returns the provided dataframe with adequate highlights.'''
 
-        mode : RSMODE = RSMODE.top_three
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_three
 
         highlighted_df : DataFrame = self.__highlight_dataframe(
             df = rls_by_year_df,
@@ -2240,17 +2386,419 @@ class RSHighlighter():
         )
         
         return highlighted_df
+@dataclass(frozen = True)
+class IntCell():
+    
+    '''Collects all the information related to a DataFrame cell that are required by IntHighlighter.'''
+
+    coordinate_pair : Tuple[int, int]
+    raw_value : str
+    numeric_value : int
+class IntHighlighter():
+
+    '''Encapsulates all the logic related to highlighting cells in dataframes containing integer numbers.'''
+
+    def __is_int(self, cell_content : str) -> bool:
+
+        '''Returns True if content matches integer format (e.g., 42, 1050).'''
+
+        pattern : str = r"^\d+$"
+        match : Optional[Match[str]] = re.fullmatch(pattern = pattern, string = cell_content)
+
+        return match is not None
+    def __unbox_int(self, cell_content : str) -> int:
+
+        '''Extracts the numerical integer value from the cell content.'''
+
+        return int(cell_content)
+    def __append_new_int_cell(self, int_cells : list[IntCell], coordinate_pair : Tuple[int, int], cell_content : str) -> None:
+
+        '''Creates and appends a new IntCell object to int_cells.'''
+
+        numeric_value : int = self.__unbox_int(cell_content = cell_content)
+
+        int_cell : IntCell = IntCell(
+            coordinate_pair = coordinate_pair,
+            raw_value = cell_content,
+            numeric_value = numeric_value,
+        )
+        
+        int_cells.append(int_cell)
+    def __extract_row(self, df : DataFrame, row_idx : int, column_names : list[str]) -> list[IntCell]:
+
+        '''Returns a collection of IntCell objects for provided arguments.'''
+
+        int_cells : list[IntCell] = []
+        col_indices : list = [df.columns.get_loc(column_name) for column_name in column_names if column_name in df.columns]
+
+        for col_idx in col_indices:
+
+            coordinate_pair : Tuple[int, int] = (row_idx, col_idx)
+            cell_content : str = str(df.iloc[row_idx, col_idx])
+
+            if self.__is_int(cell_content = cell_content):
+                self.__append_new_int_cell(int_cells, coordinate_pair, cell_content)
+
+        return int_cells
+    def __extract_n(self, mode : HIGHLIGHTERMODE) -> int:
+
+        '''Extracts n from mode.'''
+
+        if mode == HIGHLIGHTERMODE.top_three:
+            return 3
+        elif mode == HIGHLIGHTERMODE.top_one_per_row:
+            return 1
+        else:
+            raise Exception(_MessageCollection.provided_mode_not_supported(mode))
+    def __extract_top_n_int_cells(self, int_cells : list[IntCell], n : int) -> list[IntCell]:
+
+        '''Extracts the n objects in int_cells with the highest numeric values.'''
+
+        sorted_cells : list[IntCell] = sorted(int_cells, key = lambda cell : cell.numeric_value, reverse = True)
+        top_n : list[IntCell] = sorted_cells[:n]
+
+        return top_n
+    def __calculate_int_cells(self, df : DataFrame, mode : HIGHLIGHTERMODE, column_names : list[str]) -> list[IntCell]:
+
+        '''Returns a list of IntCell objects according to df and mode.'''
+
+        int_cells : list[IntCell] = []
+
+        last_row_idx : int = len(df)
+        n : int = self.__extract_n(mode = mode)
+        current : list[IntCell] = []
+
+        if mode == HIGHLIGHTERMODE.top_one_per_row:
+            for row_idx in range(last_row_idx):
+                current = self.__extract_row(df = df, row_idx = row_idx, column_names = column_names)
+                current = self.__extract_top_n_int_cells(int_cells = current, n = n)
+                int_cells.extend(current)
+                
+        elif mode == HIGHLIGHTERMODE.top_three:
+            for row_idx in range(last_row_idx):
+                current = self.__extract_row(df = df, row_idx = row_idx, column_names = column_names)
+                int_cells.extend(current)
+
+            int_cells = self.__extract_top_n_int_cells(int_cells = int_cells, n = n)
+
+        else:
+            raise Exception(_MessageCollection.provided_mode_not_supported(mode))
+
+        return int_cells
+    def __add_tags(self, df : DataFrame, int_cells : list[IntCell], tags : Tuple[str, str]) -> DataFrame:
+
+        '''Adds two HTML tags around the content of the cells listed in int_cells.'''
+
+        tagged_df : DataFrame = df.copy(deep = True).astype(object)
+
+        left_h : str = tags[0]
+        right_h : str = tags[1]
+
+        for int_cell in int_cells:
+
+            row, col = int_cell.coordinate_pair
+
+            if row < len(df) and col < len(df.columns):
+                tagged_df.iloc[row, col] = f"{left_h}{str(df.iloc[row, col])}{right_h}"
+            
+        return tagged_df
+
+    def highlight(self, df : DataFrame, mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_three, column_names : list[str] = []) -> DataFrame:
+
+        '''
+            Expects a df containing integer cell formats - i.e. 42, 1050.
+            Returns a df with highlighted cells as per arguments.
+        '''
+
+        highlighted_df : DataFrame = df.copy(deep = True)
+        highlighted_df.columns = highlighted_df.columns.map(str)
+
+        if len(column_names) == 0:
+            column_names = highlighted_df.columns.to_list()
+
+        int_cells : list[IntCell] = self.__calculate_int_cells(
+            df = highlighted_df, 
+            mode = mode,
+            column_names = column_names
+        )
+
+        tags : Tuple[str, str] = (f"<mark style='background-color: pink'>", "</mark>")
+        highlighted_df = self.__add_tags(df = highlighted_df, int_cells = int_cells, tags = tags)
+
+        return highlighted_df
+@dataclass(frozen = True)
+class FloatCell():
+    
+    '''Collects all the information related to a DataFrame cell that are required by FloatHighlighter.'''
+
+    coordinate_pair : Tuple[int, int]
+    raw_value : str
+    numeric_value : float
+class FloatHighlighter():
+
+    '''Encapsulates all the logic related to highlighting cells in dataframes containing floats, percentages, and currency amounts.'''
+
+    def __is_float(self, cell_content : str) -> bool:
+
+        '''Returns True if content matches decimal, percentage, or currency formats (e.g., 2.09, 69.09, $2153.25).'''
+
+        pattern : str = r"^\$?\d+\.\d+\%?$"
+        match : Optional[Match[str]] = re.fullmatch(pattern = pattern, string = cell_content)
+
+        return match is not None
+    def __unbox_float(self, cell_content : str) -> float:
+
+        '''Extracts the numerical float value from the cell content by removing currency symbols and percentage signs.'''
+
+        cleaned : str = cell_content.replace("$", "").replace("%", "")
+        return float(cleaned)
+    def __append_new_float_cell(self, float_cells : list[FloatCell], coordinate_pair : Tuple[int, int], cell_content : str) -> None:
+
+        '''Creates and appends a new FloatCell object to float_cells.'''
+
+        numeric_value : float = self.__unbox_float(cell_content = cell_content)
+
+        float_cell : FloatCell = FloatCell(
+            coordinate_pair = coordinate_pair,
+            raw_value = cell_content,
+            numeric_value = numeric_value,
+        )
+        
+        float_cells.append(float_cell)
+    def __extract_row(self, df : DataFrame, row_idx : int, column_names : list[str]) -> list[FloatCell]:
+
+        '''Returns a collection of FloatCell objects for provided arguments.'''
+
+        float_cells : list[FloatCell] = []
+        col_indices : list = [df.columns.get_loc(column_name) for column_name in column_names if column_name in df.columns]
+
+        for col_idx in col_indices:
+
+            coordinate_pair : Tuple[int, int] = (row_idx, col_idx)
+            cell_content : str = str(df.iloc[row_idx, col_idx])
+
+            if self.__is_float(cell_content = cell_content):
+                self.__append_new_float_cell(float_cells, coordinate_pair, cell_content)
+
+        return float_cells
+    def __extract_n(self, mode : HIGHLIGHTERMODE) -> int:
+
+        '''Extracts n from mode.'''
+
+        if mode == HIGHLIGHTERMODE.top_three:
+            return 3
+        elif mode == HIGHLIGHTERMODE.top_one_per_row:
+            return 1
+        else:
+            raise Exception(_MessageCollection.provided_mode_not_supported(mode))
+    def __extract_top_n_float_cells(self, float_cells : list[FloatCell], n : int) -> list[FloatCell]:
+
+        '''Extracts the n objects in float_cells with the highest numeric values.'''
+
+        sorted_cells : list[FloatCell] = sorted(float_cells, key = lambda cell : cell.numeric_value, reverse = True)
+        top_n : list[FloatCell] = sorted_cells[:n]
+
+        return top_n
+    def __calculate_float_cells(self, df : DataFrame, mode : HIGHLIGHTERMODE, column_names : list[str]) -> list[FloatCell]:
+
+        '''Returns a list of FloatCell objects according to df and mode.'''
+
+        float_cells : list[FloatCell] = []
+
+        last_row_idx : int = len(df)
+        n : int = self.__extract_n(mode = mode)
+        current : list[FloatCell] = []
+
+        if mode == HIGHLIGHTERMODE.top_one_per_row:
+            for row_idx in range(last_row_idx):
+                current = self.__extract_row(df = df, row_idx = row_idx, column_names = column_names)
+                current = self.__extract_top_n_float_cells(float_cells = current, n = n)
+                float_cells.extend(current)
+                
+        elif mode == HIGHLIGHTERMODE.top_three:
+            for row_idx in range(last_row_idx):
+                current = self.__extract_row(df = df, row_idx = row_idx, column_names = column_names)
+                float_cells.extend(current)
+
+            float_cells = self.__extract_top_n_float_cells(float_cells = float_cells, n = n)
+
+        else:
+            raise Exception(_MessageCollection.provided_mode_not_supported(mode))
+
+        return float_cells
+    def __add_tags(self, df : DataFrame, float_cells : list[FloatCell], tags : Tuple[str, str]) -> DataFrame:
+
+        '''Adds two HTML tags around the content of the cells listed in float_cells.'''
+
+        tagged_df : DataFrame = df.copy(deep = True).astype(object)
+
+        left_h : str = tags[0]
+        right_h : str = tags[1]
+
+        for float_cell in float_cells:
+
+            row, col = float_cell.coordinate_pair
+
+            if row < len(df) and col < len(df.columns):
+                tagged_df.iloc[row, col] = f"{left_h}{str(df.iloc[row, col])}{right_h}"
+            
+        return tagged_df
+    def __apply_formatters(self, df : DataFrame, formatters : dict = {}) -> DataFrame:
+
+        '''Applies formatters before values are converted to HTML strings.'''
+
+        formatted_df : DataFrame = df.copy(deep = True).astype(object)
+
+        for column_name, formatter in formatters.items():
+            if column_name in formatted_df.columns:
+                formatted_df[column_name] = formatted_df[column_name].apply(
+                    lambda x: formatter.format(x))
+
+        return formatted_df
+    
+    def highlight(self, df : DataFrame, mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_three, column_names : list[str] = [], formatters: dict = {}) -> DataFrame:
+
+        '''
+            Expects a df containing float, percentage, or currency cell formats - i.e. 2.09, 69.09, $2153.25.
+            Returns a df with highlighted cells as per arguments.
+        '''
+
+        highlighted_df : DataFrame = df.copy(deep = True)
+        highlighted_df.columns = highlighted_df.columns.map(str)
+
+        if len(column_names) == 0:
+            column_names = highlighted_df.columns.to_list()
+
+        float_cells : list[FloatCell] = self.__calculate_float_cells(df = highlighted_df, mode = mode, column_names = column_names)
+
+        highlighted_df = self.__apply_formatters(df = highlighted_df, formatters = formatters)
+
+        tags : Tuple[str, str] = (f"<mark style='background-color: pink'>", "</mark>")
+        highlighted_df = self.__add_tags(df = highlighted_df, float_cells = float_cells, tags = tags)
+
+        return highlighted_df
+@dataclass(frozen = True)
+class IsWorthCell():
+    
+    '''Collects all the information related to a DataFrame cell that are required by IsWorthHighlighter[cite: 1].'''
+
+    coordinate_pair : Tuple[int, int]
+    raw_value : str
+class IsWorthHighlighter():
+
+    '''Encapsulates all the logic related to highlighting cells in dataframes containing 'Yes' or 'No' values[cite: 1].'''
+
+    def __is_valid_cell(self, cell_content : str) -> bool:
+
+        '''Returns True if content is either 'Yes' or 'No'.'''
+
+        return cell_content in ["Yes", "No"]
+    def __is_yes(self, cell_content : str) -> bool:
+
+        '''Returns True if content is 'Yes'.'''
+
+        return cell_content == "Yes"
+    def __append_new_worth_cell(self, worth_cells : list[IsWorthCell], coordinate_pair : Tuple[int, int], cell_content : str) -> None:
+
+        '''Creates and appends a new WorthCell object to worth_cells[cite: 1].'''
+
+        worth_cell : IsWorthCell = IsWorthCell(
+            coordinate_pair = coordinate_pair,
+            raw_value = cell_content,
+        )
+        
+        worth_cells.append(worth_cell)
+    def __extract_row(self, df : DataFrame, row_idx : int, column_names : list[str]) -> list[IsWorthCell]:
+
+        '''Returns a collection of WorthCell objects for provided arguments[cite: 1].'''
+
+        worth_cells : list[IsWorthCell] = []
+        col_indices : list = [df.columns.get_loc(column_name) for column_name in column_names if column_name in df.columns]
+
+        for col_idx in col_indices:
+
+            coordinate_pair : Tuple[int, int] = (row_idx, col_idx)
+            cell_content : str = str(df.iloc[row_idx, col_idx])
+
+            if self.__is_valid_cell(cell_content = cell_content) and self.__is_yes(cell_content = cell_content):
+                self.__append_new_worth_cell(worth_cells, coordinate_pair, cell_content)
+
+        return worth_cells
+    def __calculate_worth_cells(self, df : DataFrame, column_names : list[str]) -> list[IsWorthCell]:
+
+        '''Returns a list of WorthCell objects representing 'Yes' values across the dataframe[cite: 1].'''
+
+        worth_cells : list[IsWorthCell] = []
+        last_row_idx : int = len(df)
+
+        for row_idx in range(last_row_idx):
+            current : list[IsWorthCell] = self.__extract_row(df = df, row_idx = row_idx, column_names = column_names)
+            worth_cells.extend(current)
+
+        return worth_cells
+    def __add_tags(self, df : DataFrame, worth_cells : list[IsWorthCell], tags : Tuple[str, str]) -> DataFrame:
+
+        '''Adds two HTML tags around the content of the cells listed in worth_cells[cite: 1].'''
+
+        tagged_df : DataFrame = df.copy(deep = True)
+
+        left_h : str = tags[0]
+        right_h : str = tags[1]
+
+        for worth_cell in worth_cells:
+
+            row, col = worth_cell.coordinate_pair
+
+            if row < len(df) and col < len(df.columns):
+                tagged_df.iloc[row, col] = f"{left_h}{str(df.iloc[row, col])}{right_h}"
+            
+        return tagged_df
+
+    def highlight(self, df : DataFrame, column_names : list[str] = []) -> DataFrame:
+
+        '''
+            Expects a df containing 'Yes' or 'No' cell formats[cite: 1].
+            Returns a df with highlighted 'Yes' cells as per arguments[cite: 1].
+        '''
+
+        highlighted_df : DataFrame = df.copy(deep = True)
+        highlighted_df.columns = highlighted_df.columns.map(str)
+
+        if len(column_names) == 0:
+            column_names = highlighted_df.columns.to_list()
+
+        worth_cells : list[IsWorthCell] = self.__calculate_worth_cells(
+            df = highlighted_df, 
+            column_names = column_names
+        )
+
+        tags : Tuple[str, str] = (f"<mark style='background-color: pink'>", "</mark>")
+        highlighted_df = self.__add_tags(df = highlighted_df, worth_cells = worth_cells, tags = tags)
+
+        return highlighted_df
 class RLAdapter():
 
     '''Adapts SettingBag properties for use in RL*Factory methods.'''
 
     __df_factory : RLDataFrameFactory
     __rs_highlighter : RSHighlighter
+    __int_highlighter : IntHighlighter
+    __float_highlighter : FloatHighlighter
+    __isworth_highlighter : IsWorthHighlighter
 
-    def __init__(self, df_factory : RLDataFrameFactory, rs_highlighter : RSHighlighter) -> None:
+    def __init__(
+            self, 
+            df_factory : RLDataFrameFactory, 
+            rs_highlighter : RSHighlighter,
+            int_highlighter : IntHighlighter,
+            float_highlighter : FloatHighlighter,
+            isworth_highlighter : IsWorthHighlighter) -> None:
         
         self.__df_factory = df_factory
         self.__rs_highlighter = rs_highlighter
+        self.__int_highlighter = int_highlighter
+        self.__float_highlighter = float_highlighter
+        self.__isworth_highlighter = isworth_highlighter
 
     def create_rl_df(self, setting_bag : SettingBag) -> DataFrame:
 
@@ -2383,6 +2931,7 @@ class RLAdapter():
         rl_rating_five_df : DataFrame = self.create_rl_rating_five_df(rl_enriched_df = rl_enriched_df, setting_bag = setting_bag)
         rl_most_underlines_df : DataFrame = self.create_rl_most_underlines_df(rl_enriched_df = rl_enriched_df, setting_bag = setting_bag)
         rls_by_month_tpl : Tuple[DataFrame, DataFrame] = self.create_rls_by_month_tpl(rl_df = rl_df, setting_bag = setting_bag)
+        rls_by_month_mom_df : DataFrame = self.__df_factory.create_rls_by_month_mom_df(rls_by_month_df = rls_by_month_tpl[1])
         rls_by_year_df : DataFrame = self.create_rls_by_year_df(rls_by_month_tpl = rls_by_month_tpl, rl_df = rl_df, setting_bag = setting_bag)
         rls_by_range_df : DataFrame = self.create_rls_by_range_df(rl_df = rl_df, setting_bag = setting_bag)
         rls_by_topic_df : DataFrame = self.__df_factory.create_rls_by_topic_df(rl_df = rl_df)
@@ -2399,12 +2948,39 @@ class RLAdapter():
                 self.__rs_highlighter.highlight_rls_by_month(rls_by_month_df = rls_by_month_tpl[1]))
             rls_by_year_df = self.__rs_highlighter.highlight_rls_by_year(rls_by_year_df = rls_by_year_df)
 
+        if setting_bag.enable_int_highlighting:
+
+            rls_by_month_mom_df = self.__int_highlighter.highlight(df = rls_by_month_mom_df)
+
+            rls_by_topic_df = self.__int_highlighter.highlight(df = rls_by_topic_df, column_names = [RLCN.BOOKS])
+            rls_by_topic_df = self.__int_highlighter.highlight(df = rls_by_topic_df, column_names = [RLCN.PAGES])
+            rls_by_topic_df = self.__int_highlighter.highlight(df = rls_by_topic_df, column_names = [RLCN.A4SHEETS])
+                       
+            rl_most_underlines_df = self.__int_highlighter.highlight(df = rl_most_underlines_df, column_names = [RLCN.A4SHEETS])
+            rl_most_underlines_df = self.__int_highlighter.highlight(df = rl_most_underlines_df, column_names = [RLCN.UNDERLINES])
+
+        if setting_bag.enable_float_highlighting:
+
+            rls_by_publisher_tpl = (
+                self.__float_highlighter.highlight(df = rls_by_publisher_tpl[0], column_names = [RLCN.AVGRATING], formatters = setting_bag.rls_by_publisher_formatters),
+                rls_by_publisher_tpl[1])
+            rls_by_publisher_tpl = (
+                self.__float_highlighter.highlight(df = rls_by_publisher_tpl[0], column_names = [RLCN.ABPERC], formatters = {}),
+                rls_by_publisher_tpl[1])
+
+        if setting_bag.enable_isworth_highlighting:
+
+            rls_by_publisher_tpl = (
+                self.__isworth_highlighter.highlight(df = rls_by_publisher_tpl[0]),
+                rls_by_publisher_tpl[1])
+
         rl_summary : RLSummary = RLSummary(
             rl_df = rl_df,
             rl_enriched_df = rl_enriched_df,
             rl_rating_five_df = rl_rating_five_df,
             rl_most_underlines_df = rl_most_underlines_df,
             rls_by_month_tpl = rls_by_month_tpl,
+            rls_by_month_mom_df = rls_by_month_mom_df,
             rls_by_year_df = rls_by_year_df,
             rls_by_range_df = rls_by_range_df,
             rls_by_topic_df = rls_by_topic_df,
@@ -2525,6 +3101,7 @@ class RLReportManager():
         html_sections: list[str] = []
         
         html_sections.append(self.__create_html(rl_summary.rls_by_month_tpl[1], REPORTSTR.RLSBYMONTH, formatters))
+        html_sections.append(self.__create_html(rl_summary.rls_by_month_mom_df, REPORTSTR.RLSBYMONTHMOM, formatters))
         html_sections.append(self.__create_html(rl_summary.rls_by_year_df, REPORTSTR.RLSBYYEAR, formatters))
         html_sections.append(self.__create_html(rl_summary.rls_by_range_df, REPORTSTR.RLSBYRANGE, formatters))
         html_sections.append(self.__create_html(rl_summary.rls_by_topic_df, REPORTSTR.RLSBYTOPIC, formatters))
@@ -2624,8 +3201,13 @@ class ComponentBag():
         df_factory = RLDataFrameFactory(
             converter = Converter(),
             formatter = Formatter(),
+            df_helper = RLDataFrameHelper(),
+            momentum_manager = MomentumManager()),
+        rs_highlighter = RSHighlighter(
             df_helper = RLDataFrameHelper()),
-        rs_highlighter = RSHighlighter(df_helper = RLDataFrameHelper())))
+        int_highlighter = IntHighlighter(),
+        float_highlighter = FloatHighlighter(),
+        isworth_highlighter = IsWorthHighlighter()))
 class ReadingListProcessor():
 
     '''Collects all the logic related to the processing of "Reading List.xlsx".'''
@@ -2645,16 +3227,35 @@ class ReadingListProcessor():
 
         if not hasattr(self, '_ReadingListProcessor__rl_summary'):
             raise Exception(_MessageCollection.please_run_initialize_first())
-    def __merge_formatters(self) -> dict:
+    def __orchestrate_formatters(self) -> dict:
 
-        '''Merges all formatters in one dict'''
+        '''
+            Orchestrates formatter ownership within the rendering pipeline.
 
-        formatters : dict = (
-            self.__setting_bag.rl_most_underlines_formatters | 
-            self.__setting_bag.rls_by_publisher_formatters
-        )
+            If float highlighting is enabled, FloatHighlighter assumes responsibility for formatting highlighted float values before
+            they are converted to HTML strings. In this case, downstream formatter application is disabled by returning an empty dict.
+
+            Otherwise, all formatter definitions are merged and returned for later processing.
+        '''
+
+        formatters: dict = {}
+
+        if self.__setting_bag.enable_float_highlighting is False:
+
+            formatters = (
+                self.__setting_bag.rl_most_underlines_formatters |
+                self.__setting_bag.rls_by_publisher_formatters
+            )
             
         return formatters
+    def __orchestrate_rls_by_publisher_formatters(self) -> dict:
+
+        '''Orchestrates formatter ownership for the DataFrame in the method name.'''
+
+        if self.__setting_bag.enable_float_highlighting:
+            return {}
+            
+        return self.__setting_bag.rls_by_publisher_formatters
 
     def initialize(self) -> None:
 
@@ -2737,6 +3338,21 @@ class ReadingListProcessor():
 
         if OPTION.display in options:
             self.__component_bag.displayer.display(obj = df)
+    def process_rls_by_month_mom(self) -> None:
+
+        '''
+            Performs all the actions listed in __setting_bag.options_rls_by_month_mom.
+            
+            It raises an exception if the 'initialize' method has not been run yet.
+        '''
+
+        self.__validate_summary()
+
+        options : list = self.__setting_bag.options_rls_by_month_mom
+        df : DataFrame = self.__rl_summary.rls_by_month_mom_df
+
+        if OPTION.display in options:
+            self.__component_bag.displayer.display(obj = df)
     def process_rls_by_year(self) -> None:
 
         '''
@@ -2809,7 +3425,7 @@ class ReadingListProcessor():
 
         options : list = self.__setting_bag.options_rls_by_publisher
         df : DataFrame = self.__rl_summary.rls_by_publisher_tpl[0]
-        formatters : dict = self.__setting_bag.rls_by_publisher_formatters
+        formatters : dict = self.__orchestrate_rls_by_publisher_formatters()
         footer : str = self.__rl_summary.rls_by_publisher_tpl[1] + "\n"
 
         if OPTION.display in options:
@@ -2912,7 +3528,7 @@ class ReadingListProcessor():
         self.__validate_summary()
 
         options : list = self.__setting_bag.options_report
-        formatters :dict = self.__merge_formatters()
+        formatters :dict = self.__orchestrate_formatters()
         save_html : bool = False
         save_pdf : bool = False
 

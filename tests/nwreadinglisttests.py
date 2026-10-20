@@ -10,7 +10,7 @@ from contextlib import redirect_stdout
 from datetime import datetime, date
 from io import StringIO
 from numpy import float64, int32
-from pandas import DataFrame, RangeIndex, Index
+from pandas import DataFrame, RangeIndex, Index, Series
 from pandas.testing import assert_frame_equal
 from pandas.io.formats.style import Styler
 from parameterized import parameterized
@@ -20,8 +20,9 @@ from unittest.mock import _Call, Mock, call, mock_open, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import Formatter, Converter, FilePathManager, FileManager, LambdaProvider, Displayer, PlotManager, PlotKind
-from nwreadinglist import REPORTSTR, RLCN, DEFINITIONSTR, OPTION, RSMODE, _MessageCollection
+from nwreadinglist import _MessageCollectionMomentumManager, FloatCell, FloatHighlighter, Formatter, Converter, FilePathManager, IsWorthHighlighter, IsWorthCell
+from nwreadinglist import FileManager, IntCell, IntHighlighter, LambdaProvider, Displayer, MomentumManager, PlotManager, PlotKind
+from nwreadinglist import REPORTSTR, RLCN, DEFINITIONSTR, OPTION, HIGHLIGHTERMODE, _MessageCollection
 from nwreadinglist import RLReportManager, RLSummary, DefaultPathProvider, RSCell, RSHighlighter
 from nwreadinglist import SettingBag, RLDataFrameHelper, RLDataFrameFactory, YearProvider
 from nwreadinglist import RLAdapter, ComponentBag, ReadingListProcessor
@@ -181,14 +182,14 @@ class ObjectMother():
         rls_by_month_df : DataFrame = DataFrame({
             RLCN.MONTH: np.array([str(i) for i in range(1, 13)], dtype=np.int64),
             "2023": np.array(["0 (0)"] * 12, dtype=object),
-            RLCN.TRENDSYMBOL: np.array(["=", "↑", "=", "=", "=", "=", "=", "=", "=", "=", "=", "="], dtype=object),
+            RLCN.TREND: np.array(["=", "↑", "=", "=", "=", "=", "=", "=", "=", "=", "=", "="], dtype=object),
             "2024": np.array(["0 (0)", "14 (5573)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", 
                             "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)", "0 (0)"], dtype=object)
         }, index=pd.Index(range(12), dtype="int64"))
 
         rls_by_month_upd_df : DataFrame = DataFrame({
             "2023": np.array(["0 (0)"] * 12, dtype=object),
-            RLCN.TRENDSYMBOL: np.array(["=", "↑", "", "", "", "", "", "", "", "", "", ""], dtype=object),
+            RLCN.TREND: np.array(["=", "↑", "", "", "", "", "", "", "", "", "", ""], dtype=object),
             "2024": np.array(["0 (0)", "14 (5573)", "", "", "", "", "", "", "", "", "", ""], dtype=object)
         }, index=pd.Index(range(12), dtype="int64"))
 
@@ -198,7 +199,7 @@ class ObjectMother():
 
         return DataFrame({
             "2023": np.array(["0 (0)", "$0.00"], dtype = object),
-            RLCN.TRENDSYMBOL: np.array(["↑", "↑"], dtype = object),
+            RLCN.TREND: np.array(["↑", "↑"], dtype = object),
             "2024": np.array(["14 (5573)", "$587.57"], dtype = object)
         }, index=pd.Index([0, 1], dtype="int64")) 
     @staticmethod
@@ -239,7 +240,7 @@ class ObjectMother():
         return pd.DataFrame({
             RLCN.TOPIC: np.array(["Development Tools", "Python", "Software Engineering"], dtype=object),
             RLCN.BOOKS: pd.Series([[0, 0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 12], [0, 0, 0, 0, 0, 0, 0, 0, 1]]).to_numpy(),
-            RLCN.TREND: np.array(["▁▁▁▁▁▁▁▁▂", "▁▁▁▁▁▁▁▁█", "▁▁▁▁▁▁▁▁▂"], dtype=object),
+            RLCN.TRENDNAME: np.array(["▁▁▁▁▁▁▁▁▂", "▁▁▁▁▁▁▁▁█", "▁▁▁▁▁▁▁▁▂"], dtype=object),
         }, index=pd.RangeIndex(start=0, stop=3, step=1))
     @staticmethod
     def get_definitions_df() -> DataFrame:
@@ -255,7 +256,7 @@ class ObjectMother():
             RLCN.UNDERLINES: "Underlines are sentences that express a fundamental concept that can be understood as-is.",
             RLCN.UPERC: f"For a given book, {RLCN.UPERC} is calculated as the number of {RLCN.UNDERLINES} in that book compared with the average number of {RLCN.UNDERLINES} across the entire reading list. The higher the {RLCN.UPERC}, the better the book.",
             DEFINITIONSTR.READINGSTATUS: f"A {DEFINITIONSTR.READINGSTATUS} is a string that reports, at a specified time grain, the number of books read and the corresponding total pages.",
-            f"{RLCN.TREND} ({RLCN.TRENDSYMBOL})": "A trend is a gamification metric that indicates whether a measure (e.g., total books read) has increased or decreased over time."
+            f"{RLCN.TRENDNAME} ({RLCN.TREND})": "A trend is a gamification metric that indicates whether a measure (e.g., total books read) has increased or decreased over time."
         }
         
         definitions_df : DataFrame = DataFrame(
@@ -266,12 +267,13 @@ class ObjectMother():
         return definitions_df
 
     @staticmethod
-    def get_setting_bag(enable_rs_highlighting : bool = True) -> SettingBag:
+    def get_setting_bag(enable_rs_highlighting : bool = True, enable_float_highlighting : bool = True) -> SettingBag:
 
         setting_bag : SettingBag = SettingBag(
             options_rl_rating_five = [OPTION.display],            
             options_rl_most_underlines = [OPTION.display],
             options_rls_by_month = [OPTION.display],
+            options_rls_by_month_mom = [OPTION.display],
             options_rls_by_year = [OPTION.display],
             options_rls_by_range = [OPTION.display],
             options_rls_by_topic = [OPTION.display],
@@ -284,7 +286,8 @@ class ObjectMother():
             read_years = YearProvider().get_all_years(),
             excel_path = DefaultPathProvider().get_default_reading_list_path(),
             excel_nrows = 323,
-            enable_rs_highlighting = enable_rs_highlighting
+            enable_rs_highlighting = enable_rs_highlighting,
+            enable_float_highlighting = enable_float_highlighting
         )
 
         return setting_bag
@@ -981,6 +984,7 @@ class RLSummaryTestCase(unittest.TestCase):
             rl_rating_five_df = df,
             rl_most_underlines_df = df,
             rls_by_month_tpl = rls_by_month_tpl,
+            rls_by_month_mom_df = df,
             rls_by_year_df = df,
             rls_by_range_df = df,
             rls_by_topic_df = df,
@@ -1000,6 +1004,7 @@ class RLSummaryTestCase(unittest.TestCase):
         assert_frame_equal(rl_summary.rl_most_underlines_df, df)        
         assert_frame_equal(rl_summary.rls_by_month_tpl[0], df)
         assert_frame_equal(rl_summary.rls_by_month_tpl[1], df)
+        assert_frame_equal(rl_summary.rls_by_month_mom_df, df)
         assert_frame_equal(rl_summary.rls_by_year_df, df)
         assert_frame_equal(rl_summary.rls_by_range_df, df)
         assert_frame_equal(rl_summary.rls_by_topic_df, df)
@@ -1045,6 +1050,7 @@ class SettingBagTestCase(unittest.TestCase):
         options_rl_rating_five : list[Literal[OPTION.display]] = [OPTION.display]                                   # type: ignore[valid-type]
         options_rl_most_underlines : list[Literal[OPTION.display]] = [OPTION.display]                               # type: ignore[valid-type]
         options_rls_by_month : list[Literal[OPTION.display]] = [OPTION.display]                                     # type: ignore[valid-type]
+        options_rls_by_month_mom : list[Literal[OPTION.display]] = [OPTION.display]                                 # type: ignore[valid-type]
         options_rls_by_year : list[Literal[OPTION.display]] = [OPTION.display]                                      # type: ignore[valid-type]
         options_rls_by_range : list[Literal[OPTION.display]] = [OPTION.display]                                     # type: ignore[valid-type]
         options_rls_by_topic : list[Literal[OPTION.display]] = [OPTION.display]                                     # type: ignore[valid-type]
@@ -1069,6 +1075,7 @@ class SettingBagTestCase(unittest.TestCase):
         rounding_digits : int = 2
         now : datetime = datetime(2025, 12, 28, 1, 12, 13, 890)
         enable_rs_highlighting : bool = False
+        enable_int_highlighting : bool = False
         report_last_update : datetime = datetime(2025, 12, 28, 1, 12, 13, 890)
         rl_most_underlines_formatters : dict[str, str] = {RLCN.AVGRATING: "{:.2f}", RLCN.ABPERC: "{:.2f}", RLCN.AVGUNDERLINES: "{:.2f}"}
         rld_by_kbsize_ascending : bool = False
@@ -1088,6 +1095,7 @@ class SettingBagTestCase(unittest.TestCase):
             options_rl_rating_five = options_rl_rating_five,
             options_rl_most_underlines = options_rl_most_underlines,
             options_rls_by_month = options_rls_by_month,
+            options_rls_by_month_mom = options_rls_by_month_mom,
             options_rls_by_year = options_rls_by_year,
             options_rls_by_range = options_rls_by_range,
             options_rls_by_topic = options_rls_by_topic,
@@ -1112,6 +1120,7 @@ class SettingBagTestCase(unittest.TestCase):
             rounding_digits = rounding_digits,
             now = now,
             enable_rs_highlighting = enable_rs_highlighting,
+            enable_int_highlighting = enable_int_highlighting,
             report_last_update = report_last_update,
             rl_most_underlines_formatters = rl_most_underlines_formatters,
             rld_by_kbsize_ascending = rld_by_kbsize_ascending,
@@ -1131,6 +1140,7 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.options_rl_rating_five, options_rl_rating_five)
         self.assertEqual(setting_bag.options_rl_most_underlines, options_rl_most_underlines)
         self.assertEqual(setting_bag.options_rls_by_month, options_rls_by_month)
+        self.assertEqual(setting_bag.options_rls_by_month_mom, options_rls_by_month_mom)
         self.assertEqual(setting_bag.options_rls_by_year, options_rls_by_year)        
         self.assertEqual(setting_bag.options_rls_by_range, options_rls_by_range)
         self.assertEqual(setting_bag.options_rls_by_topic, options_rls_by_topic)
@@ -1154,6 +1164,7 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.rounding_digits, rounding_digits)
         self.assertEqual(setting_bag.now, now)
         self.assertEqual(setting_bag.enable_rs_highlighting, enable_rs_highlighting)
+        self.assertEqual(setting_bag.enable_int_highlighting, enable_int_highlighting)
         self.assertEqual(setting_bag.report_last_update, report_last_update)
         self.assertEqual(setting_bag.rl_most_underlines_formatters, rl_most_underlines_formatters)
         self.assertEqual(setting_bag.rld_by_kbsize_ascending, rld_by_kbsize_ascending)
@@ -1167,6 +1178,127 @@ class SettingBagTestCase(unittest.TestCase):
         self.assertEqual(setting_bag.rls_by_publisher_criteria, rls_by_publisher_criteria)
         self.assertEqual(setting_bag.rls_by_rating_number_as_stars, rls_by_rating_number_as_stars)
         self.assertEqual(setting_bag.rls_by_topic_trend_sparklines_maximum, rls_by_topic_bt_sparklines_maximum)
+class MomentumManagerTestCase(unittest.TestCase):
+
+    @parameterized.expand([
+        (0, "January"), 
+        (1, "February"), 
+        (2, "March"), 
+        (3, "April"), 
+        (4, "May"), 
+        (5, "June"), 
+        (6, "July"), 
+        (7, "August"), 
+        (8, "September"), 
+        (9, "October"), 
+        (10, "November"), 
+        (11, "December")
+    ])
+    def test_converttomonth_shouldreturnexpectedmonth_whenvalidrowindex(self, row_index : int, expected : str) -> None:
+
+        # Arrange
+        # Act
+        actual: str = MomentumManager()._MomentumManager__convert_to_month(row_index = row_index)  # type: ignore
+
+        # Assert
+        self.assertEqual(expected, actual)
+
+    @parameterized.expand([
+        (pd.Series(["↑", np.nan], index=[f"{RLCN.TREND}1", f"{RLCN.TREND}2"]), "↑E"),
+        (pd.Series(["↑", "↓", "="], index=[f"{RLCN.TREND}1", f"{RLCN.TREND}2", f"{RLCN.TREND}3"]), "↑↓=")
+    ])
+    def test_createtrendsequence_shouldreturnexpectedsequence_whenvalidrow(self, row : Series, expected : str) -> None:
+
+        # Arrange
+        # Act
+        actual: str = MomentumManager()._MomentumManager__create_trend_sequence(row = row)  # type: ignore
+
+        # Assert
+        self.assertEqual(expected, actual)
+
+    @parameterized.expand([
+        ("==========", 0),
+        ("↑", 1),
+        ("↓", -1),
+        ("↑E", 1),
+        ("↓E", -1),
+        ("↑↑↑↑↑↑↑↑↑↑", 10),
+        ("↓↓↓↓↓↓↓↓↓↓", -10),
+        ("↑↑↑↑↑↑↑↑↑=", 9),
+        ("↑↑↑↑↑↑↑↑↑↓", 9),
+        ("↑↑↑↓↓↑↓↓↑↑", 3),
+        ("↑↓↑↓↓↑↑↓↑↑", 2),
+        ("↑↑↓↓↑↓↓", -2)
+    ])
+    def test_calculatemomentum_shouldreturnexpectedmomentum_whenvalidsequence(self, sequence : str, expected : int) -> None:
+
+        # Arrange
+        # Act
+        actual: int = MomentumManager()._MomentumManager__calculate_momentum(sequence = sequence)  # type: ignore
+
+        # Assert
+        self.assertEqual(expected, actual)
+
+    def test_createbymonthmomdf_shouldreturnexpecteddataframe_whenvaliddf(self) -> None:
+
+        # Arrange
+        data : dict = {
+            "2024": ["45h 45m"] * 12,
+            RLCN.TREND: ["↑", "↓", "↓", "↑", "↑", "↑", "↑", "↑", "↑", "↓", "↑", "↓"],
+            "2025": ["79h 00m"] * 12,
+        }
+        by_month_df : DataFrame = DataFrame(data, index = range(12))
+
+        expected_months: list[str] = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+        ]
+        expected_sequences: list[str] = [
+            "↑",
+            "↓",
+            "↓",
+            "↑",
+            "↑",
+            "↑",
+            "↑",
+            "↑",
+            "↑",
+            "↓",
+            "↑",
+            "↓",
+        ]
+        expected_momentums: list[int] = [1, -1, -1, 1, 1, 1, 1, 1, 1, -1, 1, -1]
+
+        # Act
+        actual: DataFrame = MomentumManager().create_by_month_mom_df(by_month_df = by_month_df)
+
+        # Assert
+        self.assertEqual(expected_months, actual["Month"].tolist())
+        self.assertEqual(expected_sequences, actual["Sequence"].tolist())
+        self.assertEqual(expected_momentums, actual["Momentum"].tolist())
+    def test_createbymonthmomdf_shouldraisevalueerror_wheninvalidindexorlength(self) -> None:
+
+        # Arrange
+        by_month_df : DataFrame = DataFrame({"2024": ["45h 45m"]}, index=[1])
+
+        # Act, Assert
+        with self.assertRaises(ValueError) as context:
+            
+            MomentumManager().create_by_month_mom_df(by_month_df = by_month_df)
+
+            self.assertEqual(
+                str(context.exception), 
+                _MessageCollectionMomentumManager.provided_by_month_df_doesnt_contain_expected_index())
 class RLDataFrameHelperTestCase(unittest.TestCase):
 
     @parameterized.expand([
@@ -1327,7 +1459,8 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         self.df_factory : RLDataFrameFactory = RLDataFrameFactory(
                 converter = Converter(),
                 formatter = Formatter(),
-                df_helper = RLDataFrameHelper()
+                df_helper = RLDataFrameHelper(),
+                momentum_manager = MomentumManager()
             )
         
         self.excel_path : str = "Reading List.xlsx"
@@ -1403,6 +1536,28 @@ class RLDataFrameFactoryTestCase(unittest.TestCase):
         # Assert
         assert_frame_equal(expected_1, actual_1)    
         assert_frame_equal(expected_2, actual_2)   
+    def test_createttsbymonthmomdf_shouldperformexpectedcall_wheninvoked(self) -> None:
+
+        # Arrange
+        rls_by_month_df : DataFrame = DataFrame()
+        expected_df : DataFrame = DataFrame()
+
+        momentum_manager : Mock = Mock(spec = MomentumManager)
+        momentum_manager.create_by_month_mom_df = Mock(return_value = expected_df)
+
+        df_factory : RLDataFrameFactory = RLDataFrameFactory(
+                converter = Converter(),
+                formatter = Formatter(),
+                df_helper = RLDataFrameHelper(),
+                momentum_manager = momentum_manager
+        )
+
+        # Act
+        actual : DataFrame = df_factory.create_rls_by_month_mom_df(rls_by_month_df = rls_by_month_df)
+
+        # Assert
+        momentum_manager.create_by_month_mom_df.assert_called_once_with(by_month_df = rls_by_month_df)
+        assert_frame_equal(expected_df, actual)
     def test_createrlsbyyeardf_shouldreturnexpecteddataframe_wheninvoked(self):
         
         # Arrange
@@ -1625,10 +1780,10 @@ class RSHighlighterTestCase(unittest.TestCase):
         self.assertEqual(actual[1].rs, "63 (18578)")
 
     @parameterized.expand([
-        (RSMODE.top_one_per_row, 1),
-        (RSMODE.top_three, 3)
+        (HIGHLIGHTERMODE.top_one_per_row, 1),
+        (HIGHLIGHTERMODE.top_three, 3)
     ])
-    def test_extractn_shouldreturnexpected_whenvalid(self, mode: RSMODE, expected: int) -> None:
+    def test_extractn_shouldreturnexpected_whenvalid(self, mode: HIGHLIGHTERMODE, expected: int) -> None:
         
         # Arrange
         # Act
@@ -1640,7 +1795,7 @@ class RSHighlighterTestCase(unittest.TestCase):
     def test_extractn_shouldraiseexception_wheninvalid(self) -> None:
         
         # Arrange
-        mode : RSMODE = cast(RSMODE, "Invalid")
+        mode : HIGHLIGHTERMODE = cast(HIGHLIGHTERMODE, "Invalid")
 
         # Act & Assert
         with self.assertRaises(Exception):
@@ -1665,7 +1820,7 @@ class RSHighlighterTestCase(unittest.TestCase):
         
         # Arrange
         df : DataFrame = DataFrame({"2015": ["0 (0)", "2 (275)"], "↕": ["↑", "↑"], "2016": ["63 (18578)", "13 (5157)"]})
-        mode : RSMODE = RSMODE.top_one_per_row
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
         column_names : list[str] = ["2015", "2016"]
 
         # Act
@@ -1679,7 +1834,7 @@ class RSHighlighterTestCase(unittest.TestCase):
         
         # Arrange
         df : DataFrame = DataFrame({"2015": ["0 (0)", "2 (275)"], "↕": ["↑", "↑"], "2016": ["63 (18578)", "13 (5157)"]})
-        mode : RSMODE = RSMODE.top_three
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_three
         column_names : list[str] = ["2015", "2016"]
 
         # Act
@@ -1694,7 +1849,7 @@ class RSHighlighterTestCase(unittest.TestCase):
 
         # Arrange
         df : DataFrame = DataFrame({"2015": ["0 (0)", "2 (275)"], "↕": ["↑", "↑"], "2016": ["63 (18578)", "13 (5157)"]})
-        mode : RSMODE = cast(RSMODE, "Invalid")
+        mode : HIGHLIGHTERMODE = cast(HIGHLIGHTERMODE, "Invalid")
         column_names : list[str] = ["2015", "2016"]
 
         expected : str = _MessageCollection.provided_mode_not_supported(mode)
@@ -1725,7 +1880,7 @@ class RSHighlighterTestCase(unittest.TestCase):
     def test_highlightdataframe_shouldhighlightexpectedcells_whencolumnnamesareprovided(self) -> None:
 
         # Arrange
-        mode : RSMODE = RSMODE.top_one_per_row
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
         column_names : list[str] = ["2015", "2016", "2017"]
 
         expected : DataFrame = self.df_without_duplicates.copy(deep = True)
@@ -1740,7 +1895,7 @@ class RSHighlighterTestCase(unittest.TestCase):
     def test_highlightdataframe_shouldhighlightexpectedcells_whencolumnnamesarenotprovided(self) -> None:
 
         # Arrange
-        mode : RSMODE = RSMODE.top_one_per_row
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
         column_names : list[str] = []
 
         expected : DataFrame = self.df_without_duplicates.copy(deep = True)
@@ -1767,7 +1922,7 @@ class RSHighlighterTestCase(unittest.TestCase):
         # Assert
         highlighted_df.assert_called_once_with(
             df = rls_by_month_df,
-            mode = RSMODE.top_three
+            mode = HIGHLIGHTERMODE.top_three
         )
     def test_highlightttsbyyear_shouldperformexpectedcalls_wheninvoked(self) -> None:
 
@@ -1783,23 +1938,573 @@ class RSHighlighterTestCase(unittest.TestCase):
         # Assert
         highlighted_df.assert_called_once_with(
             df = rls_by_year_df,
-            mode = RSMODE.top_three
+            mode = HIGHLIGHTERMODE.top_three
         )
-class ComponentBagTestCase(unittest.TestCase):
-    
-    def test_componentbag_shouldinitializeasexpected_wheninvoked(self):
-        
-        # Arrange, Act
-        component_bag = ComponentBag()
+class IntCellTestCase(unittest.TestCase):
+
+    def test_init_shouldinitializeobjectwithexpectedproperties_whenvalidarguments(self) -> None:
+
+        # Arrange
+        coordinate_pair : Tuple[int, int] = (5, 10)
+        raw_value : str = "1050"
+        numeric_value : int = 1050
+
+        # Act
+        int_cell: IntCell = IntCell(
+            coordinate_pair = coordinate_pair,
+            raw_value = raw_value,
+            numeric_value = numeric_value
+        )
 
         # Assert
-        self.assertIsInstance(component_bag, ComponentBag)
-        self.assertIsInstance(component_bag.file_path_manager, FilePathManager)
-        self.assertIsInstance(component_bag.file_manager, FileManager)
-        self.assertIsInstance(component_bag.rl_adapter, RLAdapter)
-        self.assertIsInstance(component_bag.displayer, Displayer)
-        self.assertIsInstance(component_bag.plot_manager, PlotManager)
-        self.assertTrue(callable(component_bag.logging_function))
+        self.assertEqual(int_cell.coordinate_pair, coordinate_pair)
+        self.assertEqual(int_cell.raw_value, raw_value)
+        self.assertEqual(int_cell.numeric_value, numeric_value)
+class IntHighlighterTestCase(unittest.TestCase):
+
+    def setUp(self) -> None:
+
+        data : dict[str, list] = {
+            "Month": ["1", "2"],
+            "Count": ["42", "150"],
+            "↕": ["↑", "↑"],
+            "Score": ["10", "5"],
+            "↕_duplicate_1": ["↑", "↑"],
+            "Total": ["1050", "2000"]
+        }
+        columns_01 : list[str] = ["Month", "Count", "↕", "Score", "↕", "Total"]
+        self.df_with_duplicates : DataFrame = DataFrame(data, columns = columns_01)
+
+        columns_02 : list[str] = ["Month", "Count", "↕", "Score", "↕_duplicate_1", "Total"]
+        self.df_without_duplicates : DataFrame = DataFrame(data, columns = columns_02)
+
+    def test_init_shouldinitializeobjectwithexpectedproperties_wheninvoked(self) -> None:
+        
+        # Arrange
+        # Act
+        actual : IntHighlighter = IntHighlighter()
+
+        # Assert
+        self.assertIsInstance(actual, IntHighlighter)
+
+    @parameterized.expand([
+        ("42", True),
+        ("1050", True),
+        ("0", True),
+        ("2.09", False),
+        ("invalid", False),
+        ("-5", False)
+    ])
+    def test_isint_shouldreturnexpectedresult_wheninvoked(self, cell_content : str, expected : bool) -> None:
+        
+        # Arrange
+        # Act
+        actual : bool = IntHighlighter()._IntHighlighter__is_int(cell_content = cell_content)  # type: ignore
+
+        # Assert
+        self.assertEqual(actual, expected)
+
+    @parameterized.expand([
+        ("42", 42),
+        ("1050", 1050)
+    ])
+    def test_unboxint_shouldreturnexpectedint_wheninvoked(self, cell_content : str, expected : int) -> None:
+        
+        # Arrange
+        # Act
+        actual : int = IntHighlighter()._IntHighlighter__unbox_int(cell_content = cell_content)  # type: ignore
+
+        # Assert
+        self.assertEqual(actual, expected)
+
+    def test_appendnewintcell_shouldappendprovidedcell_wheninvoked(self) -> None:
+
+        # Arrange
+        int_cells : list[IntCell] = []
+        coordinate_pair : Tuple[int, int] = (5, 10)
+        raw_value : str = "1050"
+        numeric_value : int = 1050
+
+        # Act
+        IntHighlighter()._IntHighlighter__append_new_int_cell(int_cells, coordinate_pair, raw_value)  # type: ignore
+
+        # Assert
+        self.assertEqual(len(int_cells), 1)
+        self.assertEqual(int_cells[0].coordinate_pair, coordinate_pair)
+        self.assertEqual(int_cells[0].raw_value, raw_value)
+        self.assertEqual(int_cells[0].numeric_value, numeric_value)
+    def test_extractrow_shouldreturnintcells_whenrowhasvalidints(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"Count": ["42"], "↕": ["↑"], "Total": ["1050"]})
+        column_names : list[str] = ["Count", "Total"]
+
+        # Act
+        actual : list[IntCell] = IntHighlighter()._IntHighlighter__extract_row(df = df, row_idx = 0, column_names = column_names)  # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].raw_value, "42")
+        self.assertEqual(actual[1].raw_value, "1050")  
+    def test_extracttopnintcells_shouldreturntopncells_wheninvoked(self) -> None:
+        
+        # Arrange
+        int_cells : list[IntCell] = [
+            IntCell(coordinate_pair = (0, 0), raw_value = "42", numeric_value = 42),
+            IntCell(coordinate_pair = (0, 1), raw_value = "150", numeric_value = 150),
+            IntCell(coordinate_pair = (0, 2), raw_value = "1050", numeric_value = 1050)
+        ]
+
+        # Act
+        actual : list[IntCell] = IntHighlighter()._IntHighlighter__extract_top_n_int_cells(int_cells = int_cells, n = 2)  # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].raw_value, "1050")
+        self.assertEqual(actual[1].raw_value, "150")
+    def test_calculateintcells_shouldreturnexpectedcells_whentoponeperrow(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"Count": ["42", "150"], "↕": ["↑", "↑"], "Total": ["1050", "2000"]})
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
+        column_names : list[str] = ["Count", "Total"]
+
+        # Act
+        actual : list[IntCell] = IntHighlighter()._IntHighlighter__calculate_int_cells(df = df, mode = mode, column_names = column_names)  # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].raw_value, "1050")
+        self.assertEqual(actual[1].raw_value, "2000")
+    def test_calculateintcells_shouldreturnexpectedcells_whentopthree(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"Count": ["42", "150"], "Total": ["1050", "2000"]})
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_three
+        column_names : list[str] = ["Count", "Total"]
+
+        # Act
+        actual : list[IntCell] = IntHighlighter()._IntHighlighter__calculate_int_cells(df=df, mode=mode, column_names=column_names)  # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 3)
+        self.assertEqual(actual[0].raw_value, "2000")
+        self.assertEqual(actual[1].raw_value, "1050")
+        self.assertEqual(actual[2].raw_value, "150")
+    def test_calculateintcells_shouldraiseexception_whenmodenotsupported(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"Count": ["42"]})
+        
+        # Act, Assert
+        with self.assertRaises(Exception):
+            IntHighlighter()._IntHighlighter__calculate_int_cells(df = df, mode = "unsupported_mode", column_names = ["Count"])  # type: ignore
+    def test_addtags_shouldsurroundintcellswithtokens_wheninvoked(self) -> None:
+        
+        # Arrange
+        int_cells : list[IntCell] = [
+            IntCell(coordinate_pair = (0, 1), raw_value = "42", numeric_value = 42),
+            IntCell(coordinate_pair = (1, 3), raw_value = "5", numeric_value = 5)
+        ]
+        tags : Tuple[str, str] = ("[[ ", " ]]")
+        expected : DataFrame = self.df_without_duplicates.copy(deep=True)
+        expected.iloc[0, 1] = "[[ 42 ]]"
+        expected.iloc[1, 3] = "[[ 5 ]]"
+
+        # Act
+        actual : DataFrame = IntHighlighter()._IntHighlighter__add_tags(self.df_without_duplicates, int_cells, tags)  # type: ignore
+
+        # Assert
+        self.assertTrue(expected.equals(actual))
+    def test_extractn_shouldraiseexception_whenmodenotsupported(self) -> None:
+        
+        # Arrange
+        # Act
+        # Assert
+        with self.assertRaises(Exception):
+            IntHighlighter()._IntHighlighter__extract_n(mode = "unsupported_mode")  # type: ignore
+
+    def test_highlight_shouldhighlightexpectedcells_whencolumnnamesareprovided(self) -> None:
+        
+        # Arrange
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
+        column_names : list[str] = ["Count", "Score", "Total"]
+
+        expected : DataFrame = self.df_without_duplicates.copy(deep=True)
+        expected.iloc[0, 5] = "<mark style='background-color: pink'>1050</mark>"
+        expected.iloc[1, 5] = "<mark style='background-color: pink'>2000</mark>"
+
+        # Act
+        actual : DataFrame = IntHighlighter().highlight(self.df_without_duplicates, mode, column_names)
+
+        # Assert
+        assert_frame_equal(expected, actual)
+    def test_highlight_shoulduseallcolumns_whencolumnnamesareempty(self) -> None:
+        
+        # Arrange
+        mode: HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
+
+        # Act
+        actual: DataFrame = IntHighlighter().highlight(self.df_without_duplicates, mode, [])
+
+        # Assert
+        self.assertIsNotNone(actual)
+class FloatCellTestCase(unittest.TestCase):
+
+    def test_init_shouldinitializeobjectwithexpectedproperties_whenvalidarguments(self) -> None:
+
+        # Arrange
+        coordinate_pair : Tuple[int, int] = (5, 10)
+        raw_value : str = "$2153.25"
+        numeric_value : float = 2153.25
+
+        # Act
+        float_cell : FloatCell = FloatCell(
+            coordinate_pair = coordinate_pair,
+            raw_value = raw_value,
+            numeric_value = numeric_value
+        )
+
+        # Assert
+        self.assertEqual(float_cell.coordinate_pair, coordinate_pair)
+        self.assertEqual(float_cell.raw_value, raw_value)
+        self.assertEqual(float_cell.numeric_value, numeric_value)
+class FloatHighlighterTestCase(unittest.TestCase):
+
+    def setUp(self) -> None:
+
+        data : dict[str, list] = {
+            "Month": ["1", "2"],
+            "AvgRating": ["2.09", "2.63"],
+            "↕": ["↑", "↑"],
+            "AB%": ["69.09%", "66.67%"],
+            "↕_duplicate_1": ["↑", "↑"],
+            "Amount": ["$2153.25", "$1586.70"]
+        }
+        columns_01 : list[str] = ["Month", "AvgRating", "↕", "AB%", "↕", "Amount"]
+        self.df_with_duplicates : DataFrame = DataFrame(data, columns = columns_01)
+
+        columns_02 : list[str] = ["Month", "AvgRating", "↕", "AB%", "↕_duplicate_1", "Amount"]
+        self.df_without_duplicates : DataFrame = DataFrame(data, columns = columns_02)
+
+    def test_init_shouldinitializeobjectwithexpectedproperties_wheninvoked(self) -> None:
+
+        # Arrange
+        # Act
+        actual : FloatHighlighter = FloatHighlighter()
+
+        # Assert
+        self.assertIsInstance(actual, FloatHighlighter)
+
+    @parameterized.expand([
+        ("2.09", True),
+        ("69.09%", True),
+        ("$2153.25", True),
+        ("invalid", False),
+        ("2.0", True),
+        ("$", False),
+        ("%", False)
+    ])
+    def test_isfloat_shouldreturnexpectedresult_wheninvoked(self, cell_content: str, expected: bool) -> None:
+        
+        # Arrange
+        # Act
+        actual : bool = FloatHighlighter()._FloatHighlighter__is_float(cell_content = cell_content)    # type: ignore
+
+        # Assert
+        self.assertEqual(actual, expected)
+
+    @parameterized.expand([
+        ("2.09", 2.09),
+        ("69.09%", 69.09),
+        ("$2153.25", 2153.25)
+    ])
+    def test_unboxfloat_shouldreturnexpectedfloat_wheninvoked(self, cell_content: str, expected: float) -> None:
+        
+        # Arrange
+        # Act
+        actual : float = FloatHighlighter()._FloatHighlighter__unbox_float(cell_content = cell_content)    # type: ignore
+
+        # Assert
+        self.assertEqual(actual, expected)
+
+    def test_appendnewfloatcell_shouldappendprovidedcell_wheninvoked(self) -> None:
+        
+        # Arrange
+        float_cells : list[FloatCell] = []
+        coordinate_pair : Tuple[int, int] = (5, 10)
+        raw_value : str = "$2153.25"
+        numeric_value : float = 2153.25
+
+        # Act
+        FloatHighlighter()._FloatHighlighter__append_new_float_cell(float_cells, coordinate_pair, raw_value) # type: ignore
+
+        # Assert
+        self.assertEqual(len(float_cells), 1)
+        self.assertEqual(float_cells[0].coordinate_pair, coordinate_pair)
+        self.assertEqual(float_cells[0].raw_value, raw_value)
+        self.assertEqual(float_cells[0].numeric_value, numeric_value)
+    def test_extractrow_shouldreturnfloatcells_whenrowhasvalidfloats(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"AvgRating": ["2.09"], "↕": ["↑"], "Amount": ["$2153.25"]})
+        column_names : list[str] = ["AvgRating", "Amount"]
+
+        # Act
+        actual : list[FloatCell] = FloatHighlighter()._FloatHighlighter__extract_row(df = df, row_idx = 0, column_names = column_names)   # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].raw_value, "2.09")
+        self.assertEqual(actual[1].raw_value, "$2153.25")
+    def test_extracttopnfloatcells_shouldreturntopncells_wheninvoked(self) -> None:
+
+        # Arrange
+        float_cells : list[FloatCell] = [
+            FloatCell(coordinate_pair = (0, 0), raw_value = "2.09", numeric_value = 2.09),
+            FloatCell(coordinate_pair = (0, 1), raw_value = "2.63", numeric_value = 2.63),
+            FloatCell(coordinate_pair = (0, 2), raw_value = "$2153.25", numeric_value = 2153.25)
+        ]
+
+        # Act
+        actual : list[FloatCell] = FloatHighlighter()._FloatHighlighter__extract_top_n_float_cells(float_cells = float_cells, n = 2)   # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].raw_value, "$2153.25")
+        self.assertEqual(actual[1].raw_value, "2.63")
+    def test_calculatefloatcells_shouldreturnexpectedcells_whentoponeperrow(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"AvgRating": ["2.09", "2.63"], "↕": ["↑", "↑"], "Amount": ["$2153.25", "$1586.70"]})
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
+        column_names : list[str] = ["AvgRating", "Amount"]
+
+        # Act
+        actual : list[FloatCell] = FloatHighlighter()._FloatHighlighter__calculate_float_cells(df = df, mode = mode, column_names = column_names)   # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].raw_value, "$2153.25")
+        self.assertEqual(actual[1].raw_value, "$1586.70")
+    def test_calculatefloatcells_shouldreturnexpectedcells_whentopthree(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"AvgRating": ["2.09", "2.63"], "Amount": ["$2153.25", "$1586.70"]})
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_three
+        column_names : list[str] = ["AvgRating", "Amount"]
+
+        # Act
+        actual : list[FloatCell] = FloatHighlighter()._FloatHighlighter__calculate_float_cells(df = df, mode = mode, column_names = column_names)   # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 3)
+        self.assertEqual(actual[0].raw_value, "$2153.25")
+        self.assertEqual(actual[1].raw_value, "$1586.70")
+        self.assertEqual(actual[2].raw_value, "2.63")
+    def test_calculatefloatcells_shouldraiseexception_whenmodenotsupported(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"AvgRating": ["2.09"]})
+        
+        # Act, Assert
+        with self.assertRaises(Exception):
+            FloatHighlighter()._FloatHighlighter__calculate_float_cells(df = df, mode = "unsupported_mode", column_names = ["AvgRating"])  # type: ignore
+    def test_addtags_shouldsurroundfloatcellswithtokens_wheninvoked(self) -> None:
+
+        # Arrange
+        float_cells : list[FloatCell] = [
+            FloatCell(coordinate_pair = (0, 1), raw_value = "2.09", numeric_value = 2.09),
+            FloatCell(coordinate_pair = (1, 3), raw_value = "66.67%", numeric_value = 66.67)
+        ]
+        tags : Tuple[str, str] = ("[[ ", " ]]")
+        expected : DataFrame = self.df_without_duplicates.copy(deep = True)
+        expected.iloc[0, 1] = "[[ 2.09 ]]"
+        expected.iloc[1, 3] = "[[ 66.67% ]]"
+
+        # Act
+        actual : DataFrame = FloatHighlighter()._FloatHighlighter__add_tags(self.df_without_duplicates, float_cells, tags)   # type: ignore
+
+        # Assert
+        self.assertTrue(expected.equals(actual))
+    def test_extractn_shouldraiseexception_whenmodenotsupported(self) -> None:
+        
+        # Arrange
+        # Act
+        # Assert
+        with self.assertRaises(Exception):
+            FloatHighlighter()._FloatHighlighter__extract_n(mode = "unsupported_mode")  # type: ignore
+
+    def test_highlight_shouldhighlightexpectedcells_whencolumnnamesareprovided(self) -> None:
+
+        # Arrange
+        mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
+        column_names : list[str] = ["AvgRating", "AB%", "Amount"]
+
+        expected : DataFrame = self.df_without_duplicates.copy(deep = True)
+        expected.iloc[0, 5] = "<mark style='background-color: pink'>$2153.25</mark>"
+        expected.iloc[1, 5] = "<mark style='background-color: pink'>$1586.70</mark>"
+
+        # Act
+        actual : DataFrame = FloatHighlighter().highlight(self.df_without_duplicates, mode, column_names)
+
+        # Assert
+        assert_frame_equal(expected, actual)
+    def test_highlight_shoulduseallcolumns_whencolumnnamesareempty(self) -> None:
+        
+        # Arrange
+        mode: HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_one_per_row
+
+        # Act
+        actual: DataFrame = FloatHighlighter().highlight(self.df_without_duplicates, mode, [])
+
+        # Assert
+        self.assertIsNotNone(actual)
+class IsWorthCellTestCase(unittest.TestCase):
+
+    def test_init_shouldinitializeobjectwithexpectedproperties_whenvalidarguments(self) -> None:
+
+        # Arrange
+        coordinate_pair : Tuple[int, int] = (5, 10)
+        raw_value : str = "Yes"
+
+        # Act
+        worth_cell : IsWorthCell = IsWorthCell(
+            coordinate_pair = coordinate_pair,
+            raw_value = raw_value
+        )
+
+        # Assert
+        self.assertEqual(worth_cell.coordinate_pair, coordinate_pair)
+        self.assertEqual(worth_cell.raw_value, raw_value)
+class IsWorthHighlighterTestCase(unittest.TestCase):
+
+    def setUp(self) -> None:
+
+        data : dict[str, list] = {
+            "Month": ["1", "2"],
+            "IsWorth": ["Yes", "No"],
+            "↕": ["↑", "↑"],
+            "IsRecommended": ["No", "Yes"],
+            "↕_duplicate_1": ["↑", "↑"],
+            "IsFeatured": ["Yes", "Yes"]
+        }
+        columns_01 : list[str] = ["Month", "IsWorth", "↕", "IsRecommended", "↕", "IsFeatured"]
+        self.df_with_duplicates : DataFrame = DataFrame(data, columns = columns_01)
+
+        columns_02 : list[str] = ["Month", "IsWorth", "↕", "IsRecommended", "↕_duplicate_1", "IsFeatured"]
+        self.df_without_duplicates : DataFrame = DataFrame(data, columns = columns_02)
+
+    def test_init_shouldinitializeobjectwithexpectedproperties_wheninvoked(self) -> None:
+
+        # Arrange
+        # Act
+        actual : IsWorthHighlighter = IsWorthHighlighter()
+
+        # Assert
+        self.assertIsInstance(actual, IsWorthHighlighter)
+
+    @parameterized.expand([
+        ("Yes", True),
+        ("No", True),
+        ("Maybe", False),
+        ("yes", False)
+    ])
+    def test_isvalidcell_shouldreturnexpectedresult_wheninvoked(self, cell_content: str, expected: bool) -> None:
+        
+        # Arrange
+        # Act
+        actual : bool = IsWorthHighlighter()._IsWorthHighlighter__is_valid_cell(cell_content = cell_content)    # type: ignore
+
+        # Assert
+        self.assertEqual(actual, expected)
+
+    @parameterized.expand([
+        ("Yes", True),
+        ("No", False)
+    ])
+    def test_isyes_shouldreturnexpectedresult_wheninvoked(self, cell_content: str, expected: bool) -> None:
+        
+        # Arrange
+        # Act
+        actual : bool = IsWorthHighlighter()._IsWorthHighlighter__is_yes(cell_content = cell_content)    # type: ignore
+
+        # Assert
+        self.assertEqual(actual, expected)
+
+    def test_appendnewworthcell_shouldappendprovidedcell_wheninvoked(self) -> None:
+        
+        # Arrange
+        worth_cells : list[IsWorthCell] = []
+        coordinate_pair : Tuple[int, int] = (5, 10)
+        raw_value : str = "Yes"
+
+        # Act
+        IsWorthHighlighter()._IsWorthHighlighter__append_new_worth_cell(worth_cells, coordinate_pair, raw_value) # type: ignore
+
+        # Assert
+        self.assertEqual(len(worth_cells), 1)
+        self.assertEqual(worth_cells[0].coordinate_pair, coordinate_pair)
+        self.assertEqual(worth_cells[0].raw_value, raw_value)
+    def test_extractrow_shouldreturnworthcells_whenrowhasyes(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"IsWorth": ["Yes"], "↕": ["↑"], "IsRecommended": ["No"]})
+        column_names : list[str] = ["IsWorth", "IsRecommended"]
+
+        # Act
+        actual : list[IsWorthCell] = IsWorthHighlighter()._IsWorthHighlighter__extract_row(df = df, row_idx = 0, column_names = column_names)   # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 1)
+        self.assertEqual(actual[0].raw_value, "Yes")
+    def test_calculateworthcells_shouldreturnexpectedcells_wheninvoked(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"IsWorth": ["Yes", "No"], "↕": ["↑", "↑"], "IsRecommended": ["No", "Yes"]})
+        column_names : list[str] = ["IsWorth", "IsRecommended"]
+
+        # Act
+        actual : list[IsWorthCell] = IsWorthHighlighter()._IsWorthHighlighter__calculate_worth_cells(df = df, column_names = column_names)   # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].raw_value, "Yes")
+        self.assertEqual(actual[1].raw_value, "Yes")
+    def test_addtags_shouldsurroundworthcellswithtokens_wheninvoked(self) -> None:
+
+        # Arrange
+        worth_cells : list[IsWorthCell] = [
+            IsWorthCell(coordinate_pair = (0, 1), raw_value = "Yes"),
+            IsWorthCell(coordinate_pair = (1, 5), raw_value = "Yes")
+        ]
+        tags : Tuple[str, str] = ("[[ ", " ]]")
+        expected : DataFrame = self.df_without_duplicates.copy(deep = True)
+        expected.iloc[0, 1] = "[[ Yes ]]"
+        expected.iloc[1, 5] = "[[ Yes ]]"
+
+        # Act
+        actual : DataFrame = IsWorthHighlighter()._IsWorthHighlighter__add_tags(self.df_without_duplicates, worth_cells, tags)   # type: ignore
+
+        # Assert
+        self.assertTrue(expected.equals(actual))
+
+    def test_highlight_shouldhighlightexpectedcells_whencolumnnamesareprovided(self) -> None:
+
+        # Arrange
+        column_names : list[str] = ["IsWorth", "IsRecommended", "IsFeatured"]
+
+        expected : DataFrame = self.df_without_duplicates.copy(deep = True)
+        expected.iloc[0, 1] = "<mark style='background-color: pink'>Yes</mark>"
+        expected.iloc[1, 3] = "<mark style='background-color: pink'>Yes</mark>"
+        expected.iloc[0, 5] = "<mark style='background-color: pink'>Yes</mark>"
+        expected.iloc[1, 5] = "<mark style='background-color: pink'>Yes</mark>"
+
+        # Act
+        actual : DataFrame = IsWorthHighlighter().highlight(self.df_without_duplicates, column_names)
+
+        # Assert
+        assert_frame_equal(expected, actual)
 class RLAdapterTestCase(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -1825,12 +2530,25 @@ class RLAdapterTestCase(unittest.TestCase):
         self.rls_by_publisher_criteria : str = "Yes"
         self.rls_by_rating_number_as_stars = True
 
-        self.mocked_df_factory : Mock = Mock(spec = RLDataFrameFactory)
-        self.mocked_rs_highlighter : Mock = Mock(spec = RSHighlighter)
+        self.df_factory : Mock = Mock(spec = RLDataFrameFactory)
+        self.rs_highlighter : Mock = Mock(spec = RSHighlighter)
+
+        # The lambda returns the exact same DataFrame object that was passed into it without modification.
+        self.int_highlighter : Mock = Mock(spec = IntHighlighter)
+        self.int_highlighter.highlight.side_effect = lambda df, *args, **kwargs : df
+
+        self.float_highlighter : Mock = Mock(spec = FloatHighlighter)
+        self.float_highlighter.highlight.side_effect = lambda df, *args, **kwargs : df
+
+        self.isworth_highlighter : Mock = Mock(spec = IsWorthHighlighter)
+        self.isworth_highlighter.highlight.side_effect = lambda df, *args, **kwargs : df
 
         self.adapter : RLAdapter = RLAdapter(
-            df_factory = self.mocked_df_factory,            # type: ignore
-            rs_highlighter = self.mocked_rs_highlighter     # type: ignore
+            df_factory = self.df_factory,                   # type: ignore
+            rs_highlighter = self.rs_highlighter,           # type: ignore
+            int_highlighter = self.int_highlighter,         # type: ignore
+            float_highlighter = self.float_highlighter,     # type: ignore
+            isworth_highlighter = self.isworth_highlighter  # type: ignore
         )
 
     def test_createrldf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
@@ -1840,7 +2558,10 @@ class RLAdapterTestCase(unittest.TestCase):
         rl_adapter : RLAdapter = RLAdapter(
             df_factory = df_factory, 
             rs_highlighter = RSHighlighter(
-                df_helper = RLDataFrameHelper()))
+                df_helper = RLDataFrameHelper()),
+            int_highlighter = IntHighlighter(),
+            float_highlighter = FloatHighlighter(),
+            isworth_highlighter = IsWorthHighlighter())
 
         setting_bag : SettingBag = Mock()
         setting_bag.excel_path = self.excel_path
@@ -1867,7 +2588,10 @@ class RLAdapterTestCase(unittest.TestCase):
         rl_adapter : RLAdapter = RLAdapter(
             df_factory = df_factory, 
             rs_highlighter = RSHighlighter(
-                df_helper = RLDataFrameHelper()))
+                df_helper = RLDataFrameHelper()),
+            int_highlighter = IntHighlighter(),
+            float_highlighter = FloatHighlighter(),
+            isworth_highlighter = IsWorthHighlighter())
 
         setting_bag : SettingBag = Mock()
         setting_bag.read_years = self.read_years
@@ -1891,7 +2615,10 @@ class RLAdapterTestCase(unittest.TestCase):
         rl_adapter : RLAdapter = RLAdapter(
             df_factory = df_factory, 
             rs_highlighter = RSHighlighter(
-                df_helper = RLDataFrameHelper()))
+                df_helper = RLDataFrameHelper()),
+            int_highlighter = IntHighlighter(),
+            float_highlighter = FloatHighlighter(),
+            isworth_highlighter = IsWorthHighlighter())
 
         setting_bag : SettingBag = Mock()
         setting_bag.read_years = self.read_years
@@ -1921,7 +2648,10 @@ class RLAdapterTestCase(unittest.TestCase):
         rl_adapter : RLAdapter = RLAdapter(
             df_factory = df_factory, 
             rs_highlighter = RSHighlighter(
-                df_helper = RLDataFrameHelper()))
+                df_helper = RLDataFrameHelper()),
+            int_highlighter = IntHighlighter(),
+            float_highlighter = FloatHighlighter(),
+            isworth_highlighter = IsWorthHighlighter())
 
         setting_bag : SettingBag = Mock()
         setting_bag.rounding_digits = self.rounding_digits
@@ -1944,7 +2674,10 @@ class RLAdapterTestCase(unittest.TestCase):
         rl_adapter : RLAdapter = RLAdapter(
             df_factory = df_factory, 
             rs_highlighter = RSHighlighter(
-                df_helper = RLDataFrameHelper()))
+                df_helper = RLDataFrameHelper()),
+            int_highlighter = IntHighlighter(),
+            float_highlighter = FloatHighlighter(),
+            isworth_highlighter = IsWorthHighlighter())
 
         setting_bag : SettingBag = Mock()
         setting_bag.rounding_digits = self.rounding_digits
@@ -1976,7 +2709,10 @@ class RLAdapterTestCase(unittest.TestCase):
         rl_adapter : RLAdapter = RLAdapter(
             df_factory = df_factory, 
             rs_highlighter = RSHighlighter(
-                df_helper = RLDataFrameHelper()))
+                df_helper = RLDataFrameHelper()),
+            int_highlighter = IntHighlighter(),
+            float_highlighter = FloatHighlighter(),
+            isworth_highlighter = IsWorthHighlighter())
 
         setting_bag : SettingBag = Mock()
         setting_bag.rls_by_rating_number_as_stars = self.rls_by_rating_number_as_stars
@@ -1991,7 +2727,6 @@ class RLAdapterTestCase(unittest.TestCase):
             rl_df = rl_df,
             number_as_stars = self.rls_by_rating_number_as_stars
         )
-    
     def test_createrldbykbdf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
         
         # Arrange
@@ -1999,7 +2734,10 @@ class RLAdapterTestCase(unittest.TestCase):
         rl_adapter : RLAdapter = RLAdapter(
             df_factory = df_factory, 
             rs_highlighter = RSHighlighter(
-                df_helper = RLDataFrameHelper()))
+                df_helper = RLDataFrameHelper()),
+            int_highlighter = IntHighlighter(),
+            float_highlighter = FloatHighlighter(),
+            isworth_highlighter = IsWorthHighlighter())
 
         setting_bag : SettingBag = Mock()
         setting_bag.rld_by_kbsize_n = self.rld_by_kbsize_n
@@ -2025,6 +2763,7 @@ class RLAdapterTestCase(unittest.TestCase):
         rl_df : DataFrame = ObjectMother.get_rl_tpl()[0]
 
         rls_by_month_tpl : Tuple[DataFrame, DataFrame] = ObjectMother.get_rls_by_month_tpl()
+        rls_by_month_mom_df : DataFrame = DataFrame()
         rls_by_year_df : DataFrame = ObjectMother.get_rls_by_year_df()
         rls_by_range_df : DataFrame = ObjectMother.get_rls_by_range_df()
         rls_by_topic_df : DataFrame = ObjectMother.get_rls_by_topic_df()
@@ -2038,6 +2777,7 @@ class RLAdapterTestCase(unittest.TestCase):
         df_factory : RLDataFrameFactory = Mock()
         df_factory.create_rl_df = Mock(return_value = rl_df)
         df_factory.create_rls_by_month_tpl = Mock(return_value = rls_by_month_tpl)
+        df_factory.create_rls_by_month_mom_df = Mock(return_value = rls_by_month_mom_df)
         df_factory.create_rls_by_year_df = Mock(return_value = rls_by_year_df)
         df_factory.create_rls_by_range_df = Mock(return_value = rls_by_range_df)
         df_factory.create_rls_by_topic_df.return_value = rls_by_topic_df
@@ -2051,9 +2791,12 @@ class RLAdapterTestCase(unittest.TestCase):
         rl_adapter : RLAdapter = RLAdapter(
             df_factory = df_factory, 
             rs_highlighter = RSHighlighter(
-                df_helper = RLDataFrameHelper()))
+                df_helper = RLDataFrameHelper()),
+            int_highlighter = self.int_highlighter,
+            float_highlighter = FloatHighlighter(),
+            isworth_highlighter = IsWorthHighlighter())
 				
-        setting_bag : SettingBag = ObjectMother.get_setting_bag(enable_rs_highlighting = False)
+        setting_bag : SettingBag = ObjectMother.get_setting_bag(enable_rs_highlighting = False, enable_float_highlighting = False)
 
         # Act
         actual : RLSummary = rl_adapter.create_summary(setting_bag = setting_bag)
@@ -2062,6 +2805,7 @@ class RLAdapterTestCase(unittest.TestCase):
         assert_frame_equal(actual.rl_df, rl_df)
         assert_frame_equal(actual.rls_by_month_tpl[0], rls_by_month_tpl[0])
         assert_frame_equal(actual.rls_by_month_tpl[1], rls_by_month_tpl[1])
+        assert_frame_equal(actual.rls_by_month_mom_df, rls_by_month_mom_df)
         assert_frame_equal(actual.rls_by_year_df, rls_by_year_df)        
         assert_frame_equal(actual.rls_by_range_df, rls_by_range_df)
         assert_frame_equal(actual.rls_by_topic_df, rls_by_topic_df)
@@ -2082,6 +2826,7 @@ class RLAdapterTestCase(unittest.TestCase):
         rls_by_month_df_a : DataFrame = DataFrame()
         rls_by_month_df_b : DataFrame = DataFrame()
         rls_by_month_tpl : Tuple[DataFrame, DataFrame] = (rls_by_month_df_a, rls_by_month_df_b)
+        rls_by_month_mom_df : DataFrame = DataFrame()
         rls_by_year_df : DataFrame = DataFrame()
         rls_by_range_df : DataFrame = DataFrame()
         rls_by_topic_df : DataFrame = DataFrame()
@@ -2095,46 +2840,54 @@ class RLAdapterTestCase(unittest.TestCase):
         setting_bag : SettingBag = ObjectMother.get_setting_bag(enable_rs_highlighting = True)
 
         with (
-            patch.object(self.adapter, "create_rl_df", return_value = rl_df) as mocked_create_rl_df,
-            patch.object(self.adapter, "create_rl_enriched_df", return_value = rl_enriched_df) as mocked_create_rl_enriched_df,
-            patch.object(self.adapter, "create_rl_rating_five_df", return_value = rl_rating_five_df) as mocked_create_rl_rating_five_df,
-            patch.object(self.adapter, "create_rl_most_underlines_df", return_value = rl_most_underlines_df) as mocked_create_rl_most_underlines_df,
-            patch.object(self.adapter, "create_rls_by_month_tpl", return_value = rls_by_month_tpl) as mocked_create_rls_by_month_tpl,
-            patch.object(self.adapter, "create_rls_by_year_df", return_value = rls_by_year_df) as mocked_create_rls_by_year_df,
-            patch.object(self.adapter, "create_rls_by_range_df", return_value = rls_by_range_df) as mocked_create_rls_by_range_df,
-            patch.object(self.mocked_df_factory, "create_rls_by_topic_df", return_value = rls_by_topic_df) as mocked_create_rls_by_topic_df,
-            patch.object(self.adapter, "create_rls_by_topic_trend_df", return_value = rls_by_topic_trend_df) as mocked_create_rls_by_topic_trend_df,
-            patch.object(self.adapter, "create_rls_by_publisher_tpl", return_value = rls_by_publisher_tpl) as mocked_create_rls_by_publisher_tpl,
-            patch.object(self.adapter, "create_rls_by_rating_df", return_value = rls_by_rating_df) as mocked_create_rls_by_rating_df,
-            patch.object(self.mocked_df_factory, "create_rls_by_underlines_df", return_value = rls_by_underlines_df) as mocked_create_rls_by_underlines_df,
-            patch.object(self.adapter, "create_rld_by_kbsize_df", return_value = rld_by_kbsize_df) as mocked_create_rld_by_kbsize_df,
-            patch.object(self.mocked_df_factory, "create_definitions_df", return_value = definitions_df) as mocked_create_definitions_df
+            patch.object(self.adapter, "create_rl_df", return_value = rl_df) as create_rl_df,
+            patch.object(self.adapter, "create_rl_enriched_df", return_value = rl_enriched_df) as create_rl_enriched_df,
+            patch.object(self.adapter, "create_rl_rating_five_df", return_value = rl_rating_five_df) as create_rl_rating_five_df,
+            patch.object(self.adapter, "create_rl_most_underlines_df", return_value = rl_most_underlines_df) as create_rl_most_underlines_df,
+            patch.object(self.adapter, "create_rls_by_month_tpl", return_value = rls_by_month_tpl) as create_rls_by_month_tpl,
+            patch.object(self.df_factory, "create_rls_by_month_mom_df", return_value = rls_by_month_mom_df) as create_rls_by_month_mom_df,
+            patch.object(self.adapter, "create_rls_by_year_df", return_value = rls_by_year_df) as create_rls_by_year_df,
+            patch.object(self.adapter, "create_rls_by_range_df", return_value = rls_by_range_df) as create_rls_by_range_df,
+            patch.object(self.df_factory, "create_rls_by_topic_df", return_value = rls_by_topic_df) as create_rls_by_topic_df,
+            patch.object(self.adapter, "create_rls_by_topic_trend_df", return_value = rls_by_topic_trend_df) as create_rls_by_topic_trend_df,
+            patch.object(self.adapter, "create_rls_by_publisher_tpl", return_value = rls_by_publisher_tpl) as create_rls_by_publisher_tpl,
+            patch.object(self.adapter, "create_rls_by_rating_df", return_value = rls_by_rating_df) as create_rls_by_rating_df,
+            patch.object(self.df_factory, "create_rls_by_underlines_df", return_value = rls_by_underlines_df) as create_rls_by_underlines_df,
+            patch.object(self.adapter, "create_rld_by_kbsize_df", return_value = rld_by_kbsize_df) as create_rld_by_kbsize_df,
+            patch.object(self.df_factory, "create_definitions_df", return_value = definitions_df) as create_definitions_df
         ):
 
-            self.mocked_rs_highlighter.highlight_rls_by_month = Mock(return_value = rls_by_month_df_a)
-            self.mocked_rs_highlighter.highlight_rls_by_year = Mock(return_value = rls_by_year_df)
+            self.rs_highlighter.highlight_rls_by_month = Mock(return_value = rls_by_month_df_a)
+            self.rs_highlighter.highlight_rls_by_year = Mock(return_value = rls_by_year_df)
 
             # Act
             self.adapter.create_summary(setting_bag = setting_bag)
 
             # Assert
-            mocked_create_rl_df.assert_called_once_with(setting_bag = setting_bag)
-            mocked_create_rl_enriched_df.assert_called_once_with(rl_df = rl_df)
-            mocked_create_rl_rating_five_df.assert_called_once_with(rl_enriched_df = rl_enriched_df, setting_bag = setting_bag)
-            mocked_create_rl_most_underlines_df.assert_called_once_with(rl_enriched_df = rl_enriched_df, setting_bag = setting_bag)
-            mocked_create_rls_by_month_tpl.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
-            mocked_create_rls_by_year_df.assert_called_once_with(rls_by_month_tpl = rls_by_month_tpl, rl_df = rl_df, setting_bag = setting_bag)
-            mocked_create_rls_by_range_df.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
-            mocked_create_rls_by_topic_df.assert_called_once_with(rl_df = rl_df)
-            mocked_create_rls_by_topic_trend_df.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
-            mocked_create_rls_by_publisher_tpl.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
-            mocked_create_rls_by_rating_df.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
-            mocked_create_rls_by_underlines_df.assert_called_once_with(rl_enriched_df = rl_enriched_df)
-            mocked_create_rld_by_kbsize_df.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
-            mocked_create_definitions_df.assert_called_once_with()
+            create_rl_df.assert_called_once_with(setting_bag = setting_bag)
+            create_rl_enriched_df.assert_called_once_with(rl_df = rl_df)
+            create_rl_rating_five_df.assert_called_once_with(rl_enriched_df = rl_enriched_df, setting_bag = setting_bag)
+            create_rl_most_underlines_df.assert_called_once_with(rl_enriched_df = rl_enriched_df, setting_bag = setting_bag)
+            create_rls_by_month_tpl.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
 
-            self.mocked_rs_highlighter.highlight_rls_by_month.assert_called()
-            self.mocked_rs_highlighter.highlight_rls_by_year.assert_called_once_with(rls_by_year_df = rls_by_year_df)
+            create_rls_by_month_mom_df.assert_called_once_with(rls_by_month_df = rls_by_month_tpl[1])
+
+            create_rls_by_year_df.assert_called_once_with(rls_by_month_tpl = rls_by_month_tpl, rl_df = rl_df, setting_bag = setting_bag)
+            create_rls_by_range_df.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
+            create_rls_by_topic_df.assert_called_once_with(rl_df = rl_df)
+            create_rls_by_topic_trend_df.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
+            create_rls_by_publisher_tpl.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
+            create_rls_by_rating_df.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
+            create_rls_by_underlines_df.assert_called_once_with(rl_enriched_df = rl_enriched_df)
+            create_rld_by_kbsize_df.assert_called_once_with(rl_df = rl_df, setting_bag = setting_bag)
+            create_definitions_df.assert_called_once_with()
+
+            self.rs_highlighter.highlight_rls_by_month.assert_called()
+            self.rs_highlighter.highlight_rls_by_year.assert_called_once_with(rls_by_year_df = rls_by_year_df)
+
+            self.assertEqual(self.int_highlighter.highlight.call_count, 6)
+            self.assertEqual(self.float_highlighter.highlight.call_count, 2)
+            self.assertEqual(self.isworth_highlighter.highlight.call_count, 1)
 class RLReportManagerTestCase(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -2149,6 +2902,7 @@ class RLReportManagerTestCase(unittest.TestCase):
             rl_rating_five_df = empty_df,
             rl_most_underlines_df = empty_df,
             rls_by_month_tpl = (empty_df, empty_df),
+            rls_by_month_mom_df = empty_df,
             rls_by_year_df = empty_df,
             rls_by_range_df = empty_df,
             rls_by_topic_df = empty_df,
@@ -2294,39 +3048,41 @@ class RLReportManagerTestCase(unittest.TestCase):
         formatters : Optional[dict] = None
 
         expected_call_00 : _Call = call(self.rl_summary.rls_by_month_tpl[1], REPORTSTR.RLSBYMONTH, formatters)
-        expected_call_01 : _Call = call(self.rl_summary.rls_by_year_df, REPORTSTR.RLSBYYEAR, formatters)
-        expected_call_02 : _Call = call(self.rl_summary.rls_by_range_df, REPORTSTR.RLSBYRANGE, formatters)
-        expected_call_03 : _Call = call(self.rl_summary.rls_by_topic_df, REPORTSTR.RLSBYTOPIC, formatters)
-        expected_call_04 : _Call = call(self.rl_summary.rls_by_topic_trend_df, REPORTSTR.RLSBYTOPICTREND, formatters)
-        expected_call_05 : _Call = call(self.rl_summary.rls_by_publisher_tpl[0], REPORTSTR.RLSBYPUBLISHER, formatters, self.rl_summary.rls_by_publisher_tpl[1])
-        expected_call_06 : _Call = call(self.rl_summary.rls_by_rating_df, REPORTSTR.RLSBYRATING, formatters)
-        expected_call_07 : _Call = call(self.rl_summary.rl_rating_five_df, REPORTSTR.RLRATINGFIVE, formatters)
-        expected_call_08 : _Call = call(self.rl_summary.rls_by_underlines_df, REPORTSTR.RLSBYUNDERLINES, formatters)
-        expected_call_09 : _Call = call(self.rl_summary.rl_most_underlines_df, REPORTSTR.RLMOSTUNDERLINES, formatters)
-        expected_call_10 : _Call = call(self.rl_summary.definitions_df, REPORTSTR.DEFINITIONS, formatters)
+        expected_call_01 : _Call = call(self.rl_summary.rls_by_month_mom_df, REPORTSTR.RLSBYMONTHMOM, formatters)
+        expected_call_02 : _Call = call(self.rl_summary.rls_by_year_df, REPORTSTR.RLSBYYEAR, formatters)
+        expected_call_03 : _Call = call(self.rl_summary.rls_by_range_df, REPORTSTR.RLSBYRANGE, formatters)
+        expected_call_04 : _Call = call(self.rl_summary.rls_by_topic_df, REPORTSTR.RLSBYTOPIC, formatters)
+        expected_call_05 : _Call = call(self.rl_summary.rls_by_topic_trend_df, REPORTSTR.RLSBYTOPICTREND, formatters)
+        expected_call_06 : _Call = call(self.rl_summary.rls_by_publisher_tpl[0], REPORTSTR.RLSBYPUBLISHER, formatters, self.rl_summary.rls_by_publisher_tpl[1])
+        expected_call_07 : _Call = call(self.rl_summary.rls_by_rating_df, REPORTSTR.RLSBYRATING, formatters)
+        expected_call_08 : _Call = call(self.rl_summary.rl_rating_five_df, REPORTSTR.RLRATINGFIVE, formatters)
+        expected_call_09 : _Call = call(self.rl_summary.rls_by_underlines_df, REPORTSTR.RLSBYUNDERLINES, formatters)
+        expected_call_10 : _Call = call(self.rl_summary.rl_most_underlines_df, REPORTSTR.RLMOSTUNDERLINES, formatters)
+        expected_call_11 : _Call = call(self.rl_summary.definitions_df, REPORTSTR.DEFINITIONS, formatters)
 
-        with patch.object(self.report_manager, "_RLReportManager__create_html", return_value = "<div></div>") as mocked_create_html:
-            with patch.object(self.report_manager, "_RLReportManager__reportify_rl", return_value = empty_df) as mocked_reportify_rl:
+        with patch.object(self.report_manager, "_RLReportManager__create_html", return_value = "<div></div>") as create_html:
+            with patch.object(self.report_manager, "_RLReportManager__reportify_rl", return_value = empty_df) as reportify_rl:
 
-                expected_call_11 : _Call = call(self.report_manager._RLReportManager__reportify_rl(self.rl_summary.rl_enriched_df), REPORTSTR.RL, formatters)   # type: ignore
-                expected_calls : int = 12
+                expected_call_12 : _Call = call(self.report_manager._RLReportManager__reportify_rl(self.rl_summary.rl_enriched_df), REPORTSTR.RL, formatters)   # type: ignore
+                expected_calls : int = 13
 
                 # Act
                 actual : list[str] = self.report_manager._RLReportManager__create_html_sections(rl_summary = self.rl_summary, formatters = formatters)  # type: ignore
 
                 # Assert
-                self.assertEqual(expected_call_00, mocked_create_html.call_args_list[0])
-                self.assertEqual(expected_call_01, mocked_create_html.call_args_list[1])
-                self.assertEqual(expected_call_02, mocked_create_html.call_args_list[2])
-                self.assertEqual(expected_call_03, mocked_create_html.call_args_list[3])
-                self.assertEqual(expected_call_04, mocked_create_html.call_args_list[4])
-                self.assertEqual(expected_call_05, mocked_create_html.call_args_list[5])
-                self.assertEqual(expected_call_06, mocked_create_html.call_args_list[6])
-                self.assertEqual(expected_call_07, mocked_create_html.call_args_list[7])
-                self.assertEqual(expected_call_08, mocked_create_html.call_args_list[8])
-                self.assertEqual(expected_call_09, mocked_create_html.call_args_list[9])
-                self.assertEqual(expected_call_10, mocked_create_html.call_args_list[10])
-                self.assertEqual(expected_call_11, mocked_create_html.call_args_list[11])
+                self.assertEqual(expected_call_00, create_html.call_args_list[0])
+                self.assertEqual(expected_call_01, create_html.call_args_list[1])
+                self.assertEqual(expected_call_02, create_html.call_args_list[2])
+                self.assertEqual(expected_call_03, create_html.call_args_list[3])
+                self.assertEqual(expected_call_04, create_html.call_args_list[4])
+                self.assertEqual(expected_call_05, create_html.call_args_list[5])
+                self.assertEqual(expected_call_06, create_html.call_args_list[6])
+                self.assertEqual(expected_call_07, create_html.call_args_list[7])
+                self.assertEqual(expected_call_08, create_html.call_args_list[8])
+                self.assertEqual(expected_call_09, create_html.call_args_list[9])
+                self.assertEqual(expected_call_10, create_html.call_args_list[10])
+                self.assertEqual(expected_call_11, create_html.call_args_list[11])
+                self.assertEqual(expected_call_12, create_html.call_args_list[12])
                 self.assertEqual(len(actual), expected_calls)
     def test_createhtmltemplate_shouldcontainexpectedhtmlexcerpts_wheninvoked(self) -> None:
 
@@ -2398,21 +3154,54 @@ class RLReportManagerTestCase(unittest.TestCase):
             css.assert_called_once_with(string = "@page { size: A3 landscape; margin: 20mm; }")
             html.assert_called_once_with(string = full_html)
             html_instance.write_pdf.assert_called_once_with(target = str(pdf_path), stylesheets = [stylesheet])
+class ComponentBagTestCase(unittest.TestCase):
+    
+    def test_componentbag_shouldinitializeasexpected_wheninvoked(self):
+        
+        # Arrange, Act
+        component_bag = ComponentBag()
+
+        # Assert
+        self.assertIsInstance(component_bag, ComponentBag)
+        self.assertIsInstance(component_bag.file_path_manager, FilePathManager)
+        self.assertIsInstance(component_bag.file_manager, FileManager)
+        self.assertIsInstance(component_bag.rl_adapter, RLAdapter)
+        self.assertIsInstance(component_bag.displayer, Displayer)
+        self.assertIsInstance(component_bag.plot_manager, PlotManager)
+        self.assertTrue(callable(component_bag.logging_function))
 class ReadingListProcessorTestCase(unittest.TestCase):
 
-    def test_mergeformatters_shouldmergeformatters_wheninvoked(self) -> None:
+    def test_orchestrateformatters_shouldreturnempty_whenenablefloathighlightingistrue(self) -> None:
 
         # Arrange
         component_bag : Mock = Mock()
 
         setting_bag : Mock = Mock()
+        setting_bag.enable_float_highlighting = True
         setting_bag.rl_most_underlines_formatters = {"a": "{:.2f}"}
         setting_bag.rls_by_publisher_formatters = {"b": "{:.2f}"}
 
         rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
 
         # Act
-        actual : dict = rl_processor._ReadingListProcessor__merge_formatters()  # type: ignore
+        actual : dict = rl_processor._ReadingListProcessor__orchestrate_formatters()  # type: ignore
+
+        # Assert
+        self.assertEqual(actual, {})
+    def test_orchestrateformatters_shouldmergeformatters_whenenablefloathighlightingisfalse(self) -> None:
+
+        # Arrange
+        component_bag : Mock = Mock()
+
+        setting_bag : Mock = Mock()
+        setting_bag.enable_float_highlighting = False
+        setting_bag.rl_most_underlines_formatters = {"a": "{:.2f}"}
+        setting_bag.rls_by_publisher_formatters = {"b": "{:.2f}"}
+
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+
+        # Act
+        actual : dict = rl_processor._ReadingListProcessor__orchestrate_formatters()  # type: ignore
 
         # Assert
         self.assertEqual(actual, {"a": "{:.2f}", "b": "{:.2f}"})
@@ -2570,6 +3359,32 @@ class ReadingListProcessorTestCase(unittest.TestCase):
 
         # Assert
         displayer.display.assert_called_once_with(obj = rls_by_month_df)
+    def test_processrlsbymonthmom_shoulddisplay_whenoptionisdisplay(self) -> None:
+
+        # Arrange
+        rls_by_month_mom_df : DataFrame = Mock()
+
+        rl_summary : Mock = Mock()
+        rl_summary.rls_by_month_mom_df = rls_by_month_mom_df
+
+        displayer : Mock = Mock()
+        rl_adapter : Mock = Mock()
+        rl_adapter.create_summary.return_value = rl_summary
+
+        component_bag : Mock = Mock()
+        component_bag.displayer = displayer
+        component_bag.rl_adapter = rl_adapter
+
+        setting_bag : Mock = Mock()
+        setting_bag.options_rls_by_month_mom = [OPTION.display]
+
+        # Act
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+        rl_processor.initialize()
+        rl_processor.process_rls_by_month_mom()
+
+        # Assert
+        displayer.display.assert_called_once_with(obj = rls_by_month_mom_df)
     def test_processrlsbyyear_shoulddisplay_whenoptionisdisplay(self) -> None:
 
         # Arrange
@@ -2698,6 +3513,7 @@ class ReadingListProcessorTestCase(unittest.TestCase):
         setting_bag.options_rls_by_publisher = [OPTION.display]
         setting_bag.rls_by_publisher_n = 5
         setting_bag.rls_by_publisher_formatters = formatters
+        setting_bag.enable_float_highlighting = False
 
         # Act
         rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
@@ -2903,6 +3719,7 @@ class ReadingListProcessorTestCase(unittest.TestCase):
         setting_bag.now = now
         setting_bag.rl_most_underlines_formatters = rl_most_underlines_formatters
         setting_bag.rls_by_publisher_formatters = rls_by_publisher_formatters
+        setting_bag.enable_float_highlighting = False
 
         # Act
         rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
@@ -2942,6 +3759,7 @@ class ReadingListProcessorTestCase(unittest.TestCase):
         setting_bag.now = now
         setting_bag.rl_most_underlines_formatters = rl_most_underlines_formatters
         setting_bag.rls_by_publisher_formatters = rls_by_publisher_formatters
+        setting_bag.enable_float_highlighting = False
 
         # Act
         processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
@@ -2964,6 +3782,7 @@ class ReadingListProcessorTestCase(unittest.TestCase):
         ["process_rl_rating_five"],
         ["process_rl_most_underlines"],
         ["process_rls_by_month"],
+        ["process_rls_by_month_mom"],
         ["process_rls_by_year"],        
         ["process_rls_by_range"],
         ["process_rls_by_topic"],
