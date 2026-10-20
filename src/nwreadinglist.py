@@ -2866,10 +2866,13 @@ class RLAdapter():
         if setting_bag.enable_float_highlighting:
 
             rls_by_publisher_tpl = (
-                self.__float_highlighter.highlight(
-                    df = rls_by_publisher_tpl[0], 
-                    column_names = [RLCN.AVGRATING],
-                    formatters = setting_bag.rls_by_publisher_formatters),
+                self.__float_highlighter.highlight(df = rls_by_publisher_tpl[0], column_names = [RLCN.AVGRATING], formatters = setting_bag.rls_by_publisher_formatters),
+                rls_by_publisher_tpl[1])
+            rls_by_publisher_tpl = (
+                self.__float_highlighter.highlight(df = rls_by_publisher_tpl[0], column_names = [RLCN.ABPERC], formatters = {}),
+                rls_by_publisher_tpl[1])
+            rls_by_publisher_tpl = (
+                self.__float_highlighter.highlight(df = rls_by_publisher_tpl[0], column_names = [RLCN.AVGUNDERLINES], formatters = {}),
                 rls_by_publisher_tpl[1])
 
         rl_summary : RLSummary = RLSummary(
