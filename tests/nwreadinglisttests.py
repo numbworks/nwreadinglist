@@ -267,7 +267,7 @@ class ObjectMother():
         return definitions_df
 
     @staticmethod
-    def get_setting_bag(enable_rs_highlighting : bool = True) -> SettingBag:
+    def get_setting_bag(enable_rs_highlighting : bool = True, enable_float_highlighting : bool = True) -> SettingBag:
 
         setting_bag : SettingBag = SettingBag(
             options_rl_rating_five = [OPTION.display],            
@@ -286,7 +286,8 @@ class ObjectMother():
             read_years = YearProvider().get_all_years(),
             excel_path = DefaultPathProvider().get_default_reading_list_path(),
             excel_nrows = 323,
-            enable_rs_highlighting = enable_rs_highlighting
+            enable_rs_highlighting = enable_rs_highlighting,
+            enable_float_highlighting = enable_float_highlighting
         )
 
         return setting_bag
@@ -2653,7 +2654,7 @@ class RLAdapterTestCase(unittest.TestCase):
             int_highlighter = self.int_highlighter,
             float_highlighter = FloatHighlighter())
 				
-        setting_bag : SettingBag = ObjectMother.get_setting_bag(enable_rs_highlighting = False)
+        setting_bag : SettingBag = ObjectMother.get_setting_bag(enable_rs_highlighting = False, enable_float_highlighting = False)
 
         # Act
         actual : RLSummary = rl_adapter.create_summary(setting_bag = setting_bag)
