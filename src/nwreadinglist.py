@@ -636,6 +636,7 @@ class SettingBag():
     now : datetime = field(default = datetime.now())
     enable_rs_highlighting : bool = field(default = True)
     enable_int_highlighting : bool = field(default = True)
+    enable_float_highlighting : bool = field(default = True)
     report_last_update : datetime = field(default = datetime.now())
     rl_most_underlines_formatters : dict = field(default_factory = lambda : { RLCN.AVGUNDERLINES : "{:.2f}", RLCN.UPERC : "{:.2f}" })
     rld_by_kbsize_n : int = field(default = 10)
@@ -1417,7 +1418,7 @@ class RLDataFrameFactory():
                 ...
         '''
 
-        pivoted_df : DataFrame = pd.pivot_table(data = df, index = [cn_index], values = [cn_values], aggfunc = lambda x : list(x))
+        pivoted_df : DataFrame = pd.pivot_table(data = df, index = [cn_index], values = [cn_values], aggfunc = lambda x : list(x))  # type: ignore
         pivoted_df.sort_values(by = cn_index, inplace = True)
         pivoted_df.reset_index(inplace = True)
 
@@ -2524,7 +2525,6 @@ class IntHighlighter():
         highlighted_df = self.__add_tags(df = highlighted_df, int_cells = int_cells, tags = tags)
 
         return highlighted_df
-
 @dataclass(frozen = True)
 class FloatCell():
     
@@ -2629,7 +2629,7 @@ class FloatHighlighter():
 
         '''Adds two HTML tags around the content of the cells listed in float_cells.'''
 
-        tagged_df : DataFrame = df.copy(deep = True)
+        tagged_df : DataFrame = df.copy(deep = True).astype(object)
 
         left_h : str = tags[0]
         right_h : str = tags[1]
@@ -2642,8 +2642,20 @@ class FloatHighlighter():
                 tagged_df.iloc[row, col] = f"{left_h}{str(df.iloc[row, col])}{right_h}"
             
         return tagged_df
+    def __apply_formatters(self, df : DataFrame, formatters : dict = {}) -> DataFrame:
 
-    def highlight(self, df : DataFrame, mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_three, column_names : list[str] = []) -> DataFrame:
+        '''Applies formatters before values are converted to HTML strings.'''
+
+        formatted_df : DataFrame = df.copy(deep = True).astype(object)
+
+        for column_name, formatter in formatters.items():
+            if column_name in formatted_df.columns:
+                formatted_df[column_name] = formatted_df[column_name].apply(
+                    lambda x: formatter.format(x))
+
+        return formatted_df
+    
+    def highlight(self, df : DataFrame, mode : HIGHLIGHTERMODE = HIGHLIGHTERMODE.top_three, column_names : list[str] = [], formatters: dict = {}) -> DataFrame:
 
         '''
             Expects a df containing float, percentage, or currency cell formats - i.e. 2.09, 69.09, $2153.25.
@@ -2656,17 +2668,14 @@ class FloatHighlighter():
         if len(column_names) == 0:
             column_names = highlighted_df.columns.to_list()
 
-        float_cells : list[FloatCell] = self.__calculate_float_cells(
-            df = highlighted_df, 
-            mode = mode,
-            column_names = column_names
-        )
+        float_cells : list[FloatCell] = self.__calculate_float_cells(df = highlighted_df, mode = mode, column_names = column_names)
+
+        highlighted_df = self.__apply_formatters(df = highlighted_df, formatters = formatters)
 
         tags : Tuple[str, str] = (f"<mark style='background-color: pink'>", "</mark>")
         highlighted_df = self.__add_tags(df = highlighted_df, float_cells = float_cells, tags = tags)
 
         return highlighted_df
-
 class RLAdapter():
 
     '''Adapts SettingBag properties for use in RL*Factory methods.'''
@@ -2674,16 +2683,19 @@ class RLAdapter():
     __df_factory : RLDataFrameFactory
     __rs_highlighter : RSHighlighter
     __int_highlighter : IntHighlighter
+    __float_highlighter : FloatHighlighter
 
     def __init__(
             self, 
             df_factory : RLDataFrameFactory, 
             rs_highlighter : RSHighlighter,
-            int_highlighter : IntHighlighter) -> None:
+            int_highlighter : IntHighlighter,
+            float_highlighter : FloatHighlighter) -> None:
         
         self.__df_factory = df_factory
         self.__rs_highlighter = rs_highlighter
         self.__int_highlighter = int_highlighter
+        self.__float_highlighter = float_highlighter
 
     def create_rl_df(self, setting_bag : SettingBag) -> DataFrame:
 
@@ -2834,6 +2846,7 @@ class RLAdapter():
             rls_by_year_df = self.__rs_highlighter.highlight_rls_by_year(rls_by_year_df = rls_by_year_df)
 
         if setting_bag.enable_int_highlighting:
+
             rls_by_month_mom_df = self.__int_highlighter.highlight(df = rls_by_month_mom_df)
 
             rls_by_topic_df = self.__int_highlighter.highlight(df = rls_by_topic_df, column_names = [RLCN.BOOKS])
@@ -2849,6 +2862,15 @@ class RLAdapter():
             
             rl_most_underlines_df = self.__int_highlighter.highlight(df = rl_most_underlines_df, column_names = [RLCN.A4SHEETS])
             rl_most_underlines_df = self.__int_highlighter.highlight(df = rl_most_underlines_df, column_names = [RLCN.UNDERLINES])
+
+        if setting_bag.enable_float_highlighting:
+
+            rls_by_publisher_tpl = (
+                self.__float_highlighter.highlight(
+                    df = rls_by_publisher_tpl[0], 
+                    column_names = [RLCN.AVGRATING],
+                    formatters = setting_bag.rls_by_publisher_formatters),
+                rls_by_publisher_tpl[1])
 
         rl_summary : RLSummary = RLSummary(
             rl_df = rl_df,
@@ -3081,7 +3103,8 @@ class ComponentBag():
             momentum_manager = MomentumManager()),
         rs_highlighter = RSHighlighter(
             df_helper = RLDataFrameHelper()),
-        int_highlighter = IntHighlighter()))
+        int_highlighter = IntHighlighter(),
+        float_highlighter = FloatHighlighter()))
 class ReadingListProcessor():
 
     '''Collects all the logic related to the processing of "Reading List.xlsx".'''
@@ -3101,16 +3124,35 @@ class ReadingListProcessor():
 
         if not hasattr(self, '_ReadingListProcessor__rl_summary'):
             raise Exception(_MessageCollection.please_run_initialize_first())
-    def __merge_formatters(self) -> dict:
+    def __orchestrate_formatters(self) -> dict:
 
-        '''Merges all formatters in one dict'''
+        '''
+            Orchestrates formatter ownership within the rendering pipeline.
 
-        formatters : dict = (
-            self.__setting_bag.rl_most_underlines_formatters | 
-            self.__setting_bag.rls_by_publisher_formatters
-        )
+            If float highlighting is enabled, FloatHighlighter assumes responsibility for formatting highlighted float values before
+            they are converted to HTML strings. In this case, downstream formatter application is disabled by returning an empty dict.
+
+            Otherwise, all formatter definitions are merged and returned for later processing.
+        '''
+
+        formatters: dict = {}
+
+        if self.__setting_bag.enable_float_highlighting is False:
+
+            formatters = (
+                self.__setting_bag.rl_most_underlines_formatters |
+                self.__setting_bag.rls_by_publisher_formatters
+            )
             
         return formatters
+    def __orchestrate_rls_by_publisher_formatters(self) -> dict:
+
+        '''Orchestrates formatter ownership for the DataFrame in the method name.'''
+
+        if self.__setting_bag.enable_float_highlighting:
+            return {}
+            
+        return self.__setting_bag.rls_by_publisher_formatters
 
     def initialize(self) -> None:
 
@@ -3280,7 +3322,7 @@ class ReadingListProcessor():
 
         options : list = self.__setting_bag.options_rls_by_publisher
         df : DataFrame = self.__rl_summary.rls_by_publisher_tpl[0]
-        formatters : dict = self.__setting_bag.rls_by_publisher_formatters
+        formatters : dict = self.__orchestrate_rls_by_publisher_formatters()
         footer : str = self.__rl_summary.rls_by_publisher_tpl[1] + "\n"
 
         if OPTION.display in options:
@@ -3383,7 +3425,7 @@ class ReadingListProcessor():
         self.__validate_summary()
 
         options : list = self.__setting_bag.options_report
-        formatters :dict = self.__merge_formatters()
+        formatters :dict = self.__orchestrate_formatters()
         save_html : bool = False
         save_pdf : bool = False
 
