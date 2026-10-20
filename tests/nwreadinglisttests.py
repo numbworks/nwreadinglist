@@ -2540,11 +2540,15 @@ class RLAdapterTestCase(unittest.TestCase):
         self.float_highlighter : Mock = Mock(spec = FloatHighlighter)
         self.float_highlighter.highlight.side_effect = lambda df, *args, **kwargs : df
 
+        self.isworth_highlighter : Mock = Mock(spec = IsWorthHighlighter)
+        self.isworth_highlighter.highlight.side_effect = lambda df, *args, **kwargs : df
+
         self.adapter : RLAdapter = RLAdapter(
-            df_factory = self.df_factory,               # type: ignore
-            rs_highlighter = self.rs_highlighter,       # type: ignore
-            int_highlighter = self.int_highlighter,     # type: ignore
-            float_highlighter = self.float_highlighter  # type: ignore
+            df_factory = self.df_factory,                   # type: ignore
+            rs_highlighter = self.rs_highlighter,           # type: ignore
+            int_highlighter = self.int_highlighter,         # type: ignore
+            float_highlighter = self.float_highlighter,     # type: ignore
+            isworth_highlighter = self.isworth_highlighter  # type: ignore
         )
 
     def test_createrldf_shouldcalldffactorywithexpectedarguments_wheninvoked(self) -> None:
@@ -2556,7 +2560,8 @@ class RLAdapterTestCase(unittest.TestCase):
             rs_highlighter = RSHighlighter(
                 df_helper = RLDataFrameHelper()),
             int_highlighter = IntHighlighter(),
-            float_highlighter = FloatHighlighter())
+            float_highlighter = FloatHighlighter(),
+            isworth_highlighter = IsWorthHighlighter())
 
         setting_bag : SettingBag = Mock()
         setting_bag.excel_path = self.excel_path
@@ -2585,7 +2590,8 @@ class RLAdapterTestCase(unittest.TestCase):
             rs_highlighter = RSHighlighter(
                 df_helper = RLDataFrameHelper()),
             int_highlighter = IntHighlighter(),
-            float_highlighter = FloatHighlighter())
+            float_highlighter = FloatHighlighter(),
+            isworth_highlighter = IsWorthHighlighter())
 
         setting_bag : SettingBag = Mock()
         setting_bag.read_years = self.read_years
@@ -2611,7 +2617,8 @@ class RLAdapterTestCase(unittest.TestCase):
             rs_highlighter = RSHighlighter(
                 df_helper = RLDataFrameHelper()),
             int_highlighter = IntHighlighter(),
-            float_highlighter = FloatHighlighter())
+            float_highlighter = FloatHighlighter(),
+            isworth_highlighter = IsWorthHighlighter())
 
         setting_bag : SettingBag = Mock()
         setting_bag.read_years = self.read_years
@@ -2643,7 +2650,8 @@ class RLAdapterTestCase(unittest.TestCase):
             rs_highlighter = RSHighlighter(
                 df_helper = RLDataFrameHelper()),
             int_highlighter = IntHighlighter(),
-            float_highlighter = FloatHighlighter())
+            float_highlighter = FloatHighlighter(),
+            isworth_highlighter = IsWorthHighlighter())
 
         setting_bag : SettingBag = Mock()
         setting_bag.rounding_digits = self.rounding_digits
@@ -2668,7 +2676,8 @@ class RLAdapterTestCase(unittest.TestCase):
             rs_highlighter = RSHighlighter(
                 df_helper = RLDataFrameHelper()),
             int_highlighter = IntHighlighter(),
-            float_highlighter = FloatHighlighter())
+            float_highlighter = FloatHighlighter(),
+            isworth_highlighter = IsWorthHighlighter())
 
         setting_bag : SettingBag = Mock()
         setting_bag.rounding_digits = self.rounding_digits
@@ -2702,7 +2711,8 @@ class RLAdapterTestCase(unittest.TestCase):
             rs_highlighter = RSHighlighter(
                 df_helper = RLDataFrameHelper()),
             int_highlighter = IntHighlighter(),
-            float_highlighter = FloatHighlighter())
+            float_highlighter = FloatHighlighter(),
+            isworth_highlighter = IsWorthHighlighter())
 
         setting_bag : SettingBag = Mock()
         setting_bag.rls_by_rating_number_as_stars = self.rls_by_rating_number_as_stars
@@ -2726,7 +2736,8 @@ class RLAdapterTestCase(unittest.TestCase):
             rs_highlighter = RSHighlighter(
                 df_helper = RLDataFrameHelper()),
             int_highlighter = IntHighlighter(),
-            float_highlighter = FloatHighlighter())
+            float_highlighter = FloatHighlighter(),
+            isworth_highlighter = IsWorthHighlighter())
 
         setting_bag : SettingBag = Mock()
         setting_bag.rld_by_kbsize_n = self.rld_by_kbsize_n
@@ -2782,7 +2793,8 @@ class RLAdapterTestCase(unittest.TestCase):
             rs_highlighter = RSHighlighter(
                 df_helper = RLDataFrameHelper()),
             int_highlighter = self.int_highlighter,
-            float_highlighter = FloatHighlighter())
+            float_highlighter = FloatHighlighter(),
+            isworth_highlighter = IsWorthHighlighter())
 				
         setting_bag : SettingBag = ObjectMother.get_setting_bag(enable_rs_highlighting = False, enable_float_highlighting = False)
 
@@ -2873,7 +2885,9 @@ class RLAdapterTestCase(unittest.TestCase):
             self.rs_highlighter.highlight_rls_by_month.assert_called()
             self.rs_highlighter.highlight_rls_by_year.assert_called_once_with(rls_by_year_df = rls_by_year_df)
 
-            self.assertEqual(self.int_highlighter.highlight.call_count, 8)
+            self.assertEqual(self.int_highlighter.highlight.call_count, 6)
+            self.assertEqual(self.float_highlighter.highlight.call_count, 2)
+            self.assertEqual(self.isworth_highlighter.highlight.call_count, 1)
 class RLReportManagerTestCase(unittest.TestCase):
 
     def setUp(self) -> None:

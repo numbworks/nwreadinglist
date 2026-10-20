@@ -637,6 +637,7 @@ class SettingBag():
     enable_rs_highlighting : bool = field(default = True)
     enable_int_highlighting : bool = field(default = True)
     enable_float_highlighting : bool = field(default = True)
+    enable_isworth_highlighting : bool = field(default = True)
     report_last_update : datetime = field(default = datetime.now())
     rl_most_underlines_formatters : dict = field(default_factory = lambda : { RLCN.AVGUNDERLINES : "{:.2f}", RLCN.UPERC : "{:.2f}" })
     rld_by_kbsize_n : int = field(default = 10)
@@ -2783,18 +2784,21 @@ class RLAdapter():
     __rs_highlighter : RSHighlighter
     __int_highlighter : IntHighlighter
     __float_highlighter : FloatHighlighter
+    __isworth_highlighter : IsWorthHighlighter
 
     def __init__(
             self, 
             df_factory : RLDataFrameFactory, 
             rs_highlighter : RSHighlighter,
             int_highlighter : IntHighlighter,
-            float_highlighter : FloatHighlighter) -> None:
+            float_highlighter : FloatHighlighter,
+            isworth_highlighter : IsWorthHighlighter) -> None:
         
         self.__df_factory = df_factory
         self.__rs_highlighter = rs_highlighter
         self.__int_highlighter = int_highlighter
         self.__float_highlighter = float_highlighter
+        self.__isworth_highlighter = isworth_highlighter
 
     def create_rl_df(self, setting_bag : SettingBag) -> DataFrame:
 
@@ -2951,14 +2955,7 @@ class RLAdapter():
             rls_by_topic_df = self.__int_highlighter.highlight(df = rls_by_topic_df, column_names = [RLCN.BOOKS])
             rls_by_topic_df = self.__int_highlighter.highlight(df = rls_by_topic_df, column_names = [RLCN.PAGES])
             rls_by_topic_df = self.__int_highlighter.highlight(df = rls_by_topic_df, column_names = [RLCN.A4SHEETS])
-            
-            rls_by_publisher_tpl = (
-                self.__int_highlighter.highlight(df = rls_by_publisher_tpl[0], column_names = [RLCN.BOOKS]),
-                rls_by_publisher_tpl[1])
-            rls_by_publisher_tpl = (
-                self.__int_highlighter.highlight(df = rls_by_publisher_tpl[0], column_names = [RLCN.A4SHEETS]),
-                rls_by_publisher_tpl[1])
-            
+                       
             rl_most_underlines_df = self.__int_highlighter.highlight(df = rl_most_underlines_df, column_names = [RLCN.A4SHEETS])
             rl_most_underlines_df = self.__int_highlighter.highlight(df = rl_most_underlines_df, column_names = [RLCN.UNDERLINES])
 
@@ -2970,8 +2967,11 @@ class RLAdapter():
             rls_by_publisher_tpl = (
                 self.__float_highlighter.highlight(df = rls_by_publisher_tpl[0], column_names = [RLCN.ABPERC], formatters = {}),
                 rls_by_publisher_tpl[1])
+
+        if setting_bag.enable_isworth_highlighting:
+
             rls_by_publisher_tpl = (
-                self.__float_highlighter.highlight(df = rls_by_publisher_tpl[0], column_names = [RLCN.AVGUNDERLINES], formatters = {}),
+                self.__isworth_highlighter.highlight(df = rls_by_publisher_tpl[0]),
                 rls_by_publisher_tpl[1])
 
         rl_summary : RLSummary = RLSummary(
@@ -3206,7 +3206,8 @@ class ComponentBag():
         rs_highlighter = RSHighlighter(
             df_helper = RLDataFrameHelper()),
         int_highlighter = IntHighlighter(),
-        float_highlighter = FloatHighlighter()))
+        float_highlighter = FloatHighlighter(),
+        isworth_highlighter = IsWorthHighlighter()))
 class ReadingListProcessor():
 
     '''Collects all the logic related to the processing of "Reading List.xlsx".'''
