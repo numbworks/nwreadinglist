@@ -3559,6 +3559,7 @@ class ReadingListProcessorTestCase(unittest.TestCase):
         setting_bag.now = now
         setting_bag.rl_most_underlines_formatters = rl_most_underlines_formatters
         setting_bag.rls_by_publisher_formatters = rls_by_publisher_formatters
+        setting_bag.enable_float_highlighting = False
 
         # Act
         rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
@@ -3598,6 +3599,7 @@ class ReadingListProcessorTestCase(unittest.TestCase):
         setting_bag.now = now
         setting_bag.rl_most_underlines_formatters = rl_most_underlines_formatters
         setting_bag.rls_by_publisher_formatters = rls_by_publisher_formatters
+        setting_bag.enable_float_highlighting = False
 
         # Act
         processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
