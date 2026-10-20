@@ -2505,21 +2505,6 @@ class IsWorthHighlighterTestCase(unittest.TestCase):
 
         # Assert
         assert_frame_equal(expected, actual)
-class ComponentBagTestCase(unittest.TestCase):
-    
-    def test_componentbag_shouldinitializeasexpected_wheninvoked(self):
-        
-        # Arrange, Act
-        component_bag = ComponentBag()
-
-        # Assert
-        self.assertIsInstance(component_bag, ComponentBag)
-        self.assertIsInstance(component_bag.file_path_manager, FilePathManager)
-        self.assertIsInstance(component_bag.file_manager, FileManager)
-        self.assertIsInstance(component_bag.rl_adapter, RLAdapter)
-        self.assertIsInstance(component_bag.displayer, Displayer)
-        self.assertIsInstance(component_bag.plot_manager, PlotManager)
-        self.assertTrue(callable(component_bag.logging_function))
 class RLAdapterTestCase(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -3155,6 +3140,21 @@ class RLReportManagerTestCase(unittest.TestCase):
             css.assert_called_once_with(string = "@page { size: A3 landscape; margin: 20mm; }")
             html.assert_called_once_with(string = full_html)
             html_instance.write_pdf.assert_called_once_with(target = str(pdf_path), stylesheets = [stylesheet])
+class ComponentBagTestCase(unittest.TestCase):
+    
+    def test_componentbag_shouldinitializeasexpected_wheninvoked(self):
+        
+        # Arrange, Act
+        component_bag = ComponentBag()
+
+        # Assert
+        self.assertIsInstance(component_bag, ComponentBag)
+        self.assertIsInstance(component_bag.file_path_manager, FilePathManager)
+        self.assertIsInstance(component_bag.file_manager, FileManager)
+        self.assertIsInstance(component_bag.rl_adapter, RLAdapter)
+        self.assertIsInstance(component_bag.displayer, Displayer)
+        self.assertIsInstance(component_bag.plot_manager, PlotManager)
+        self.assertTrue(callable(component_bag.logging_function))
 class ReadingListProcessorTestCase(unittest.TestCase):
 
     def test_orchestrateformatters_shouldreturnempty_whenenablefloathighlightingistrue(self) -> None:
