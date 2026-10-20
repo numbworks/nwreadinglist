@@ -7,5 +7,8 @@ classDiagram
   RLDataFrameHelper --* RSHighlighter : __df_helper
   RLReportManager --* ComponentBag : rlr_manager
   RSHighlighter --* RLAdapter : __rs_highlighter
+  IntHighlighter --* RLAdapter : __int_highlighter
+  FloatHighlighter --* RLAdapter : __float_highlighter
+  IsWorthHighlighter --* RLAdapter : __isworth_highlighter
   SettingBag --* ReadingListProcessor : __setting_bag
 ```

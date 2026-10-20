@@ -2,7 +2,7 @@
 
 # --- CONFIGURATION ---
 PROJECT_NAME="nwreadinglist"
-PROJECT_VERSION="6.0.1"
+PROJECT_VERSION="6.1.0"
 PROJECT_ALIAS="nwread"
 CLI_NAME="nwreadinglistcli"
 
