@@ -2676,6 +2676,105 @@ class FloatHighlighter():
         highlighted_df = self.__add_tags(df = highlighted_df, float_cells = float_cells, tags = tags)
 
         return highlighted_df
+@dataclass(frozen = True)
+class IsWorthCell():
+    
+    '''Collects all the information related to a DataFrame cell that are required by IsWorthHighlighter[cite: 1].'''
+
+    coordinate_pair : Tuple[int, int]
+    raw_value : str
+class IsWorthHighlighter():
+
+    '''Encapsulates all the logic related to highlighting cells in dataframes containing 'Yes' or 'No' values[cite: 1].'''
+
+    def __is_valid_cell(self, cell_content : str) -> bool:
+
+        '''Returns True if content is either 'Yes' or 'No'.'''
+
+        return cell_content in ["Yes", "No"]
+    def __is_yes(self, cell_content : str) -> bool:
+
+        '''Returns True if content is 'Yes'.'''
+
+        return cell_content == "Yes"
+    def __append_new_worth_cell(self, worth_cells : list[IsWorthCell], coordinate_pair : Tuple[int, int], cell_content : str) -> None:
+
+        '''Creates and appends a new WorthCell object to worth_cells[cite: 1].'''
+
+        worth_cell : IsWorthCell = IsWorthCell(
+            coordinate_pair = coordinate_pair,
+            raw_value = cell_content,
+        )
+        
+        worth_cells.append(worth_cell)
+    def __extract_row(self, df : DataFrame, row_idx : int, column_names : list[str]) -> list[IsWorthCell]:
+
+        '''Returns a collection of WorthCell objects for provided arguments[cite: 1].'''
+
+        worth_cells : list[IsWorthCell] = []
+        col_indices : list = [df.columns.get_loc(column_name) for column_name in column_names if column_name in df.columns]
+
+        for col_idx in col_indices:
+
+            coordinate_pair : Tuple[int, int] = (row_idx, col_idx)
+            cell_content : str = str(df.iloc[row_idx, col_idx])
+
+            if self.__is_valid_cell(cell_content = cell_content) and self.__is_yes(cell_content = cell_content):
+                self.__append_new_worth_cell(worth_cells, coordinate_pair, cell_content)
+
+        return worth_cells
+    def __calculate_worth_cells(self, df : DataFrame, column_names : list[str]) -> list[IsWorthCell]:
+
+        '''Returns a list of WorthCell objects representing 'Yes' values across the dataframe[cite: 1].'''
+
+        worth_cells : list[IsWorthCell] = []
+        last_row_idx : int = len(df)
+
+        for row_idx in range(last_row_idx):
+            current : list[IsWorthCell] = self.__extract_row(df = df, row_idx = row_idx, column_names = column_names)
+            worth_cells.extend(current)
+
+        return worth_cells
+    def __add_tags(self, df : DataFrame, worth_cells : list[IsWorthCell], tags : Tuple[str, str]) -> DataFrame:
+
+        '''Adds two HTML tags around the content of the cells listed in worth_cells[cite: 1].'''
+
+        tagged_df : DataFrame = df.copy(deep = True)
+
+        left_h : str = tags[0]
+        right_h : str = tags[1]
+
+        for worth_cell in worth_cells:
+
+            row, col = worth_cell.coordinate_pair
+
+            if row < len(df) and col < len(df.columns):
+                tagged_df.iloc[row, col] = f"{left_h}{str(df.iloc[row, col])}{right_h}"
+            
+        return tagged_df
+
+    def highlight(self, df : DataFrame, column_names : list[str] = []) -> DataFrame:
+
+        '''
+            Expects a df containing 'Yes' or 'No' cell formats[cite: 1].
+            Returns a df with highlighted 'Yes' cells as per arguments[cite: 1].
+        '''
+
+        highlighted_df : DataFrame = df.copy(deep = True)
+        highlighted_df.columns = highlighted_df.columns.map(str)
+
+        if len(column_names) == 0:
+            column_names = highlighted_df.columns.to_list()
+
+        worth_cells : list[IsWorthCell] = self.__calculate_worth_cells(
+            df = highlighted_df, 
+            column_names = column_names
+        )
+
+        tags : Tuple[str, str] = (f"<mark style='background-color: pink'>", "</mark>")
+        highlighted_df = self.__add_tags(df = highlighted_df, worth_cells = worth_cells, tags = tags)
+
+        return highlighted_df
 class RLAdapter():
 
     '''Adapts SettingBag properties for use in RL*Factory methods.'''

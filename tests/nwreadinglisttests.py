@@ -20,7 +20,7 @@ from unittest.mock import _Call, Mock, call, mock_open, patch
 
 # LOCAL/NW MODULES
 sys.path.append(os.path.dirname(__file__).replace('tests', 'src'))
-from nwreadinglist import _MessageCollectionMomentumManager, FloatCell, FloatHighlighter, Formatter, Converter, FilePathManager
+from nwreadinglist import _MessageCollectionMomentumManager, FloatCell, FloatHighlighter, Formatter, Converter, FilePathManager, IsWorthHighlighter, IsWorthCell
 from nwreadinglist import FileManager, IntCell, IntHighlighter, LambdaProvider, Displayer, MomentumManager, PlotManager, PlotKind
 from nwreadinglist import REPORTSTR, RLCN, DEFINITIONSTR, OPTION, HIGHLIGHTERMODE, _MessageCollection
 from nwreadinglist import RLReportManager, RLSummary, DefaultPathProvider, RSCell, RSHighlighter
@@ -2360,6 +2360,151 @@ class FloatHighlighterTestCase(unittest.TestCase):
 
         # Assert
         self.assertIsNotNone(actual)
+class IsWorthCellTestCase(unittest.TestCase):
+
+    def test_init_shouldinitializeobjectwithexpectedproperties_whenvalidarguments(self) -> None:
+
+        # Arrange
+        coordinate_pair : Tuple[int, int] = (5, 10)
+        raw_value : str = "Yes"
+
+        # Act
+        worth_cell : IsWorthCell = IsWorthCell(
+            coordinate_pair = coordinate_pair,
+            raw_value = raw_value
+        )
+
+        # Assert
+        self.assertEqual(worth_cell.coordinate_pair, coordinate_pair)
+        self.assertEqual(worth_cell.raw_value, raw_value)
+class IsWorthHighlighterTestCase(unittest.TestCase):
+
+    def setUp(self) -> None:
+
+        data : dict[str, list] = {
+            "Month": ["1", "2"],
+            "IsWorth": ["Yes", "No"],
+            "↕": ["↑", "↑"],
+            "IsRecommended": ["No", "Yes"],
+            "↕_duplicate_1": ["↑", "↑"],
+            "IsFeatured": ["Yes", "Yes"]
+        }
+        columns_01 : list[str] = ["Month", "IsWorth", "↕", "IsRecommended", "↕", "IsFeatured"]
+        self.df_with_duplicates : DataFrame = DataFrame(data, columns = columns_01)
+
+        columns_02 : list[str] = ["Month", "IsWorth", "↕", "IsRecommended", "↕_duplicate_1", "IsFeatured"]
+        self.df_without_duplicates : DataFrame = DataFrame(data, columns = columns_02)
+
+    def test_init_shouldinitializeobjectwithexpectedproperties_wheninvoked(self) -> None:
+
+        # Arrange
+        # Act
+        actual : IsWorthHighlighter = IsWorthHighlighter()
+
+        # Assert
+        self.assertIsInstance(actual, IsWorthHighlighter)
+
+    @parameterized.expand([
+        ("Yes", True),
+        ("No", True),
+        ("Maybe", False),
+        ("yes", False)
+    ])
+    def test_isvalidcell_shouldreturnexpectedresult_wheninvoked(self, cell_content: str, expected: bool) -> None:
+        
+        # Arrange
+        # Act
+        actual : bool = IsWorthHighlighter()._IsWorthHighlighter__is_valid_cell(cell_content = cell_content)    # type: ignore
+
+        # Assert
+        self.assertEqual(actual, expected)
+
+    @parameterized.expand([
+        ("Yes", True),
+        ("No", False)
+    ])
+    def test_isyes_shouldreturnexpectedresult_wheninvoked(self, cell_content: str, expected: bool) -> None:
+        
+        # Arrange
+        # Act
+        actual : bool = IsWorthHighlighter()._IsWorthHighlighter__is_yes(cell_content = cell_content)    # type: ignore
+
+        # Assert
+        self.assertEqual(actual, expected)
+
+    def test_appendnewworthcell_shouldappendprovidedcell_wheninvoked(self) -> None:
+        
+        # Arrange
+        worth_cells : list[IsWorthCell] = []
+        coordinate_pair : Tuple[int, int] = (5, 10)
+        raw_value : str = "Yes"
+
+        # Act
+        IsWorthHighlighter()._IsWorthHighlighter__append_new_worth_cell(worth_cells, coordinate_pair, raw_value) # type: ignore
+
+        # Assert
+        self.assertEqual(len(worth_cells), 1)
+        self.assertEqual(worth_cells[0].coordinate_pair, coordinate_pair)
+        self.assertEqual(worth_cells[0].raw_value, raw_value)
+    def test_extractrow_shouldreturnworthcells_whenrowhasyes(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"IsWorth": ["Yes"], "↕": ["↑"], "IsRecommended": ["No"]})
+        column_names : list[str] = ["IsWorth", "IsRecommended"]
+
+        # Act
+        actual : list[IsWorthCell] = IsWorthHighlighter()._IsWorthHighlighter__extract_row(df = df, row_idx = 0, column_names = column_names)   # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 1)
+        self.assertEqual(actual[0].raw_value, "Yes")
+    def test_calculateworthcells_shouldreturnexpectedcells_wheninvoked(self) -> None:
+        
+        # Arrange
+        df : DataFrame = DataFrame({"IsWorth": ["Yes", "No"], "↕": ["↑", "↑"], "IsRecommended": ["No", "Yes"]})
+        column_names : list[str] = ["IsWorth", "IsRecommended"]
+
+        # Act
+        actual : list[IsWorthCell] = IsWorthHighlighter()._IsWorthHighlighter__calculate_worth_cells(df = df, column_names = column_names)   # type: ignore
+
+        # Assert
+        self.assertEqual(len(actual), 2)
+        self.assertEqual(actual[0].raw_value, "Yes")
+        self.assertEqual(actual[1].raw_value, "Yes")
+    def test_addtags_shouldsurroundworthcellswithtokens_wheninvoked(self) -> None:
+
+        # Arrange
+        worth_cells : list[IsWorthCell] = [
+            IsWorthCell(coordinate_pair = (0, 1), raw_value = "Yes"),
+            IsWorthCell(coordinate_pair = (1, 5), raw_value = "Yes")
+        ]
+        tags : Tuple[str, str] = ("[[ ", " ]]")
+        expected : DataFrame = self.df_without_duplicates.copy(deep = True)
+        expected.iloc[0, 1] = "[[ Yes ]]"
+        expected.iloc[1, 5] = "[[ Yes ]]"
+
+        # Act
+        actual : DataFrame = IsWorthHighlighter()._IsWorthHighlighter__add_tags(self.df_without_duplicates, worth_cells, tags)   # type: ignore
+
+        # Assert
+        self.assertTrue(expected.equals(actual))
+
+    def test_highlight_shouldhighlightexpectedcells_whencolumnnamesareprovided(self) -> None:
+
+        # Arrange
+        column_names : list[str] = ["IsWorth", "IsRecommended", "IsFeatured"]
+
+        expected : DataFrame = self.df_without_duplicates.copy(deep = True)
+        expected.iloc[0, 1] = "<mark style='background-color: pink'>Yes</mark>"
+        expected.iloc[1, 3] = "<mark style='background-color: pink'>Yes</mark>"
+        expected.iloc[0, 5] = "<mark style='background-color: pink'>Yes</mark>"
+        expected.iloc[1, 5] = "<mark style='background-color: pink'>Yes</mark>"
+
+        # Act
+        actual : DataFrame = IsWorthHighlighter().highlight(self.df_without_duplicates, column_names)
+
+        # Assert
+        assert_frame_equal(expected, actual)
 class ComponentBagTestCase(unittest.TestCase):
     
     def test_componentbag_shouldinitializeasexpected_wheninvoked(self):
