@@ -3011,12 +3011,30 @@ class RLReportManagerTestCase(unittest.TestCase):
             html_instance.write_pdf.assert_called_once_with(target = str(pdf_path), stylesheets = [stylesheet])
 class ReadingListProcessorTestCase(unittest.TestCase):
 
-    def test_orchestrateformatters_shouldorchestrateformatters_wheninvoked(self) -> None:
+    def test_orchestrateformatters_shouldreturnempty_whenenablefloathighlightingistrue(self) -> None:
 
         # Arrange
         component_bag : Mock = Mock()
 
         setting_bag : Mock = Mock()
+        setting_bag.enable_float_highlighting = True
+        setting_bag.rl_most_underlines_formatters = {"a": "{:.2f}"}
+        setting_bag.rls_by_publisher_formatters = {"b": "{:.2f}"}
+
+        rl_processor : ReadingListProcessor = ReadingListProcessor(component_bag = component_bag, setting_bag = setting_bag)
+
+        # Act
+        actual : dict = rl_processor._ReadingListProcessor__orchestrate_formatters()  # type: ignore
+
+        # Assert
+        self.assertEqual(actual, {})
+    def test_orchestrateformatters_shouldmergeformatters_whenenablefloathighlightingisfalse(self) -> None:
+
+        # Arrange
+        component_bag : Mock = Mock()
+
+        setting_bag : Mock = Mock()
+        setting_bag.enable_float_highlighting = False
         setting_bag.rl_most_underlines_formatters = {"a": "{:.2f}"}
         setting_bag.rls_by_publisher_formatters = {"b": "{:.2f}"}
 
